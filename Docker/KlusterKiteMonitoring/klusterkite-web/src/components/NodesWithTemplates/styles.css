@@ -1,5 +1,6 @@
 .templates {
   margin-top: 10px;
+  margin-bottom: 15px;
   display: flex;
   flex-flow: wrap;
 }

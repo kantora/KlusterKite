@@ -1,6 +1,6 @@
 import Relay from 'react-relay'
 
-export default class RecheckStateMutation extends Relay.Mutation {
+export default class ValidateStateMutation extends Relay.Mutation {
 
   getMutation () {
     return Relay.QL`mutation{klusterKiteNodeApi_klusterKiteNodesApi_clusterManagement_recheckState}`

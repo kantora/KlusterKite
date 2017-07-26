@@ -24,3 +24,7 @@
   -moz-background-clip: padding;
   background-clip: padding-box;
 }
+
+.td-center {
+  text-align: center;
+}

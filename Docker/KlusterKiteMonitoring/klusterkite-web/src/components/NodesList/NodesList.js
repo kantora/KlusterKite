@@ -1,10 +1,10 @@
 import React from 'react';
 import Relay from 'react-relay'
-
 import delay from 'lodash/delay'
-
 import { Popover, OverlayTrigger, Button } from 'react-bootstrap';
 import Icon from 'react-fa';
+
+import SortableHeader from '../Table/SortableHeader';
 
 import UpgradeNodeMutation from './mutations/UpgradeNodeMutation';
 
@@ -15,9 +15,10 @@ export class NodesList extends React.Component {
   constructor(props) {
     super(props);
     this.nodePopover = this.nodePopover.bind(this);
+    this.onSort = this.onSort.bind(this);
 
     this.state = {
-      upgradingNodes: []
+      upgradingNodes: [],
     };
   }
 
@@ -27,6 +28,8 @@ export class NodesList extends React.Component {
     upgradeNodePrivilege: React.PropTypes.bool.isRequired,
     testMode: React.PropTypes.bool,
     hideDetails: React.PropTypes.bool,
+    sort: React.PropTypes.string,
+    onSort: React.PropTypes.func,
   };
 
   drawRole(node, role) {
@@ -103,7 +106,7 @@ export class NodesList extends React.Component {
   /**
    * Shows reloading packages message
    */
-  showErrorMessage = () => {
+  showErrorMessage() {
     this.setState({
       isError: true
     });
@@ -112,18 +115,27 @@ export class NodesList extends React.Component {
   /**
    * Hides reloading packages message after delay
    */
-  hideErrorMessageAfterDelay = () => {
+  hideErrorMessageAfterDelay() {
     delay(() => this.hideErrorMessage(), 5000);
   };
 
   /**
    * Hides reloading packages message
    */
-  hideErrorMessage = () => {
+  hideErrorMessage() {
     this.setState({
       isError: false
     });
   };
+
+  onSort(column, direction) {
+    this.setState({
+      sortColumn: column,
+      sortDirection: direction,
+    });
+
+    this.props.onSort(`${column}_${direction}`);
+  }
 
   render() {
     if (!this.props.nodeDescriptions.getActiveNodeDescriptions){
@@ -137,7 +149,6 @@ export class NodesList extends React.Component {
 
     return (
       <div>
-        <h3>Nodes list</h3>
         {hasError &&
           <div className="alert alert-danger" role="alert">
             <span className="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
@@ -149,8 +160,8 @@ export class NodesList extends React.Component {
             <tr>
               <th>Leader</th>
               <th>Address</th>
-              <th>Template</th>
-              <th>Container</th>
+              <SortableHeader title="Template" code="nodeTemplate" sortColumn={this.props.sort.split('_')[0]} sortDirection={this.props.sort.split('_')[1]} onSort={this.onSort} />
+              <SortableHeader title="Container" code="containerType" sortColumn={this.props.sort.split('_')[0]} sortDirection={this.props.sort.split('_')[1]} onSort={this.onSort} />
               {!this.props.hideDetails &&
                 <th>Modules</th>
               }
@@ -158,6 +169,7 @@ export class NodesList extends React.Component {
                 <th>Roles</th>
               }
               <th>Status</th>
+              <th>Reset</th>
             </tr>
           </thead>
           <tbody>
@@ -167,7 +179,7 @@ export class NodesList extends React.Component {
             const reloadClassName = isUpdating ? 'fa fa-refresh fa-spin' : 'fa fa-refresh';
             return (
               <tr key={`${node.nodeId}`}>
-                <td>{node.isClusterLeader ? <i className="fa fa-check-circle" aria-hidden="true"></i> : ''}</td>
+                <td className="td-center">{node.isClusterLeader ? <i className="fa fa-check-circle" aria-hidden="true"></i> : ''}</td>
                 <td>{node.nodeAddress.host}:{node.nodeAddress.port}</td>
                 <td>
                   {node.nodeTemplate}
@@ -194,37 +206,11 @@ export class NodesList extends React.Component {
                 {node.isInitialized &&
                 <td>
                   <span className="label">{node.isInitialized}</span>
-                  {this.props.upgradeNodePrivilege &&
-                    <span>
-                      {!node.isObsolete &&
-                        <button
-                          disabled={isUpdating}
-                          type="button" className="upgrade btn btn-xs btn-success"
-                          title="Upgrade Node"
-                          onClick={() => this.onManualUpgrade(node.nodeAddress.asString, node.nodeId)}>
-                          <i className={reloadClassName} /> Actual
-                        </button>
-                      }
-                      {node.isObsolete &&
-                        <button
-                          disabled={isUpdating}
-                          type="button" className="upgrade btn btn-xs btn-warning"
-                          title="Upgrade Node"
-                          onClick={() => this.onManualUpgrade(node.nodeAddress.asString, node.nodeId)}>
-                          <i className={reloadClassName} /> Obsolete
-                        </button>
-                      }
-                    </span>
+                  {!node.isObsolete &&
+                    <span className="label label-success">OK</span>
                   }
-                  {!this.props.upgradeNodePrivilege &&
-                  <span>
-                    {!node.isObsolete &&
-                    <span className="label label-success">Actual</span>
-                    }
-                    {node.isObsolete &&
+                  {node.isObsolete &&
                     <span className="label label-warning">Obsolete</span>
-                    }
-                  </span>
                   }
                 </td>
                 }
@@ -233,6 +219,17 @@ export class NodesList extends React.Component {
                   <span className="label label-info">Uncontrolled</span>
                 </td>
                 }
+                <td>
+                  {this.props.upgradeNodePrivilege &&
+                  <button
+                    disabled={isUpdating}
+                    type="button" className="upgrade btn btn-xs btn-warning"
+                    title="Upgrade Node. Use it to manually force node to update to the latest state if it is obsolete."
+                    onClick={() => this.onManualUpgrade(node.nodeAddress.asString, node.nodeId)}>
+                    <i className={reloadClassName} /> Reset
+                  </button>
+                  }
+                </td>
               </tr>
             )
           })
@@ -248,9 +245,12 @@ export class NodesList extends React.Component {
 export default Relay.createContainer(
   NodesList,
   {
+    initialVariables: {
+      sort: 'nodeTemplate_asc',
+    },
     fragments: {
-      nodeDescriptions: () => Relay.QL`fragment on IKlusterKiteNodeApi_Root {
-        getActiveNodeDescriptions
+      nodeDescriptions: (variables) => Relay.QL`fragment on IKlusterKiteNodeApi_Root {
+        getActiveNodeDescriptions(sort: $sort)
         {
           edges {
             node {

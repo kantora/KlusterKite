@@ -1,0 +1,17 @@
+.sorting_td {
+  cursor: pointer;
+}
+
+.sorting_icon {
+  margin-left: 5px;
+}
+
+.sorting_icon_desc {
+  top: -2px;
+  position: relative;
+}
+
+.sorting_icon_asc {
+  top: 5px;
+  position: relative;
+}

@@ -1,16 +1,26 @@
-import React from 'react';
+import React from 'react'
 import Relay from 'react-relay'
-import Icon from 'react-fa';
+import { browserHistory } from 'react-router'
 
-import RecheckStateMutation from './mutations/RecheckStateMutation'
+import ValidateStateMutation from './mutations/ValidateStateMutation'
 
-export class RecheckState extends React.Component {
+class ValidateStatePage extends React.Component {
+
+  static propTypes = {
+    api: React.PropTypes.object,
+    params: React.PropTypes.object,
+  };
+
   constructor(props) {
     super(props);
 
     this.state = {
       isProcessing: false,
     };
+  }
+
+  componentWillMount() {
+    this.onStartRecheck();
   }
 
   onStartRecheck() {
@@ -22,20 +32,16 @@ export class RecheckState extends React.Component {
       });
 
       Relay.Store.commitUpdate(
-        new RecheckStateMutation(),
+        new ValidateStateMutation(),
         {
           onSuccess: (response) => {
             console.log('response', response);
             const responsePayload = response.klusterKiteNodeApi_klusterKiteNodesApi_clusterManagement_recheckState;
 
-            if (responsePayload.errors &&
-              responsePayload.errors.edges) {
-              const messages = this.getErrorMessagesFromEdge(responsePayload.errors.edges);
-              this.props.onError(messages);
-
+            if (responsePayload.errors) {
               this.setState({
                 processSuccessful: false,
-                processErrors: messages,
+                processErrors: true,
               });
             } else {
               // console.log('result update nodes', responsePayload.result);
@@ -45,11 +51,13 @@ export class RecheckState extends React.Component {
                 processErrors: null,
                 processSuccessful: true,
               });
+              browserHistory.push(`${decodeURIComponent(this.props.location.query.from)}`);
             }
           },
           onFailure: (transaction) => {
             this.setState({
-              isProcessing: false
+              isProcessing: false,
+              processErrors: true,
             });
             console.log(transaction)},
         },
@@ -57,15 +65,24 @@ export class RecheckState extends React.Component {
     }
   }
 
-  render() {
-    const processClassName = this.state.isProcessing ? 'fa-spin' : '';
-
+  render () {
     return (
-      <button className="btn btn-info" type="button" onClick={this.onStartRecheck.bind(this)} disabled={this.state.isProcessing}>
-        <Icon name="refresh" className={processClassName}/>{' '}Recheck state
-      </button>
-    );
+      <div>
+        {this.state.processErrors &&
+        <div>
+          <h2>Error!</h2>
+          <p>Server is inaccessible or has encountered an error.</p>
+        </div>
+        }
+        {this.state.processing &&
+          <div>
+            <h2>Validating State</h2>
+            <p>Please wait…</p>
+          </div>
+        }
+      </div>
+    )
   }
 }
 
-export default RecheckState
+export default ValidateStatePage
