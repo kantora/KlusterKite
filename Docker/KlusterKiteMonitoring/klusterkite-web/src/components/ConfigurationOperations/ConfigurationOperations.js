@@ -1,7 +1,5 @@
 import React from 'react';
 import Relay from 'react-relay'
-import Icon from 'react-fa';
-import { Link } from 'react-router';
 
 import DraftOperations from './DraftOperations';
 import ReadyOperations from './ReadyOperations';

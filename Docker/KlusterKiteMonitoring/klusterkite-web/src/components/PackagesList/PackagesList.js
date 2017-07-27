@@ -18,8 +18,9 @@ export class PackagesList extends React.Component { // eslint-disable-line react
     this.state = {
       showUpdated: true,
       filter: '',
-      packagesList: null,
+      nugetPackagesList: null,
       editableIds: [],
+      packagesCache: null,
     };
   }
 
@@ -29,7 +30,7 @@ export class PackagesList extends React.Component { // eslint-disable-line react
     settings: React.PropTypes.object.isRequired,
     activeConfigurationPackages: React.PropTypes.object,
     canEdit: React.PropTypes.bool,
-    packagesList: React.PropTypes.object,
+    nugetPackagesList: React.PropTypes.object,
     currentState: React.PropTypes.string.isRequired,
   };
 
@@ -42,10 +43,17 @@ export class PackagesList extends React.Component { // eslint-disable-line react
   }
 
   onReceiveProps(nextProps, skipCheck) {
-    if (nextProps.packagesList && (!isEqual(nextProps.packagesList, this.props.packagesList) || skipCheck)) {
-      const packagesNodes = nextProps.packagesList.edges.map(x => x.node);
+    if (nextProps.nugetPackagesList && (!isEqual(nextProps.nugetPackagesList, this.props.nugetPackagesList) || skipCheck)) {
+      const packagesNodes = nextProps.nugetPackagesList.edges.map(x => x.node);
       this.setState({
-        packagesList: packagesNodes
+        nugetPackagesList: packagesNodes
+      })
+    }
+
+    // We save unfiltered packages list to use later in migration
+    if (nextProps.settings && nextProps.settings.packages && !this.state.packagesCache) {
+      this.setState({
+        packagesCache: nextProps.settings.packages
       })
     }
   }
@@ -70,16 +78,14 @@ export class PackagesList extends React.Component { // eslint-disable-line react
   }
 
   onChangeVersion(item, newValue) {
-    console.log('onChangeVersion', item, newValue);
-
-    const packages = this.props.settings.packages.edges.map(x => {
+    const packages = this.state.packagesCache.edges.map(x => {
       return {
         id: x.node.__id,
         version: x.node.id === item.id ? newValue : x.node.version
       }
     });
 
-    this.editNode(packages);
+    this.savePackages(packages);
   }
 
   onStartEdit(id) {
@@ -91,7 +97,7 @@ export class PackagesList extends React.Component { // eslint-disable-line react
     }));
   }
 
-  editNode = (packages) => {
+  savePackages = (packages) => {
     this.setState({
       saving: true
     });
@@ -184,7 +190,7 @@ export class PackagesList extends React.Component { // eslint-disable-line react
             </thead>
             <tbody>
             {packagesFiltered.map((item) => {
-              const nugetFeedNode = this.state.packagesList.find(x => x.name === item.name);
+              const nugetFeedNode = this.state.nugetPackagesList.find(x => x.name === item.name);
               const isEditable = this.state.editableIds.includes(item.id);
               return (
                 <tr key={item.id}>

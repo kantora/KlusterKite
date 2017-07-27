@@ -214,7 +214,7 @@ class ConfigurationPage extends React.Component {
             configurationInnerId={model.__id}
             activeConfigurationPackages={activeConfiguration.settings.packages}
             canEdit={canEdit}
-            packagesList={packages}
+            nugetPackagesList={packages}
             currentState={model.state}
           />
         </div>
