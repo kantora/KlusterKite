@@ -3,8 +3,6 @@ import Relay from 'react-relay'
 import Icon from 'react-fa';
 import { Link } from 'react-router';
 
-// import delay from 'lodash/delay'
-
 import DraftOperations from './DraftOperations';
 import ReadyOperations from './ReadyOperations';
 import ActiveOperations from './ActiveOperations';
@@ -29,7 +27,7 @@ export class ConfigurationOperations extends React.Component {
   }
 
   static propTypes = {
-    configuration: React.PropTypes.object,
+    settings: React.PropTypes.object,
     nodeManagement: React.PropTypes.object,
     isStable: React.PropTypes.bool.isRequired,
     configurationId: React.PropTypes.string.isRequired,
@@ -76,11 +74,13 @@ export class ConfigurationOperations extends React.Component {
   }
 
   render() {
-    const nodeTemplates = this.props.configuration && this.props.configuration.nodeTemplates && this.props.configuration.nodeTemplates.edges;
+    const nodeTemplates = this.props.settings && this.props.settings.nodeTemplates && this.props.settings.nodeTemplates.edges;
 
     return (
       <div>
-        <h2>Operations</h2>
+        {this.props.currentState !== 'Active' &&
+          <h2>Operations</h2>
+        }
         <div>
           <DraftOperations
             nodeTemplates={nodeTemplates}
@@ -126,18 +126,6 @@ export class ConfigurationOperations extends React.Component {
           />
         </div>
         <h2 className="margined-header">Settings</h2>
-        {this.props.currentState && this.props.currentState === 'Draft' && !this.state.isChangingState &&
-          <div className="buttons-block-margin">
-            <Link to={`/klusterkite/CopyConfig/${this.props.configurationId}/updateCurrent`} className="btn btn-success" role="button">
-              <Icon name="clone"/>{' '}Update packages
-            </Link>
-
-            {false && <Link to={`/klusterkite/CopyConfig/${this.props.configurationId}/exact`} className="btn btn-success btn-margined"
-                  role="button">
-              <Icon name="clone"/>{' '}Clone configuration (exact)
-            </Link>}
-          </div>
-        }
 
         {this.state.isChangingState &&
         <div className="alert alert-warning" role="alert">
@@ -155,7 +143,7 @@ export default Relay.createContainer(
   ConfigurationOperations,
   {
     fragments: {
-      configuration: () => Relay.QL`fragment on IKlusterKiteNodeApi_ConfigurationSettings {
+      settings: () => Relay.QL`fragment on IKlusterKiteNodeApi_ConfigurationSettings {
         nodeTemplates {
           edges {
             node {

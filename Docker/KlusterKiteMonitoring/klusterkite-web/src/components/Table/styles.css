@@ -15,3 +15,26 @@
   top: 5px;
   position: relative;
 }
+
+.table-filter {
+  margin-top: 15px;
+  margin-bottom: 5px;
+}
+
+.table-filter-element {
+  width: 200px;
+  float: left;
+}
+
+.table-filter-filter {
+  width: 300px;
+  float: right;
+}
+
+.table-filter-filter input {
+  width: 300px;
+}
+
+.table-filter-clear {
+  clear: both;
+}

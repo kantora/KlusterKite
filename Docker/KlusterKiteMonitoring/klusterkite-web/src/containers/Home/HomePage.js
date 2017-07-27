@@ -4,6 +4,7 @@ import { browserHistory } from 'react-router'
 
 import delay from 'lodash/delay'
 
+import ContainerStats from '../../components/ContainersStats/ContainerStats';
 import NodesList from '../../components/NodesList/NodesList';
 import NodesWithTemplates from '../../components/NodesWithTemplates/NodesWithTemplates';
 import Warnings from '../../components/Warnings/Warnings';
@@ -50,6 +51,7 @@ class HomePage extends React.Component {
         }
         {hasPrivilege('KlusterKite.NodeManager.GetActiveNodeDescriptions') && this.props.api.klusterKiteNodesApi &&
           <NodesList
+            hideModules={true}
             hasError={false}
             upgradeNodePrivilege={hasPrivilege('KlusterKite.NodeManager.UpgradeNode')}
             nodeDescriptions={this.props.api.klusterKiteNodesApi}
@@ -57,6 +59,9 @@ class HomePage extends React.Component {
             onSort={this.onSort}
           />
         }
+        <ContainerStats
+          klusterKiteNodesApi={this.props.api.klusterKiteNodesApi}
+        />
       </div>
     )
   }
@@ -76,6 +81,7 @@ export default Relay.createContainer(
           ${NodesWithTemplates.getFragment('data')},
           ${NodesList.getFragment('nodeDescriptions', { sort: variables.sort })},
           ${Warnings.getFragment('klusterKiteNodesApi')},
+          ${ContainerStats.getFragment('klusterKiteNodesApi')},
         }
       }
       `,

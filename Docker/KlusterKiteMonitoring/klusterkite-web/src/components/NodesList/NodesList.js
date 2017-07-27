@@ -30,6 +30,7 @@ export class NodesList extends React.Component {
     hideDetails: React.PropTypes.bool,
     sort: React.PropTypes.string,
     onSort: React.PropTypes.func,
+    hideModules: React.PropTypes.bool,
   };
 
   drawRole(node, role) {
@@ -160,9 +161,21 @@ export class NodesList extends React.Component {
             <tr>
               <th>Leader</th>
               <th>Address</th>
-              <SortableHeader title="Template" code="nodeTemplate" sortColumn={this.props.sort.split('_')[0]} sortDirection={this.props.sort.split('_')[1]} onSort={this.onSort} />
-              <SortableHeader title="Container" code="containerType" sortColumn={this.props.sort.split('_')[0]} sortDirection={this.props.sort.split('_')[1]} onSort={this.onSort} />
               {!this.props.hideDetails &&
+                <SortableHeader title="Template" code="nodeTemplate" sortColumn={this.props.sort.split('_')[0]}
+                                sortDirection={this.props.sort.split('_')[1]} onSort={this.onSort}/>
+              }
+              {this.props.hideDetails &&
+                <th>Template</th>
+              }
+              {!this.props.hideDetails &&
+                <SortableHeader title="Container" code="containerType" sortColumn={this.props.sort.split('_')[0]}
+                                sortDirection={this.props.sort.split('_')[1]} onSort={this.onSort}/>
+              }
+              {this.props.hideDetails &&
+                <th>Container</th>
+              }
+              {!this.props.hideDetails && !this.props.hideModules &&
                 <th>Modules</th>
               }
               {!this.props.hideDetails &&
@@ -187,7 +200,7 @@ export class NodesList extends React.Component {
                 <td>
                   {node.containerType}
                 </td>
-                {!this.props.hideDetails &&
+                {!this.props.hideDetails && !this.props.hideModules &&
                   <td>
                     {node.isInitialized &&
                     <OverlayTrigger trigger="click" rootClose placement="bottom" overlay={this.nodePopover(node)}>
@@ -285,5 +298,3 @@ export default Relay.createContainer(
     },
   },
 )
-
-

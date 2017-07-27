@@ -197,7 +197,7 @@ export class DraftOperations extends React.Component {
         <div className="alert alert-success" role="alert">
           <span className="glyphicon glyphicon-ok" aria-hidden="true"></span>
           {' '}
-          Set ready successful!
+          Prepared for publication successfully!
         </div>
       </div>
       }
@@ -210,7 +210,7 @@ export class DraftOperations extends React.Component {
 
       {this.props.currentState && this.props.currentState === 'Draft' && !this.state.isChangingState &&
       <button className="btn btn-default btn-margined" type="button" onClick={this.onSetReady}>
-        <Icon name="flag-checkered" className={setReadyClassName}/>{' '}Set ready
+        <Icon name="flag-checkered" className={setReadyClassName}/>{' '}Prepare for publication
       </button>
       }
 

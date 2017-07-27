@@ -17,12 +17,12 @@ class SeedsList extends React.Component {
   };
 
   render() {
-    const seeds = this.props.configuration && this.props.configuration.seedAddresses;
+    const seeds = this.props.settings && this.props.settings.seedAddresses;
 
     return (
       <div>
         <div>
-          <h3>Seed list</h3>
+          <h3>Akka Cluster Seeds</h3>
           {this.props.canEdit &&
             <Link to={`/klusterkite/Seeds/${this.props.configurationId}`} className="btn btn-primary" role="button">Add a new
               seed</Link>
@@ -63,7 +63,7 @@ export default Relay.createContainer(
   SeedsList,
   {
     fragments: {
-      configuration: () => Relay.QL`fragment on IKlusterKiteNodeApi_ConfigurationSettings {
+      settings: () => Relay.QL`fragment on IKlusterKiteNodeApi_ConfigurationSettings {
         seedAddresses
       }
       `,

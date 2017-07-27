@@ -1,0 +1,10 @@
+.templates {
+  margin-top: 10px;
+  margin-bottom: 15px;
+  display: flex;
+  flex-flow: wrap;
+}
+
+.templates > div {
+  margin-right: 5px;
+}

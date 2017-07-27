@@ -150,6 +150,7 @@ class ConfigurationPage extends React.Component {
     const activeConfiguration = this.props.api.activeConfiguration && this.props.api.activeConfiguration.configurations && this.props.api.activeConfiguration.configurations.edges && this.props.api.activeConfiguration.configurations.edges[0].node;
     const klusterKiteNodesApi = this.props.api.klusterKiteNodesApi;
     const nodeManagement = klusterKiteNodesApi.clusterManagement;
+    const packages = this.props.api.klusterKiteNodesApi.nugetPackages;
 
     const canEdit = !model || model.state === 'Draft';
     return (
@@ -173,7 +174,7 @@ class ConfigurationPage extends React.Component {
         {model &&
         <div>
           <ConfigurationOperations
-            configuration={model.settings}
+            settings={model.settings}
             nodeManagement={nodeManagement}
             klusterKiteNodesApi={klusterKiteNodesApi}
             configurationId={this.props.params.id}
@@ -184,34 +185,37 @@ class ConfigurationPage extends React.Component {
             onStartMigration={this.onStartMigration.bind(this)}
           />
           <FeedsList
-            configuration={model.settings}
+            settings={model.settings}
             configurationId={this.props.params.id}
             canEdit={canEdit}
           />
           <NodeTemplatesList
-            configuration={model.settings}
+            settings={model.settings}
             createNodeTemplatePrivilege={true}
             getNodeTemplatePrivilege={true}
             configurationId={this.props.params.id}
             canEdit={canEdit}
           />
           <MigratorTemplatesList
-            configuration={model.settings}
+            settings={model.settings}
             createMigratorTemplatePrivilege={true}
             getMigratorTemplatePrivilege={true}
             configurationId={this.props.params.id}
             canEdit={canEdit}
           />
           <SeedsList
-            configuration={model.settings}
+            settings={model.settings}
             configurationId={this.props.params.id}
             canEdit={canEdit}
           />
           <PackagesList
-            configuration={model.settings}
+            settings={model.settings}
             configurationId={this.props.params.id}
+            configurationInnerId={model.__id}
             activeConfigurationPackages={activeConfiguration.settings.packages}
             canEdit={canEdit}
+            packagesList={packages}
+            currentState={model.state}
           />
         </div>
         }
@@ -243,13 +247,15 @@ export default Relay.createContainer(
               majorVersion
               state
               isStable
+              created
+              finished
               settings {
-                ${FeedsList.getFragment('configuration')},
-                ${MigratorTemplatesList.getFragment('configuration')}
-                ${NodeTemplatesList.getFragment('configuration')}
-                ${PackagesList.getFragment('configuration')}
-                ${SeedsList.getFragment('configuration')}
-                ${ConfigurationOperations.getFragment('configuration')}
+                ${FeedsList.getFragment('settings')},
+                ${MigratorTemplatesList.getFragment('settings')}
+                ${NodeTemplatesList.getFragment('settings')}
+                ${PackagesList.getFragment('settings')}
+                ${SeedsList.getFragment('settings')}
+                ${ConfigurationOperations.getFragment('settings')}
                 id
               }
             }
@@ -280,6 +286,15 @@ export default Relay.createContainer(
             }
             ${ConfigurationOperations.getFragment('klusterKiteNodesApi')}
             ${Warnings.getFragment('klusterKiteNodesApi')}
+            nugetPackages {
+              edges {
+                node {
+                  name
+                  version
+                  availableVersions
+                }
+              }
+            }
           }
         }
       `,

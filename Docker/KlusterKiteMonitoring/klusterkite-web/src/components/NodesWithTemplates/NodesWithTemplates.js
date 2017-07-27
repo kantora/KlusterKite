@@ -41,7 +41,7 @@ export class NodesWithTemplates extends React.Component {
 
     return (
       <div>
-        <h3>Nodes list</h3>
+        <h3>Nodes</h3>
         <div className="templates">
           <div>
             <span className="label label-default">Total nodes: {(activeNodes && activeNodes.length) || 'unknown'}</span>

@@ -244,7 +244,7 @@ export default class PackagesSelector extends React.Component {
     };
 
     const inputPropsVersion = {
-      placeholder: 'Latest version',
+      placeholder: 'Default version',
       value: versionValue,
       onChange: this.onVersionChange,
       onBlur: this.onVersionBlur

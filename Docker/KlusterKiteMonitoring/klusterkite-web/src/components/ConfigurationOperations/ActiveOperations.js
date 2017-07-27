@@ -122,7 +122,7 @@ export default class ActiveOperations extends React.Component {
       </div>
       }
 
-      {this.props.currentState && this.props.currentState === 'Active' && !this.props.isStable && !this.state.isChangingState &&
+      {false && this.props.currentState && this.props.currentState === 'Active' && !this.props.isStable && !this.state.isChangingState &&
       <button className="btn btn-default" type="button" onClick={this.onSetStable}>
         <Icon name="thumbs-up" className={setStableClassName}/>{' '}Set stable
       </button>

@@ -4,6 +4,8 @@ import { Input, Textarea } from 'formsy-react-components';
 import Form from '../Form/Form';
 import RowText from '../Form/RowText';
 
+import DateFormat from '../../utils/date';
+
 export default class ConfigurationForm extends React.Component {
   constructor(props) {
     super(props);
@@ -69,8 +71,9 @@ export default class ConfigurationForm extends React.Component {
                    validations={{isNumeric:true}}
                    validationErrors={{isNumeric: 'You have to type a number'}}
                    elementWrapperClassName="col-sm-2" />
-            <RowText label="Is stable" text={(initialValues && initialValues.isStable.toString()) || "false"} />
             <RowText label="State" text={(initialValues && initialValues.state) || "Draft"} />
+            <RowText label="Created" text={(initialValues && initialValues.created && DateFormat.formatDateTime(new Date(initialValues.created))) || "—"} />
+            <RowText label="Finished" text={(initialValues && initialValues.finished && DateFormat.formatDateTime(new Date(initialValues.finished))) || "—"} />
           </fieldset>
         </Form>
       </div>

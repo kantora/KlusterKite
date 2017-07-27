@@ -6,3 +6,14 @@
   margin-right: 7px;
   margin-left: 7px;
 }
+
+.pseudohref {
+  text-decoration: none;
+  color: #337ab7;
+  border-bottom: 1px dashed #337ab7;
+  cursor: pointer;
+}
+
+.buttons-block-margin {
+  margin-top: 15px;
+}
