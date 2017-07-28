@@ -4,7 +4,7 @@
     <TargetFrameworks>net46;netstandard1.6</TargetFrameworks>
     <PackageId>KlusterKite.Core</PackageId>
     <Version>0.0.0.0-local</Version>
-    <Description>Bundle of utils to create scalable and redundant services</Description>
+    <Description>KlusterKite base plugin description utilities</Description>
     <PackageTags>$(KlusterKitePackageTags)</PackageTags>    
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netstandard1.6' ">$(PackageTargetFallback);portable-net45+win8</PackageTargetFallback>

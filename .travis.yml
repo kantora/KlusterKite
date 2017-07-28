@@ -1,0 +1,30 @@
+language: csharp
+sudo: required
+dist: trusty # Ubuntu 14.04
+
+env:
+ - HOME=/home/travis APPDATA=/home/travis LocalAppData=/home/travis
+
+addons:
+  apt:
+    packages:
+      - libunwind8
+
+before_script:
+  - wget https://github.com/fsharp/FAKE/releases/download/5.0.0-alpha011/fake-dotnetcore-ubuntu.14.04-x64.zip -O /tmp/fake-dotnetcore-ubuntu.14.04-x64.zip
+  - mkdir fake-dotnetcore
+  - unzip /tmp/fake-dotnetcore-ubuntu.14.04-x64.zip -d fake-dotnetcore || echo unzip returned $?
+  - export PATH=$PATH:$PWD/fake-dotnetcore/
+  - chmod +x $PWD/fake-dotnetcore/fake
+#  - export FAKE="$PWD/fake-dotnetcore/Fake"
+  
+before install:
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update               ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install openssl      ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew link --force openssl ; fi
+
+mono: latest
+dotnet: 1.0.4
+
+script: 
+  - fake run -t "Tests" build.fsx
