@@ -290,7 +290,7 @@ namespace KlusterKite.API.Tests.Mock
         /// </summary>
         [UsedImplicitly]
         [DeclareField]
-        [RequirePrivilege("allow")]
+        [RequirePrivilege("allow", Scope = EnPrivilegeScope.Any)]
         public string RequirePrivilegeAnyField => "success";
 
         /// <summary>
@@ -322,7 +322,7 @@ namespace KlusterKite.API.Tests.Mock
         /// </summary>
         [UsedImplicitly]
         [DeclareField]
-        [RequirePrivilege("allow", IgnoreOnUserPresent = true)]
+        [RequirePrivilege("allow", IgnoreOnUserPresent = true, Scope = EnPrivilegeScope.Client)]
         public string RequirePrivilegeIgnoreOnUserPresentField => "success";
 
         /// <summary>

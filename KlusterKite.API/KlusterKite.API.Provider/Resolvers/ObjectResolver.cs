@@ -619,7 +619,9 @@ namespace KlusterKite.API.Provider.Resolvers
         private static IResolver CreateResolver(string fieldName, FieldDescription field)
         {
             var metadata = field.Metadata;
-            var elementResolver = metadata.ScalarType != EnScalarType.None
+
+            var elementResolver = metadata.ScalarType == EnScalarType.DateTime 
+                ? new DateTimeResolver() : metadata.ScalarType != EnScalarType.None
                                       ? typeof(ScalarResolver<>).MakeGenericType(metadata.Type)
                                           .CreateInstance<IResolver>()
                                       : metadata.Type.GetTypeInfo().IsSubclassOf(typeof(Enum))

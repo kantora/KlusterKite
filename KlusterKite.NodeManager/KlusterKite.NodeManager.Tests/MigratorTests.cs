@@ -505,7 +505,7 @@ namespace KlusterKite.NodeManager.Tests
                         this.Container.Resolve<UniversalContextFactory>(),
                         this.Container.Resolve<IPackageRepository>()),
                     "migrationActor");
-                this.ExpectMsg<ProcessingTheRequest>();
+                this.ExpectMsg<ProcessingTheRequest>(TimeSpan.FromSeconds(1));
 
                 var state = this.ExpectMsg<MigrationActorMigrationState>(TimeSpan.FromSeconds(30));
                 this.ExpectNoMsg();

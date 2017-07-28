@@ -88,13 +88,17 @@ namespace KlusterKite.API.Provider.Resolvers
         /// </summary>
         public CollectionResolver()
         {
-            if (NodeMetaData.ScalarType == EnScalarType.None)
+            switch (NodeMetaData.ScalarType)
             {
-                this.NodeResolver = new ObjectResolver<T>();
-            }
-            else
-            {
-                this.NodeResolver = new ScalarResolver<T>();
+                case EnScalarType.None:
+                    this.NodeResolver = new ObjectResolver<T>();
+                    break;
+                case EnScalarType.DateTime:
+                    this.NodeResolver = new DateTimeResolver();
+                    break;
+                default:
+                    this.NodeResolver = new ScalarResolver<T>();
+                    break;
             }
         }
 
@@ -582,116 +586,109 @@ namespace KlusterKite.API.Provider.Resolvers
                                 "{0} is greater then or equal to the parameter");
                             break;
                         case EnScalarType.String:
+                            var checkNull = Expression.NotEqual(Expression.Constant(null), propertyExpression);
                             var propertyToLower = Expression.Call(propertyExpression, stringToLower);
                             AddFilterExpression(
                                 $"{filterableField.Name}_in",
-                                prop => Expression.Call(createConstant(prop), stringContains, propertyExpression),
+                                prop => Expression.And(checkNull, Expression.Call(createConstant(prop), stringContains, propertyExpression)),
                                 filterableField,
                                 "{0} is a substring of the parameter");
                             AddFilterExpression(
                                 $"{filterableField.Name}_not_in",
                                 prop =>
-                                    Expression.Not(
-                                        Expression.Call(createConstant(prop), stringContains, propertyExpression)),
+                                    Expression.And(checkNull, Expression.Not(Expression.Call(createConstant(prop), stringContains, propertyExpression))),
                                 filterableField,
                                 "{0} is not a substring of the parameter");
                             AddFilterExpression(
                                 $"{filterableField.Name}_contains",
-                                prop => Expression.Call(propertyExpression, stringContains, createConstant(prop)),
+                                prop => Expression.And(checkNull, Expression.Call(propertyExpression, stringContains, createConstant(prop))),
                                 filterableField,
                                 "{0} contains the parameter as substring");
                             AddFilterExpression(
                                 $"{filterableField.Name}_not_contains",
                                 prop =>
-                                    Expression.Not(
-                                        Expression.Call(propertyExpression, stringContains, createConstant(prop))),
+                                    Expression.And(checkNull, Expression.Not(Expression.Call(propertyExpression, stringContains, createConstant(prop)))),
                                 filterableField,
                                 "{0} doesn't contain the parameter as substring");
                             AddFilterExpression(
                                 $"{filterableField.Name}_starts_with",
-                                prop => Expression.Call(propertyExpression, stringStartsWith, createConstant(prop)),
+                                prop => Expression.And(checkNull, Expression.Call(propertyExpression, stringStartsWith, createConstant(prop))),
                                 filterableField,
                                 "{0} starts with the parameter value");
                             AddFilterExpression(
                                 $"{filterableField.Name}_not_starts_with",
                                 prop =>
-                                    Expression.Not(
-                                        Expression.Call(propertyExpression, stringStartsWith, createConstant(prop))),
+                                    Expression.And(checkNull, Expression.Not(Expression.Call(propertyExpression, stringStartsWith, createConstant(prop)))),
                                 filterableField,
                                 "{0} doesn't start with the parameter value");
                             AddFilterExpression(
                                 $"{filterableField.Name}_ends_with",
-                                prop => Expression.Call(propertyExpression, stringEndsWith, createConstant(prop)),
+                                prop => Expression.And(checkNull, Expression.Call(propertyExpression, stringEndsWith, createConstant(prop))),
                                 filterableField,
                                 "{0} ends with the parameter value");
                             AddFilterExpression(
                                 $"{filterableField.Name}_not_ends_with",
                                 prop =>
-                                    Expression.Not(
-                                        Expression.Call(propertyExpression, stringEndsWith, createConstant(prop))),
+                                    Expression.And(checkNull, Expression.Not(Expression.Call(propertyExpression, stringEndsWith, createConstant(prop)))),
                                 filterableField,
                                 "{0} doesn't end with the parameter value");
 
                             AddFilterExpression(
                                 $"{filterableField.Name}_l",
-                                prop => Expression.Equal(propertyToLower, createConstant(prop)),
+                                prop => Expression.And(checkNull, Expression.Equal(propertyToLower, createConstant(prop))),
                                 filterableField,
-                                "{0} lowercased equals the parameter");
+                                "{0} lower-cased equals the parameter");
 
                             AddFilterExpression(
                                 $"{filterableField.Name}_l_not",
-                                prop => Expression.NotEqual(propertyToLower, createConstant(prop)),
+                                prop => Expression.And(checkNull, Expression.NotEqual(propertyToLower, createConstant(prop))),
                                 filterableField,
-                                "{0} lowercased doesn't equal the parameter");
+                                "{0} lower-cased doesn't equal the parameter");
 
                             AddFilterExpression(
                                 $"{filterableField.Name}_l_in",
-                                prop => Expression.Call(createConstant(prop), stringContains, propertyToLower),
+                                prop => Expression.And(checkNull, Expression.Call(createConstant(prop), stringContains, propertyToLower)),
                                 filterableField,
-                                "{0} lowercased is a substring of the parameter");
+                                "{0} lower-cased is a substring of the parameter");
                             AddFilterExpression(
                                 $"{filterableField.Name}_l_not_in",
                                 prop =>
-                                    Expression.Not(
-                                        Expression.Call(createConstant(prop), stringContains, propertyToLower)),
+                                    Expression.And(checkNull, Expression.Not(Expression.Call(createConstant(prop), stringContains, propertyToLower))),
                                 filterableField,
-                                "{0} lowercased is not a substring of the parameter");
+                                "{0} lower-cased is not a substring of the parameter");
                             AddFilterExpression(
                                 $"{filterableField.Name}_l_contains",
-                                prop => Expression.Call(propertyToLower, stringContains, createConstant(prop)),
+                                prop => Expression.And(checkNull, Expression.Call(propertyToLower, stringContains, createConstant(prop))),
                                 filterableField,
-                                "{0} lowercased contains the parameter as substring");
+                                "{0} lower-cased contains the parameter as substring");
                             AddFilterExpression(
                                 $"{filterableField.Name}_l_not_contains",
                                 prop =>
-                                    Expression.Not(
-                                        Expression.Call(propertyToLower, stringContains, createConstant(prop))),
+                                    Expression.And(checkNull, Expression.Not(Expression.Call(propertyToLower, stringContains, createConstant(prop)))),
                                 filterableField,
-                                "{0} lowercased doesn't contain the parameter as substring");
+                                "{0} lower-cased doesn't contain the parameter as substring");
                             AddFilterExpression(
                                 $"{filterableField.Name}_l_starts_with",
-                                prop => Expression.Call(propertyToLower, stringStartsWith, createConstant(prop)),
+                                prop => Expression.And(checkNull, Expression.Call(propertyToLower, stringStartsWith, createConstant(prop))),
                                 filterableField,
-                                "{0} lowercased starts with the parameter value");
+                                "{0} lower-cased starts with the parameter value");
                             AddFilterExpression(
                                 $"{filterableField.Name}_l_not_starts_with",
                                 prop =>
-                                    Expression.Not(
-                                        Expression.Call(propertyToLower, stringStartsWith, createConstant(prop))),
+                                    Expression.And(checkNull, Expression.Not(Expression.Call(propertyToLower, stringStartsWith, createConstant(prop)))),
                                 filterableField,
-                                "{0} lowercased doesn't start with the parameter value");
+                                "{0} lower-cased doesn't start with the parameter value");
                             AddFilterExpression(
                                 $"{filterableField.Name}_l_ends_with",
-                                prop => Expression.Call(propertyToLower, stringEndsWith, createConstant(prop)),
+                                prop => Expression.And(checkNull, Expression.Call(propertyToLower, stringEndsWith, createConstant(prop))),
                                 filterableField,
-                                "{0} lowercased ends with the parameter value");
+                                "{0} lower-cased ends with the parameter value");
                             AddFilterExpression(
                                 $"{filterableField.Name}_l_not_ends_with",
                                 prop =>
-                                    Expression.Not(
-                                        Expression.Call(propertyToLower, stringEndsWith, createConstant(prop))),
+                                    Expression.And(checkNull, Expression.Not(Expression.Call(propertyToLower, stringEndsWith, createConstant(prop)))),
                                 filterableField,
-                                "{0} lowercased doesn't end with the parameter value");
+                                "{0} lower-cased doesn't end with the parameter value");
                             break;
                     }
                 }
