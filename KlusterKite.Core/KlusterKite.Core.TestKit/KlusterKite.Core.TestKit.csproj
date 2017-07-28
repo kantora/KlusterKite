@@ -5,7 +5,8 @@
     <PackageId>KlusterKite.Core.TestKit</PackageId>
     <Version>0.0.0.0-local</Version>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <PackageTags>$(KlusterKitePackageTags)</PackageTags>    
+    <Description>KlusterKite test helpers</Description>
+    <PackageTags>$(KlusterKitePackageTags);TestKit</PackageTags>    
     <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netstandard1.6' ">$(PackageTargetFallback);portable-net45+win8</PackageTargetFallback>
     <NetStandardImplicitPackageVersion Condition=" '$(TargetFramework)' == 'netstandard1.6' ">1.6.1</NetStandardImplicitPackageVersion>
 

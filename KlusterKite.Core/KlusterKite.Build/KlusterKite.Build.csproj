@@ -5,7 +5,8 @@
     <PackageId>KlusterKite.Build</PackageId>
     <Version>0.0.0.0-local</Version>    
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <PackageTags>$(KlusterKitePackageTags)</PackageTags>    
+    <Description>KlusterKite base build script</Description>
+    <PackageTags>$(KlusterKitePackageTags);build</PackageTags>
   </PropertyGroup>
   <ItemGroup>
     <Content Include="..\..\build.base.fsx" Link="build.base.fsx">

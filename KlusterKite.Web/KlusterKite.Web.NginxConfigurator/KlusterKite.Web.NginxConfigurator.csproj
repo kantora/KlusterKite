@@ -7,6 +7,8 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netstandard1.6' ">$(PackageTargetFallback);portable-net45+win8</PackageTargetFallback>
     <NetStandardImplicitPackageVersion Condition=" '$(TargetFramework)' == 'netstandard1.6' ">1.6.1</NetStandardImplicitPackageVersion>
+    <Description>KlusterKite: local nginx configuration to proxy request for discovered published web services</Description>
+    <PackageTags>$(KlusterKitePackageTags);Web;API;Nginx</PackageTags>    
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net46|x64'" />
   <ItemGroup>

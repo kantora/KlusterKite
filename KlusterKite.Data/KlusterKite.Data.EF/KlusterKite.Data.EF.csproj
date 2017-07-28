@@ -7,7 +7,8 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netstandard1.6' ">$(PackageTargetFallback);portable-net45+win8</PackageTargetFallback>
     <NetStandardImplicitPackageVersion Condition=" '$(TargetFramework)' == 'netstandard1.6' ">1.6.1</NetStandardImplicitPackageVersion>
-
+    <Description>KlusterKite actors and other abstractions to handle basic data work (mainly CRUD) via EntityFramework.Core</Description>
+    <PackageTags>$(KlusterKitePackageTags);Data;CRUD;EntityFramework</PackageTags>    
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net46|x64'" />
   <ItemGroup>

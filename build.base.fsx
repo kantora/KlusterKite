@@ -166,7 +166,9 @@ module  Base =
 
     Target.Create "Nuget" (fun _ ->
         printfn "Packing nuget..."
+        
         let sourcesDir = Path.Combine(buildDir, "src")  
+        
         filesInDirMatching "*.sln" (new DirectoryInfo(sourcesDir))
         |> Seq.iter
             (fun (file:FileInfo) ->
@@ -183,9 +185,16 @@ module  Base =
                         ]
                 }
                 dotNetBuild setParams file.FullName)
-
+                
         CleanDir packageDir
+
+        let testProjects = filesInDirMatchingRecursive "*.csproj" (new DirectoryInfo(sourcesDir))
+                                |> Seq.filter (fun (file:FileInfo) -> Regex.IsMatch(File.ReadAllText(file.FullName), "<IsTest>true</IsTest>", (RegexOptions.CultureInvariant ||| RegexOptions.IgnoreCase)))
+                                |> Seq.map (fun (file:FileInfo) -> Path.GetFileNameWithoutExtension(file.Name))
+                                |> List<string>
+        
         filesInDirMatchingRecursive "*.nupkg" (new DirectoryInfo(sourcesDir))
+        |> Seq.filter (fun (file:FileInfo) -> not(testProjects.Contains(((new DirectoryInfo(Path.GetFullPath (Path.Combine((Path.GetDirectoryName file.FullName), "../../")))).Name))))
         |> Seq.iter
             (fun (file:FileInfo) ->
                     printfn "%s" (Path.GetFileName file.FullName)
@@ -383,7 +392,7 @@ module  Base =
             ExecProcess(fun info ->
                 info.FileName <- "dotnet"
                 info.WorkingDirectory <- (Directory.GetParent project).FullName
-                info.Arguments <- (sprintf "xunit -parallel none -teamcity -xml %s/%s_xunit.xml" outputTests (Path.GetFileNameWithoutExtension project))) (TimeSpan.FromMinutes 30.) 
+                info.Arguments <- (sprintf "xunit -parallel none -xml %s/%s_xunit.xml" outputTests (Path.GetFileNameWithoutExtension project))) (TimeSpan.FromMinutes 30.) 
                 |> ignore
 
         filesInDirMatchingRecursive "*.csproj" (new DirectoryInfo(sourcesDir))

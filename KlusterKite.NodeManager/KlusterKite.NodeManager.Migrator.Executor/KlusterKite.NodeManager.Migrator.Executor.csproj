@@ -10,6 +10,8 @@
     <OutputTypeEx>exe</OutputTypeEx>
     <OutputType>Exe</OutputType>
     <StartupObject />
+    <Description>KlusterKite cluster management: external resources migration launcher</Description>
+    <PackageTags>$(KlusterKitePackageTags);configuration;migration</PackageTags>    
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net46|x64'" />
   

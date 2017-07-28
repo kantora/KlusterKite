@@ -4,7 +4,8 @@
     <TargetFrameworks>net46;netcoreapp1.1</TargetFrameworks>
     <PackageId>KlusterKite.Core.Service</PackageId>
     <Version>0.0.0.0-local</Version>
-    <Description>Bundle of utils to create scalable and redundant services</Description>
+    <Description>KlusterKite service</Description>
+    <PackageTags>$(KlusterKitePackageTags)</PackageTags>    
     <OutputTypeEx>exe</OutputTypeEx>
     <OutputType>exe</OutputType>
     <StartupObject />
