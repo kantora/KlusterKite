@@ -21,6 +21,7 @@ export class PackagesList extends React.Component { // eslint-disable-line react
       nugetPackagesList: null,
       editableIds: [],
       packagesCache: null,
+      changedVersions: [],
     };
   }
 
@@ -55,6 +56,12 @@ export class PackagesList extends React.Component { // eslint-disable-line react
       this.setState({
         packagesCache: nextProps.settings.packages
       })
+    }
+
+    if (nextProps.currentState !== 'Draft') {
+      this.setState({
+        showUpdated: false
+      });
     }
   }
 
@@ -167,9 +174,11 @@ export class PackagesList extends React.Component { // eslint-disable-line react
           }
 
           <TableFilter onFilter={this.applyFilter.bind(this)}>
-            <p className="table-filter-element">
-              <label className="checkbox-label"><input type="checkbox" checked={this.state.showUpdated} onChange={this.onUpdatedChange.bind(this)} /> Show changed only</label>
-            </p>
+            {this.props.currentState === 'Draft' &&
+              <p className="table-filter-element">
+                <label className="checkbox-label"><input type="checkbox" checked={this.state.showUpdated} onChange={this.onUpdatedChange.bind(this)} /> Show changed only</label>
+              </p>
+            }
           </TableFilter>
 
           <div className="table-filter-clear"></div>
@@ -200,13 +209,16 @@ export class PackagesList extends React.Component { // eslint-disable-line react
                     </Link>
                   </td>
                   <td>
-                    {!isEditable &&
+                    {this.props.canEdit && !isEditable &&
                       <span className="pseudohref" onClick={() => {this.onStartEdit(item.id)}}>{item.version}</span>
                     }
-                    {isEditable &&
+                    {this.props.canEdit && isEditable &&
                       <select defaultValue={item.version} onChange={(event) => { this.onChangeVersion(item, event.target.value) }}>
                         {nugetFeedNode.availableVersions.map((version) => <option key={version} value={version}>{version}</option>)}
                       </select>
+                    }
+                    {!this.props.canEdit &&
+                      <span>{item.version}</span>
                     }
                   </td>
                   <td>

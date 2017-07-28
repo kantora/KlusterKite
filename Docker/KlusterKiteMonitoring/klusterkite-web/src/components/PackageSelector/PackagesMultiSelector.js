@@ -8,6 +8,7 @@ export default class PackagesMultiSelector extends React.Component {
   static propTypes = {
     packages: React.PropTypes.object.isRequired,
     onChange: React.PropTypes.func,
+    showAlertForSpecificVersions: React.PropTypes.bool,
   };
 
   constructor() {
@@ -80,7 +81,7 @@ export default class PackagesMultiSelector extends React.Component {
     return (
       <div className="form-group row package-selector-outer">
         <label className="control-label col-sm-3" data-required="false">Packages</label>
-        <div className="col-sm-9">
+        <div className="col-sm-9" >
         {this.state.values && this.state.values.length > 0 && this.state.values.map((item, index) => {
             let onDelete = () => this.onDelete(index);
             if (recordsCount === 1) {
@@ -99,6 +100,7 @@ export default class PackagesMultiSelector extends React.Component {
               onDelete={onDelete}
               onAdd={onAdd}
               initialValues={item}
+              showAlertForSpecificVersions={this.props.showAlertForSpecificVersions}
             />)
           }
         )}

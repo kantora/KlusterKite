@@ -4,6 +4,7 @@ import { Input, Textarea } from 'formsy-react-components';
 import isEqual from 'lodash/isEqual';
 
 import Form from '../Form/Form';
+import MultiLineEditor from '../Form/MultiLineEditor';
 import PackagesMultiSelector from '../PackageSelector/PackagesMultiSelector';
 
 export default class NodeTemplateForm extends React.Component { // eslint-disable-line react/prefer-stateless-function
@@ -12,7 +13,8 @@ export default class NodeTemplateForm extends React.Component { // eslint-disabl
     this.submit = this.submit.bind(this);
 
     this.state = {
-      packagesList: []
+      packagesList: [],
+      containerTypes: [],
     };
 
     Formsy.addValidationRule('isLessOrEqualThan', function (values, value, otherField) {
@@ -51,6 +53,7 @@ export default class NodeTemplateForm extends React.Component { // eslint-disabl
 
   onReceiveProps(nextProps, skipCheck) {
     if (nextProps.initialValues && (!isEqual(nextProps.initialValues, this.props.initialValues) || skipCheck)) {
+      const containerTypes = (nextProps.initialValues && nextProps.initialValues.containerTypes) || [];
       const packageRequirements = nextProps.initialValues.packageRequirements.edges.map(x => x.node).map(x => {
         return {
           id: x.__id,
@@ -59,21 +62,10 @@ export default class NodeTemplateForm extends React.Component { // eslint-disabl
       });
 
       this.setState({
-        packageRequirements: packageRequirements
+        packageRequirements: packageRequirements,
+        containerTypes: containerTypes,
       });
     }
-  }
-
-  arrayToString(data) {
-    return data && this.replaceAll(data.join(), ',', '\n');
-  }
-
-  stringToArray(data) {
-    return data && data.length > 0 ? data.split('\n') : [];
-  }
-
-  replaceAll(value, search, replacement) {
-    return value.replace(new RegExp(search, 'g'), replacement);
   }
 
   onPackageRequirementsChange(data) {
@@ -82,9 +74,17 @@ export default class NodeTemplateForm extends React.Component { // eslint-disabl
     });
   }
 
+  onContainerTypesChange(data) {
+    console.log('onContainerTypes', data);
+
+    this.setState({
+      containerTypes: data
+    });
+  }
+
   submit(model) {
     model.packageRequirements = this.state.packageRequirements;
-    model.containerTypes = this.stringToArray(model.containerTypes);
+    model.containerTypes = this.state.containerTypes;
     model.maximumNeededInstances = Number.parseInt(model.maximumNeededInstances, 10);
     model.minimumRequiredInstances = model.minimumRequiredInstances ? Number.parseInt(model.minimumRequiredInstances, 10) : 0;
     model.priority = model.priority ? Number.parseInt(model.priority, 10) : 0;
@@ -137,10 +137,15 @@ export default class NodeTemplateForm extends React.Component { // eslint-disabl
               elementWrapperClassName="col-sm-2"
             />
             {this.props.packagesList &&
-              <PackagesMultiSelector packages={this.props.packagesList} values={this.state.packageRequirements} onChange={this.onPackageRequirementsChange.bind(this)} />
+              <PackagesMultiSelector
+                packages={this.props.packagesList}
+                values={this.state.packageRequirements}
+                onChange={this.onPackageRequirementsChange.bind(this)}
+                showAlertForSpecificVersions={true}
+              />
             }
             <Input name="priority" label="Priority" value={(initialValues && initialValues.priority) || ""} validations="isNumeric" validationError="Must be numeric" elementWrapperClassName="col-sm-2" />
-            <Textarea name="containerTypes" label="Container Types" value={(initialValues && this.arrayToString(initialValues.containerTypes)) || ""} rows={3} />
+            <MultiLineEditor id="containerTypes" label="Container Types" values={this.state.containerTypes} onChange={this.onContainerTypesChange.bind(this)} />
             <Textarea name="configuration" label="Configuration" value={(initialValues && initialValues.configuration) || ""} rows={10} />
           </fieldset>
         </Form>

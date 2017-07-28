@@ -39,9 +39,9 @@ export class ConfigurationsList extends React.Component {
           migratableResourcesWarning={true}
           outOfScopeWarning={true}
         />
-        <h3>Configurations list</h3>
-        <Link to={`/klusterkite/Configuration/create/exact`} className="btn btn-primary" role="button">Add a new configuration</Link>
-        <Link to={`/klusterkite/Configuration/create/update`} className="btn btn-primary btn-margined" role="button">Add a new configuration (update)</Link>
+        <h3>Configurations</h3>
+        <Link to={`/klusterkite/Configuration/create/exact`} className="btn btn-primary" role="button">Copy a configuration</Link>
+        <Link to={`/klusterkite/Configuration/create/update`} className="btn btn-primary btn-margined" role="button">Copy a configuration with packages update</Link>
         <table className="table table-hover">
           <thead>
             <tr>

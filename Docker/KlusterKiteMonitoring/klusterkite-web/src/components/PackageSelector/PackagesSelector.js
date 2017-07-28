@@ -1,6 +1,7 @@
 import React from 'react';
 import Autosuggest from 'react-autosuggest';
 import Icon from 'react-fa';
+import { OverlayTrigger, Popover } from 'react-bootstrap';
 
 import isEqual from 'lodash/isEqual';
 
@@ -14,7 +15,8 @@ export default class PackagesSelector extends React.Component {
     onChange: React.PropTypes.func,
     onAdd: React.PropTypes.func,
     onDelete: React.PropTypes.func,
-    initialValues: React.PropTypes.object
+    initialValues: React.PropTypes.object,
+    showAlertForSpecificVersions: React.PropTypes.bool,
   };
 
   constructor() {
@@ -25,7 +27,6 @@ export default class PackagesSelector extends React.Component {
       packageSuggestions: [],
       packagesNames: [],
       versionValue: '',
-      versionSuggestions: [],
       packageVersions: [],
       isPackageValid: false,
       isVersionValid: false
@@ -142,27 +143,6 @@ export default class PackagesSelector extends React.Component {
   };
 
   /**
-   * Checks typed version value and notifies external component if it has been changed
-   * @param event {Event} Event
-   * @param newValue {string} Version typed
-   */
-  onVersionChange = (event, { newValue }) => {
-    const isVersionValid = this.isVersionValid(newValue);
-
-    this.setState({
-      versionValue: newValue,
-      isVersionValid: isVersionValid
-    });
-
-    if (isVersionValid && this.props.onChange) {
-      this.props.onChange({
-        id: this.state.packageValue,
-        specificVersion: newValue,
-      });
-    }
-  };
-
-  /**
    * Checks package list to verify that typed package and version are valid
    * @param value {string} Version typed by user
    * @return {boolean} Are package and version typed right?
@@ -191,25 +171,6 @@ export default class PackagesSelector extends React.Component {
     });
   };
 
-  /**
-   * Autosuggest will call this function every time you need to update suggestions on version input.
-   * @param value {string} Typed text
-   */
-  onVersionSuggestionsFetchRequested = ({ value }) => {
-    this.setState({
-      versionSuggestions: this.getSuggestions(value, this.state.packageVersions)
-    });
-  };
-
-  /**
-   * Autosuggest will call this function every time you need to clear suggestions on version input.
-   */
-  onVersionSuggestionsClearRequested = () => {
-    this.setState({
-      versionSuggestions: []
-    });
-  };
-
   // Teach Autosuggest how to calculate suggestions for any given input value.
   getSuggestions = (value, source) => {
     const inputValue = value.trim().toLowerCase();
@@ -233,21 +194,39 @@ export default class PackagesSelector extends React.Component {
     </div>
   );
 
+  /**
+   * Notifies external component that version has been changed
+   * @param newValue {string} Version typed
+   */
+  onChangeVersion(newValue) {
+    this.setState({
+      versionValue: newValue,
+      isVersionValid: true
+    });
+
+    if (this.props.onChange) {
+      this.props.onChange({
+        id: this.state.packageValue,
+        specificVersion: newValue,
+      });
+    }
+  }
+
   render() {
-    const { packageValue, packageSuggestions, versionValue, versionSuggestions } = this.state;
+    const { packageValue, packageSuggestions, versionValue } = this.state;
+
+    const popoverHoverFocus = (
+      <Popover id="popover-trigger-hover-focus" title="Attention!">
+        <p>This package won’t follow the configuration versions update.</p>
+        <p>It will be fixed to the specified version.</p>
+      </Popover>
+    );
 
     const inputPropsPackage = {
       placeholder: 'Package',
       value: packageValue,
       onChange: this.onPackageChange,
       onBlur: this.onPackageBlur
-    };
-
-    const inputPropsVersion = {
-      placeholder: 'Default version',
-      value: versionValue,
-      onChange: this.onVersionChange,
-      onBlur: this.onVersionBlur
     };
 
     return (
@@ -264,14 +243,17 @@ export default class PackagesSelector extends React.Component {
             />
           </div>
           <div className="col-xs-4 col-sm-4 col-md-4 col-lg-4">
-            <Autosuggest
-              suggestions={versionSuggestions}
-              onSuggestionsFetchRequested={this.onVersionSuggestionsFetchRequested}
-              onSuggestionsClearRequested={this.onVersionSuggestionsClearRequested}
-              getSuggestionValue={this.getSuggestionValue}
-              renderSuggestion={this.renderSuggestion}
-              inputProps={inputPropsVersion}
-            />
+            <select className="form-control" defaultValue={versionValue} onChange={(event) => { this.onChangeVersion(event.target.value) }}>
+              <option value="">Default value</option>
+              {this.state.packageVersions.map((version) => <option key={version} value={version}>{version}</option>)}
+            </select>
+          </div>
+          <div className="col-xs-1 col-sm-1 col-md-1 col-lg-1">
+            {versionValue !== '' &&
+              <OverlayTrigger trigger={['hover']} placement="bottom" overlay={popoverHoverFocus}>
+                <Icon name="exclamation-triangle" className="alert" />
+              </OverlayTrigger>
+            }
           </div>
           <div className="col-xs-1 col-sm-1 col-md-1 col-lg-1">
             <nobr>
