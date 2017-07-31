@@ -10,9 +10,9 @@
 .loading img {
   position: relative;
   left: 50%;
-  width: 60px;
+  width: 38px;
   height: 60px;
-  margin: 10px 0 22px -30px;
+  margin: 5px 0 12px -19px;
   -webkit-animation:spin 4s linear infinite;
   -moz-animation:spin 4s linear infinite;
   animation:spin 4s linear infinite;
