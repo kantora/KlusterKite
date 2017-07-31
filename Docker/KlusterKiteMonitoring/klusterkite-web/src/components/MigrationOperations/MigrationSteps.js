@@ -1,6 +1,9 @@
 import React from 'react';
 import Relay from 'react-relay'
 
+import UpdateResources from '../../components/MigrationOperations/UpdateResources'
+import UpdateResourcesButton from '../../components/MigrationOperations/UpdateResourcesButton'
+
 import CancelMigration from '../../components/MigrationOperations/CancelMigration'
 import FinishMigration from '../../components/MigrationOperations/FinishMigration'
 import UpdateNodes from '../../components/MigrationOperations/UpdateNodes'
@@ -10,10 +13,12 @@ import './styles.css';
 export class MigrationSteps extends React.Component {
   constructor(props) {
     super(props);
+    this.onSelectedResourcesChange = this.onSelectedResourcesChange.bind(this);
 
     this.state = {
       migrationSteps: null,
       currentMigrationStep: null,
+      selectedResources: [],
     };
 
     this.replacements = {
@@ -57,6 +62,12 @@ export class MigrationSteps extends React.Component {
     }
   }
 
+  onSelectedResourcesChange(selectedResources) {
+    this.setState({
+      selectedResources: selectedResources
+    });
+  }
+
   render() {
     const migrationSteps = this.state.migrationSteps;
     const currentMigrationStep = this.state.currentMigrationStep;
@@ -86,50 +97,81 @@ export class MigrationSteps extends React.Component {
                         <span className="index">{index + 1}</span>
                       </div>
                       <p className="title">{title}</p>
-
-                      {index === 0 &&
-                      <div className="migration-controls">
-                        <CancelMigration
-                          onStateChange={this.props.onStateChange}
-                          onError={this.props.onError}
-                          canCancelMigration={this.props.resourceState.canCancelMigration}
-                          operationIsInProgress={operationIsInProgress}
-                        />
-
-                        <UpdateNodes
-                          onStateChange={this.props.onStateChange}
-                          onError={this.props.onError}
-                          canUpdateBackward={this.props.resourceState.canUpdateNodesToSource}
-                          operationIsInProgress={operationIsInProgress}
-                        />
-                      </div>
-                      }
-
-                      {index === lastIndex &&
-                      <div className="migration-controls">
-                        <UpdateNodes
-                          onStateChange={this.props.onStateChange}
-                          onError={this.props.onError}
-                          canUpdateForward={this.props.resourceState.canUpdateNodesToDestination}
-                          operationIsInProgress={operationIsInProgress}
-                        />
-
-                        <FinishMigration
-                          onStateChange={this.props.onStateChange}
-                          onError={this.props.onError}
-                          canFinishMigration={this.props.resourceState.canFinishMigration}
-                          operationIsInProgress={operationIsInProgress}
-                        />
-                      </div>
-                      }
                     </li>
                   )
                 })}
               </ul>
+              <div className="migration-controls-outer">
+                <div className="migration-controls migration-controls-left">
+                  <CancelMigration
+                    onStateChange={this.props.onStateChange}
+                    onError={this.props.onError}
+                    canCancelMigration={this.props.resourceState.canCancelMigration}
+                    operationIsInProgress={operationIsInProgress}
+                  />
+
+                  <UpdateNodes
+                    onStateChange={this.props.onStateChange}
+                    onError={this.props.onError}
+                    canUpdateBackward={this.props.resourceState.canUpdateNodesToSource}
+                    operationIsInProgress={operationIsInProgress}
+                  />
+
+                  {(currentMigrationStep === 'ResourcesUpdated' || currentMigrationStep === 'Finish' || currentMigrationStep === 'PreNodesResourcesUpdating' || currentMigrationStep === 'PreNodeResourcesUpdated') &&
+                  <UpdateResourcesButton
+                    onStateChange={this.props.onStateChange}
+                    onError={this.props.onError}
+                    migrationState={this.props.resourceState.migrationState}
+                    canMigrateResources={this.props.resourceState.canMigrateResources}
+                    operationIsInProgress={operationIsInProgress}
+                    selectedResources={this.state.selectedResources}
+                    onSelectedResourcesChange={this.onSelectedResourcesChange}
+                    direction="downgrade"
+                  />
+                  }
+                </div>
+                <div className="migration-controls migration-controls-right">
+                  <UpdateNodes
+                    onStateChange={this.props.onStateChange}
+                    onError={this.props.onError}
+                    canUpdateForward={this.props.resourceState.canUpdateNodesToDestination}
+                    operationIsInProgress={operationIsInProgress}
+                  />
+
+                  <FinishMigration
+                    onStateChange={this.props.onStateChange}
+                    onError={this.props.onError}
+                    canFinishMigration={this.props.resourceState.canFinishMigration}
+                    operationIsInProgress={operationIsInProgress}
+                  />
+
+                  {(currentMigrationStep === 'Start' || currentMigrationStep === 'PreNodesResourcesUpdating' || currentMigrationStep === 'NodesUpdated') &&
+                  <UpdateResourcesButton
+                    onStateChange={this.props.onStateChange}
+                    onError={this.props.onError}
+                    migrationState={this.props.resourceState.migrationState}
+                    canMigrateResources={this.props.resourceState.canMigrateResources}
+                    operationIsInProgress={operationIsInProgress}
+                    selectedResources={this.state.selectedResources}
+                    onSelectedResourcesChange={this.onSelectedResourcesChange}
+                    direction="upgrade"
+                  />
+                  }
+                </div>
+              </div>
             </div>
           </div>
         }
 
+        <UpdateResources
+          onStateChange={this.props.onStateChange}
+          onError={this.props.onError}
+          migrationState={this.props.resourceState.migrationState}
+          canMigrateResources={this.props.resourceState.canMigrateResources}
+          operationIsInProgress={operationIsInProgress}
+          selectedResources={this.state.selectedResources}
+          onSelectedResourcesChange={this.onSelectedResourcesChange}
+        />
       </div>
     );
   }
@@ -148,6 +190,9 @@ export default Relay.createContainer(
         canMigrateResources
         migrationSteps
         currentMigrationStep
+        migrationState {
+          ${UpdateResources.getFragment('migrationState')},
+        }
       }
       `,
     },

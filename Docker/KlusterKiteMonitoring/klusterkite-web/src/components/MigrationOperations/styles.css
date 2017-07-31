@@ -1,7 +1,3 @@
-.buttons-block-margin {
-  margin-top: 15px;
-}
-
 ul.migration-steps {
   width: 100%;
   display: table;
@@ -54,14 +50,30 @@ ul.migration-steps li hr.empty {
   border-color: #fff;
 }
 
+.migration-controls-outer {
+
+}
+
 .migration-controls {
   width: 100%;
-  margin-top: 20px;
-  margin-bottom: 20px;
+  margin-top: 5px;
+  margin-bottom: 10px;
 }
 
 .migration-controls p {
   color: #000;
+}
+
+.migration-controls-left {
+  float: left;
+  width: 300px;
+  text-align: left;
+}
+
+.migration-controls-right {
+  float: right;
+  width: 300px;
+  text-align: right;
 }
 
 .table>tbody>tr>td.migration-resources {

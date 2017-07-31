@@ -82,7 +82,7 @@ export class FinishMigration extends React.Component {
     }
 
     return (
-      <div className="buttons-block-margin">
+      <div>
         {this.props.canFinishMigration && !this.state.isProcessing && !this.props.operationIsInProgress &&
           <button className="btn btn-success" type="button" onClick={this.onFinishMigration}>
             <Icon name="flag-checkered" className={processClassName}/>{' '}Finish migration

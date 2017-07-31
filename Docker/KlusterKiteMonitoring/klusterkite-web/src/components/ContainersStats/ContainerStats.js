@@ -9,11 +9,12 @@ export class ContainerStats extends React.Component {
   };
 
   render() {
+    if (!this.props.klusterKiteNodesApi.getActiveNodeDescriptions || !this.props.klusterKiteNodesApi.getActiveNodeDescriptions.edges) {
+      return;
+    }
     const containers = this.props.klusterKiteNodesApi.getActiveNodeDescriptions.edges.map(x => x.node.containerType);
     let counts = {};
     containers.forEach((x) => { if (x !== null) { counts[x] = (counts[x] || 0)+1 }});
-    console.log('containers', containers);
-    console.log('counts', counts);
 
     return (
       <div>

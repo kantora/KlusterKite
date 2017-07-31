@@ -32,7 +32,10 @@ export class MigrationLogs extends React.Component {
                 return (
                   <tr key={`migration-log-${index}`}>
                     <td>{node.started && DateFormat.formatTime(new Date(node.started))}</td>
-                    <td>{node.started && DateFormat.formatTime(new Date(node.finished))}</td>
+                    <td>
+                      {node.finished && DateFormat.formatTime(new Date(node.finished))}
+                      {!node.finished && node.started && DateFormat.formatTime(new Date(node.started))}
+                    </td>
                     <td>{node.migratorTemplateName}</td>
                     <td>{node.resourceName}</td>
                     <td>{node.message}</td>

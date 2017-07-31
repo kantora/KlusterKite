@@ -95,7 +95,7 @@ export class FinishMigration extends React.Component {
     }
 
     return (
-      <div className="buttons-block-margin">
+      <div>
         {this.props.canCancelMigration && !this.state.isProcessing && !this.props.operationIsInProgress &&
           <button className="btn btn-danger" type="button" onClick={this.onFinishMigration}>
             <Icon name="trash" className={processClassName}/>{' '}Cancel migration

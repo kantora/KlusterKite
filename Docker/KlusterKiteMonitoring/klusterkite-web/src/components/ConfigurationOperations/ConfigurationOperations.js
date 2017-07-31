@@ -46,7 +46,7 @@ export class ConfigurationOperations extends React.Component {
   hasNonSourceResource() {
     const resourceState = this.props.nodeManagement.resourceState;
     let error = false;
-    if (resourceState && resourceState.configurationState.states && resourceState.configurationState.states.edges) {
+    if (resourceState && resourceState.configurationState && resourceState.configurationState.states && resourceState.configurationState.states.edges) {
       const configurationStateNodes = resourceState.configurationState.states.edges.map(x => x.node);
       configurationStateNodes.forEach(configurationStateNode => {
         if (configurationStateNode.migratorsStates.edges.length > 0) {

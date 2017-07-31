@@ -7,7 +7,6 @@ import NodesList from '../../components/NodesList/NodesList'
 import MigrationLogs from '../../components/MigrationOperations/MigrationLogs'
 import MigrationSteps from '../../components/MigrationOperations/MigrationSteps'
 import NodesWithTemplates from '../../components/NodesWithTemplates/NodesWithTemplates'
-import UpdateResources from '../../components/MigrationOperations/UpdateResources'
 import Warnings from '../../components/Warnings/Warnings';
 
 import { hasPrivilege } from '../../utils/privileges'
@@ -177,16 +176,6 @@ class MigrationPage extends React.Component {
         }
 
         {currentMigration &&
-          <UpdateResources
-            onStateChange={this.onStateChange}
-            onError={this.onError}
-            migrationState={resourceState.migrationState}
-            canMigrateResources={resourceState.canMigrateResources}
-            operationIsInProgress={this.state.operationIsInProgress}
-          />
-        }
-
-        {currentMigration &&
           <MigrationLogs
             currentMigration={currentMigration}
           />
@@ -223,9 +212,6 @@ export default Relay.createContainer(
                 canMigrateResources
                 currentMigrationStep
                 ${MigrationSteps.getFragment('resourceState')},
-                migrationState {
-                  ${UpdateResources.getFragment('migrationState')},
-                }
               }
             }
             ${NodesWithTemplates.getFragment('data')},
