@@ -9,18 +9,21 @@ export class ContainerStats extends React.Component {
   };
 
   render() {
-    if (!this.props.klusterKiteNodesApi.getActiveNodeDescriptions || !this.props.klusterKiteNodesApi.getActiveNodeDescriptions.edges) {
-      return;
-    }
-    const containers = this.props.klusterKiteNodesApi.getActiveNodeDescriptions.edges.map(x => x.node.containerType);
+    const containers = this.props.klusterKiteNodesApi && this.props.klusterKiteNodesApi.getActiveNodeDescriptions && this.props.klusterKiteNodesApi.getActiveNodeDescriptions.edges.map(x => x.node.containerType);
     let counts = {};
-    containers.forEach((x) => { if (x !== null) { counts[x] = (counts[x] || 0)+1 }});
+    if (containers) {
+      containers.forEach((x) => {
+        if (x !== null) {
+          counts[x] = (counts[x] || 0) + 1
+        }
+      });
+    }
 
     return (
       <div>
         <h3>Containers</h3>
         <div className="templates">
-          {Object.keys(counts).map((key) =>
+          {containers && Object.keys(counts).map((key) =>
             <div key={key}>
               <span className="label label-success">
                 {key}: {counts[key]}
