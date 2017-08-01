@@ -72,7 +72,7 @@ export class PackagesList extends React.Component { // eslint-disable-line react
   }
 
   /**
-   * Applies filter to Relay variables after debounce (defined in the constructor)
+   * Applies filter to Relay variables
    * @param filter {string} Filter text
    */
   applyFilter(filter) {

@@ -15,6 +15,8 @@ export class UpdateResources extends React.Component {
       selectedResources: [],
       resourcesToUpgrade: [],
       resourcesToDowngrade: [],
+      upgradeAll: false,
+      downgradeAll: false,
     };
   }
 
@@ -39,6 +41,13 @@ export class UpdateResources extends React.Component {
   onReceiveProps(nextProps, skipCheck) {
     if (nextProps.migrationState && (!isEqual(nextProps.migrationState, this.props.migrationState) || skipCheck)) {
       this.getOptionsList(nextProps.migrationState);
+    }
+
+    if (nextProps.operationIsInProgress) {
+      this.setState({
+        upgradeAll: false,
+        downgradeAll: false,
+      });
     }
   }
 
@@ -106,6 +115,10 @@ export class UpdateResources extends React.Component {
     const keys = this.props.selectedResources.map(item => item.target === 'Destination' && item.key);
     const resourcesToAdd = this.state.resourcesToUpgrade.filter(item => !keys.includes(item.key));
 
+    this.setState({
+      upgradeAll: checked
+    });
+
     let list = [];
     if (checked) {
       list = [
@@ -122,6 +135,10 @@ export class UpdateResources extends React.Component {
   onDowngradeAll(checked) {
     const keys = this.props.selectedResources.map(item => item.target === 'Source' && item.key);
     const resourcesToAdd = this.state.resourcesToDowngrade.filter(item => !keys.includes(item.key));
+
+    this.setState({
+      downgradeAll: checked
+    });
 
     let list = [];
     if (checked) {
@@ -166,11 +183,11 @@ export class UpdateResources extends React.Component {
                   <th>Current point</th>
                   <th className="migration-downgrade" title="Downgrade selected resources">
                     ↓<br />
-                    <input type="checkbox" onChange={(element) => this.onDowngradeAll(element.target.checked)} />
+                    <input type="checkbox" checked={this.state.downgradeAll} onChange={(element) => this.onDowngradeAll(element.target.checked)} />
                   </th>
                   <th className="migration-upgrade" title="Upgrade selected resources">
                     ↑<br />
-                    <input type="checkbox" onChange={(element) => this.onUpgradeAll(element.target.checked)} />
+                    <input type="checkbox" checked={this.state.upgradeAll} onChange={(element) => this.onUpgradeAll(element.target.checked)} />
                   </th>
                 </tr>
                 </thead>

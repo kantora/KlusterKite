@@ -5,6 +5,7 @@ import { Popover, OverlayTrigger, Button } from 'react-bootstrap';
 import Icon from 'react-fa';
 
 import SortableHeader from '../Table/SortableHeader';
+import TableFilter from '../Table/TableFilter'
 
 import UpgradeNodeMutation from './mutations/UpgradeNodeMutation';
 
@@ -138,6 +139,19 @@ export class NodesList extends React.Component {
     this.props.onSort(`${column}_${direction}`);
   }
 
+  /**
+   * Applies filter to Relay variables
+   * @param filter {string} Filter text
+   */
+  applyFilter(filter) {
+    this.props.relay.setVariables({
+      filter: {OR: [{ nodeTemplate_contains: filter.toLowerCase() }, {containerType_l_contains: filter.toLowerCase()}]}
+    });
+    this.setState({
+      filter: filter
+    });
+  }
+
   render() {
     if (!this.props.nodeDescriptions.getActiveNodeDescriptions){
       return (<div></div>);
@@ -155,6 +169,9 @@ export class NodesList extends React.Component {
             <span className="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
             <span> Could not connect to the server</span>
           </div>
+        }
+        {false &&
+        <TableFilter onFilter={this.applyFilter.bind(this)}/>
         }
         <table className="table table-hover">
           <thead>
@@ -265,7 +282,7 @@ export default Relay.createContainer(
       nodeDescriptions: (variables) => Relay.QL`fragment on IKlusterKiteNodeApi_Root {
         getActiveNodeDescriptions(sort: $sort)
         {
-          edges {
+          edges{
             node {
               containerType,
               isClusterLeader,
@@ -298,3 +315,5 @@ export default Relay.createContainer(
     },
   },
 )
+
+// filter TODO: filter: {OR: [{ nodeTemplate_contains: "bla" }, {containerType_l_contains: "meh"}]}
