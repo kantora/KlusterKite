@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\..\common.props" />
   <PropertyGroup>
-    <TargetFrameworks>net46;netcoreapp1.1</TargetFrameworks>
+    <TargetFrameworks>net6.0</TargetFrameworks>
     <PackageId>KlusterKite.NodeManager.FallbackPackageFixer</PackageId>
     <Version>0.0.0.0-local</Version>
     <ApplicationIcon />
@@ -14,7 +14,7 @@
     <Description>KlusterKite cluster management: utitlity to fix versions of assemblies in fallback configurations</Description>
     <PackageTags>$(KlusterKitePackageTags);configuration;migration</PackageTags>    
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net46|x64'" />
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net6.0|x64'" />
   <ItemGroup>
     <PackageReference Include="NuGet.Packaging" Version="4.0.0" />
     <PackageReference Include="NuGet.Protocol.Core.Types" Version="4.0.0" />
@@ -29,7 +29,7 @@
     <Reference Include="System.IO.Compression" />
   </ItemGroup>
   
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net46' ">
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
     <DefineConstants>$(DefineConstants);APPDOMAIN</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.1' ">

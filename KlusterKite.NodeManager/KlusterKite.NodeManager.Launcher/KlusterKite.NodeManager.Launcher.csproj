@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\..\common.props" />
   <PropertyGroup>
-    <TargetFrameworks>net46;netcoreapp1.1</TargetFrameworks>
+    <TargetFrameworks>net6.0</TargetFrameworks>
     <PackageId>KlusterKite.NodeManager.Launcher</PackageId>
     <Version>0.0.0.0-local</Version>
     <OutputTypeEx>exe</OutputTypeEx>
@@ -13,7 +13,7 @@
     <Description>KlusterKite cluster management: utility to assemble and run KlusterKite service from provided configuration</Description>
     <PackageTags>$(KlusterKitePackageTags);configuration;migration</PackageTags>    
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net46|x64'" />
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net6.0|x64'" />
   <ItemGroup>
     <None Remove="Resources\nuget.config" />
     <None Remove="Resources\packages.config" />
@@ -30,13 +30,13 @@
     <ProjectReference Include="..\KlusterKite.NodeManager.Launcher.Messages\KlusterKite.NodeManager.Launcher.Messages.csproj" />
     <ProjectReference Include="..\KlusterKite.NodeManager.Launcher.Utils\KlusterKite.NodeManager.Launcher.Utils.csproj" />
   </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net46'">
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0'">
     <Reference Include="System.Configuration" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.1' ">
     <PackageReference Include="System.Xml.XPath.XDocument" Version="4.3.0" />
   </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net46' ">
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
   </ItemGroup>
   <ItemGroup>
     <None Update="config.hocon">
@@ -50,7 +50,7 @@
     </None>
   </ItemGroup>    
   
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net46' ">
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
     <DefineConstants>$(DefineConstants);APPDOMAIN</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.1' ">

@@ -43,11 +43,7 @@ namespace KlusterKite.Core
         {
             if (installAssemblies)
             {
-#if APPDOMAIN
                 var dir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-#elif CORECLR
-                var dir = PlatformServices.Default.Application.ApplicationBasePath;
-#endif
                 if (!string.IsNullOrWhiteSpace(dir))
                 {
                     var files = Directory.GetFiles(dir, "*.dll");
@@ -55,14 +51,7 @@ namespace KlusterKite.Core
                     {
                         try
                         {
-#if APPDOMAIN
                             Assembly.LoadFrom(file);
-#elif CORECLR
-                            AssemblyLoadContext.Default.LoadFromAssemblyPath(file);
-#else
-#error Not implemented method
-                            throw new NotImplementedException();
-#endif
                         }
                         catch
                         {
