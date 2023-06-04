@@ -1,55 +1,37 @@
-(* -- Fake Dependencies paket.dependencies
-file ./paket.dependencies
-group netcorebuild
--- Fake Dependencies -- *)
-
-//#load ".fake/build.fsx/loadDependencies.fsx"
-// TODO: remove dll load after loadDependencies.fsx fixed in fake
-
-#r ".fake/build.fsx/packages/netcorebuild/Fake.Core.Targets/lib/netstandard1.6/Fake.Core.Targets.dll"
-#r ".fake/build.fsx/packages/netcorebuild/Fake.Core.Environment/lib/netstandard1.6/Fake.Core.Environment.dll"
-#r ".fake/build.fsx/packages/netcorebuild/Fake.Core.Process/lib/netstandard1.6/Fake.Core.Process.dll"
-#r ".fake/build.fsx/packages/netcorebuild/Fake.Core.SemVer/lib/netstandard1.6/Fake.Core.SemVer.dll"
-#r ".fake/build.fsx/packages/netcorebuild/System.Diagnostics.Process/runtimes/win/lib/netstandard1.4/System.Diagnostics.Process.dll"
-#r ".fake/build.fsx/packages/netcorebuild/System.Text.Encoding/ref/netstandard1.3/System.Text.Encoding.dll"
-#r ".fake/build.fsx/packages/netcorebuild/Fake.DotNet.NuGet/lib/netstandard1.6/Fake.DotNet.NuGet.dll"
-#r ".fake/build.fsx/packages/netcorebuild/Fake.DotNet.MsBuild/lib/netstandard1.6/Fake.DotNet.MsBuild.dll"
-#r ".fake/build.fsx/packages/netcorebuild/Fake.IO.FileSystem/lib/netstandard1.6/Fake.IO.FileSystem.dll"
-#r ".fake/build.fsx/packages/netcorebuild/Microsoft.Build/lib/netstandard1.5/Microsoft.Build.dll"
-#r ".fake/build.fsx/packages/netcorebuild/System.Xml.ReaderWriter/lib/netstandard1.3/System.Xml.ReaderWriter.dll"
-#r ".fake/build.fsx/packages/netcorebuild/System.Xml.XmlDocument/lib/netstandard1.3/System.Xml.XmlDocument.dll"
-#r ".fake/build.fsx/packages/netcorebuild/System.Xml.XDocument/lib/netstandard1.3/System.Xml.XDocument.dll"
-#r ".fake/build.fsx/packages/netcorebuild/System.IO.Compression/runtimes/win/lib/netstandard1.3/System.IO.Compression.dll"
-#r ".fake/build.fsx/packages/netcorebuild/System.IO.Compression.ZipFile/lib/netstandard1.3/System.IO.Compression.ZipFile.dll"
-#r ".fake/build.fsx/packages/netcorebuild/System.Net.Http/runtimes/win/lib/netstandard1.3/System.Net.Http.dll"
-
-#r @".fake/build.fsx/packages/netcorebuild/Newtonsoft.Json/lib/netstandard1.3/Newtonsoft.Json.dll"
-#r @".fake/build.fsx/packages/netcorebuild/NuGet.Protocol.Core.Types/lib/netstandard1.3/NuGet.Protocol.Core.Types.dll"
-#r @".fake/build.fsx/packages/netcorebuild/NuGet.Protocol.Core.v3/lib/netstandard1.3/NuGet.Protocol.Core.v3.dll"
-#r @".fake/build.fsx/packages/netcorebuild/NuGet.Configuration/lib/netstandard1.3/NuGet.Configuration.dll"
-#r @".fake/build.fsx/packages/netcorebuild/NuGet.Common/lib/netstandard1.3/NuGet.Common.dll"
-#r @".fake/build.fsx/packages/netcorebuild/NuGet.Frameworks/lib/netstandard1.3/NuGet.Frameworks.dll"
-#r @".fake/build.fsx/packages/netcorebuild/NuGet.Versioning/lib/netstandard1.0/NuGet.Versioning.dll"
-#r @".fake/build.fsx/packages/netcorebuild/NuGet.Packaging/lib/netstandard1.3/NuGet.Packaging.dll"
-#r @".fake/build.fsx/packages/netcorebuild/NuGet.Packaging.Core/lib/netstandard1.3/NuGet.Packaging.Core.dll"
-#r @".fake/build.fsx/packages/netcorebuild/NuGet.Packaging.Core.Types/lib/netstandard1.3/NuGet.Packaging.Core.Types.dll"
+#if FAKE
+#r "paket: groupref netcorebuild //"
+#else
+#r "./packages/netcorebuild/Fake.Core.Environment/lib/netstandard2.0/Fake.Core.Environment.dll"
+#r "./packages/netcorebuild/Fake.Core.Target/lib/netstandard2.0/Fake.Core.Target.dll"
+#r "./packages/netcorebuild/Fake.Core.Process/lib/netstandard2.0/Fake.Core.Process.dll"
+#r "./packages/netcorebuild/Fake.Core.SemVer/lib/netstandard2.0/Fake.Core.SemVer.dll"
+#r "./packages/netcorebuild/Fake.DotNet.NuGet/lib/netstandard2.0/Fake.DotNet.NuGet.dll"
+#r "./packages/netcorebuild/Fake.DotNet.MsBuild/lib/netstandard2.0/Fake.DotNet.MsBuild.dll"
+#r "./packages/netcorebuild/Fake.IO.FileSystem/lib/netstandard2.0/Fake.IO.FileSystem.dll"
+#r "./packages/netcorebuild/Microsoft.Build/lib/net7.0/Microsoft.Build.dll"
+#r "./packages/netcorebuild/Newtonsoft.Json/lib/netstandard2.0/Newtonsoft.Json.dll"
+#r "./packages/netcorebuild/NuGet.Protocol/lib/netstandard2.0/NuGet.Protocol.dll"
+#r "./packages/netcorebuild/NuGet.Configuration/lib/netstandard2.0/NuGet.Configuration.dll"
+#r "./packages/netcorebuild/NuGet.Common/lib/netstandard2.0/NuGet.Common.dll"
+#r "./packages/netcorebuild/NuGet.Frameworks/lib/netstandard2.0/NuGet.Frameworks.dll"
+#r "./packages/netcorebuild/NuGet.Versioning/lib/netstandard2.0/NuGet.Versioning.dll"
+#r "./packages/netcorebuild/NuGet.Packaging/lib/netstandard2.0/NuGet.Packaging.dll"
+#endif
 
 #load "./build.base.fsx"
+
 open KlusterKite.Build.Base
 
-open System
 open System.IO
 open System.Diagnostics
 
 open Fake.Core
 open Fake.Core.TargetOperators
-open Fake.Core.Environment
-open Fake.Core.Process
-open Fake.DotNet.MsBuild
-open Fake.IO.FileSystem.Shell
+open Fake.DotNet
+open Fake.IO
 
 // builds base (system) docker images
-Target.Create "DockerBase" (fun _ ->
+Target.create "DockerBase" (fun _ ->
     buildDocker "klusterkite/baseworker" "Docker/KlusterKiteBaseWorkerNode"
     buildDocker "klusterkite/baseweb" "Docker/KlusterKiteBaseWebNode"
     buildDocker "klusterkite/nuget" "Docker/KlusterKiteNuget"
@@ -61,12 +43,12 @@ Target.Create "DockerBase" (fun _ ->
 )
 
 // builds standard docker images
-Target.Create "DockerContainers" (fun _ ->
+Target.create "DockerContainers" (fun _ ->
     
     let buildProject (outputPath:string) (projectPath:string) = 
-        let setParams defaults = { 
+        let setParams (defaults:Fake.DotNet.MSBuildParams) = { 
                 defaults with
-                    Verbosity = Some(Minimal)
+                    Verbosity = Some(Fake.DotNet.Minimal)
                     Targets = ["Restore"; "Publish"]
                     RestorePackagesFlag = true
                     Properties = 
@@ -78,9 +60,9 @@ Target.Create "DockerContainers" (fun _ ->
                         "OutputPath", outputPath
                     ]
                 }
-        dotNetBuild setParams projectPath
+        Fake.DotNet.MSBuild.build setParams projectPath
 
-    CleanDirs [|"./build/launcher"; "./build/launcherpublish"; "./build/seed"; "./build/seedpublish"; "./build/seeder"; "./build/seederpublish";|]
+    CleanDirs ["./build/launcher"; "./build/launcherpublish"; "./build/seed"; "./build/seedpublish"; "./build/seeder"; "./build/seederpublish"]
     buildProject (Path.GetFullPath "./build/launcher") "./build/src/KlusterKite.NodeManager/KlusterKite.NodeManager.Launcher/KlusterKite.NodeManager.Launcher.csproj"
     
     buildProject (Path.GetFullPath "./build/seed") "./KlusterKite.Core/KlusterKite.Core.Service/KlusterKite.Core.Service.csproj"
@@ -93,18 +75,19 @@ Target.Create "DockerContainers" (fun _ ->
         let buildDir = Path.Combine ([|fullPath; "build"|])
         let packageCacheDir = Path.Combine ([|fullPath; "packageCache"|])
 
-        CleanDirs [|buildDir; packageCacheDir|]
-        CopyDir buildDir "./build/launcherpublish" (fun _ -> true)
-        CopyTo buildDir [|"./Docker/utils/launcher/start.sh"|]
-        CopyTo buildDir [|"./nuget.exe"|]
+        CleanDirs [buildDir; packageCacheDir]
+        CopyDir buildDir "./build/launcherpublish" 
+         
+        CopyTo buildDir "./Docker/utils/launcher/start.sh"
+        CopyTo buildDir "./nuget.exe"
         
 
-    CleanDirs [|"./Docker/KlusterKiteSeed/build"|]
-    CopyDir "./Docker/KlusterKiteSeed/build" "./build/seedpublish" (fun _ -> true)
+    CleanDirs ["./Docker/KlusterKiteSeed/build"]
+    CopyDir "./Docker/KlusterKiteSeed/build" "./build/seedpublish"
     buildDocker "klusterkite/seed" "Docker/KlusterKiteSeed"
 
-    CleanDirs [|"./Docker/KlusterKiteSeeder/build"|]
-    CopyDir "./Docker/KlusterKiteSeeder/build" "./build/seederpublish" (fun _ -> true)
+    CleanDirs ["./Docker/KlusterKiteSeeder/build"]
+    CopyDir "./Docker/KlusterKiteSeeder/build" "./build/seederpublish" 
     buildDocker "klusterkite/seeder" "Docker/KlusterKiteSeeder"
 
     copyLauncherData "./Docker/KlusterKiteWorker" |> ignore
@@ -116,12 +99,12 @@ Target.Create "DockerContainers" (fun _ ->
     
     // building node.js web sites
     CleanDir "./Docker/KlusterKiteMonitoring/klusterkite-web/node_modules/.cache/babel-loader"
-    Rename "./Docker/KlusterKiteMonitoring/klusterkite-web/.env-local" "./Docker/KlusterKiteMonitoring/klusterkite-web/.env"
-    Rename "./Docker/KlusterKiteMonitoring/klusterkite-web/.env" "./Docker/KlusterKiteMonitoring/klusterkite-web/.env-build"
+    DirectoryInfo("./Docker/KlusterKiteMonitoring/klusterkite-web/.env-local").MoveTo "./Docker/KlusterKiteMonitoring/klusterkite-web/.env"
+    DirectoryInfo("./Docker/KlusterKiteMonitoring/klusterkite-web/.env").MoveTo "./Docker/KlusterKiteMonitoring/klusterkite-web/.env-build"
     
     /// Default paths to Npm
     let npmFileName =
-        match isWindows with
+        match Environment.isWindows with
         | true -> 
             System.Environment.GetEnvironmentVariable("PATH")
             |> fun path -> path.Split ';'
@@ -144,22 +127,23 @@ Target.Create "DockerContainers" (fun _ ->
                 | _ -> "/usr/bin/npm"
 
     printfn "Running: %s install" npmFileName
-    if not(execProcess (fun info -> 
-                info.UseShellExecute <- false
-                info.WorkingDirectory <- "./Docker/KlusterKiteMonitoring/klusterkite-web" 
-                info.FileName <- npmFileName
-                info.Arguments <- "install") (TimeSpan.FromDays 2.0)) then failwith "Could not install npm modules"
+    let result  = ["install"]
+                        |> CreateProcess.fromRawCommand npmFileName 
+                        |> CreateProcess.withWorkingDirectory "./Docker/KlusterKiteMonitoring/klusterkite-web" 
+                        |> Proc.run
+
+    if result.ExitCode <> 0 then failwith "Could not install npm modules"
     printfn "Running: %s run build" npmFileName
-    if not(execProcess (fun info -> 
-                info.UseShellExecute <- false
-                info.WorkingDirectory <- "./Docker/KlusterKiteMonitoring/klusterkite-web" 
-                info.FileName <- npmFileName
-                info.Arguments <- "run build") (TimeSpan.FromDays 2.0)) then failwith "Could build klusterkite-web"
+    let result  = ["run"; "build"]     
+                    |> CreateProcess.fromRawCommand npmFileName 
+                    |> CreateProcess.withWorkingDirectory "./Docker/KlusterKiteMonitoring/klusterkite-web" 
+                    |> Proc.run
+    if result.ExitCode <> 0 then failwith "Could build klusterkite-web"
 
     buildDocker "klusterkite/monitoring-ui" "Docker/KlusterKiteMonitoring"
     
-    Rename "./Docker/KlusterKiteMonitoring/klusterkite-web/.env-build" "./Docker/KlusterKiteMonitoring/klusterkite-web/.env"
-    Rename "./Docker/KlusterKiteMonitoring/klusterkite-web/.env" "./Docker/KlusterKiteMonitoring/klusterkite-web/.env-local"
+    DirectoryInfo("./Docker/KlusterKiteMonitoring/klusterkite-web/.env-build").MoveTo "./Docker/KlusterKiteMonitoring/klusterkite-web/.env"
+    DirectoryInfo("./Docker/KlusterKiteMonitoring/klusterkite-web/.env").MoveTo "./Docker/KlusterKiteMonitoring/klusterkite-web/.env-local"
 )
 
 "PrepareSources" ==> "DockerContainers"
@@ -168,9 +152,9 @@ Target.Create "DockerContainers" (fun _ ->
 "DockerBase" ?=> "DockerContainers"
 
 // prepares docker images
-Target.Create  "FinalBuildDocker" (fun _ -> ())
+Target.create  "FinalBuildDocker" (fun _ -> ())
 "DockerBase" ==> "FinalBuildDocker"
 "DockerContainers" ==> "FinalBuildDocker"
 "CleanDockerImages" ==> "FinalBuildDocker"
 
-Target.RunOrDefault "Nuget"
+Target.runOrDefault "Nuget"
