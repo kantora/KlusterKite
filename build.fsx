@@ -1,23 +1,8 @@
 #if FAKE
 #r "paket: groupref netcorebuild //"
-#else
-#r "./packages/netcorebuild/Fake.Core.Environment/lib/netstandard2.0/Fake.Core.Environment.dll"
-#r "./packages/netcorebuild/Fake.Core.Target/lib/netstandard2.0/Fake.Core.Target.dll"
-#r "./packages/netcorebuild/Fake.Core.Process/lib/netstandard2.0/Fake.Core.Process.dll"
-#r "./packages/netcorebuild/Fake.Core.SemVer/lib/netstandard2.0/Fake.Core.SemVer.dll"
-#r "./packages/netcorebuild/Fake.DotNet.NuGet/lib/netstandard2.0/Fake.DotNet.NuGet.dll"
-#r "./packages/netcorebuild/Fake.DotNet.MsBuild/lib/netstandard2.0/Fake.DotNet.MsBuild.dll"
-#r "./packages/netcorebuild/Fake.IO.FileSystem/lib/netstandard2.0/Fake.IO.FileSystem.dll"
-#r "./packages/netcorebuild/Microsoft.Build/lib/net7.0/Microsoft.Build.dll"
-#r "./packages/netcorebuild/Newtonsoft.Json/lib/netstandard2.0/Newtonsoft.Json.dll"
-#r "./packages/netcorebuild/NuGet.Protocol/lib/netstandard2.0/NuGet.Protocol.dll"
-#r "./packages/netcorebuild/NuGet.Configuration/lib/netstandard2.0/NuGet.Configuration.dll"
-#r "./packages/netcorebuild/NuGet.Common/lib/netstandard2.0/NuGet.Common.dll"
-#r "./packages/netcorebuild/NuGet.Frameworks/lib/netstandard2.0/NuGet.Frameworks.dll"
-#r "./packages/netcorebuild/NuGet.Versioning/lib/netstandard2.0/NuGet.Versioning.dll"
-#r "./packages/netcorebuild/NuGet.Packaging/lib/netstandard2.0/NuGet.Packaging.dll"
 #endif
 
+#load "./.fake/build.fsx/intellisense.fsx"
 #load "./build.base.fsx"
 
 open KlusterKite.Build.Base

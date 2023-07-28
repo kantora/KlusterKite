@@ -1,14 +1,16 @@
 version 7.1.5
 group NetcoreBuild
     source https://api.nuget.org/v3/index.json   
-    nuget FSharp.Core 6.0.3
+    nuget Microsoft.Build 16.11.0
+	
+	nuget FSharp.Core 6.0.3
 	nuget Fake.Core.Target 6.0.0
 	nuget Fake.Core.Environment 6.0.0
 	nuget Fake.Core.Process 6.0.0
 	nuget Fake.DotNet.MsBuild 6.0.0	
 	nuget Fake.DotNet.NuGet 6.0.0		
 	nuget Fake.IO.FileSystem 6.0.0 	
-	nuget Microsoft.Build
+	
 	nuget NuGet.Protocol
 	nuget NuGet.Configuration
 	nuget NuGet.Common

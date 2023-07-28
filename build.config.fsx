@@ -1,8 +1,7 @@
 #if FAKE
 #r "paket: groupref netcorebuild //"
-#else
-#r "./packages/netcorebuild/Fake.Core.Environment/lib/netstandard2.0/Fake.Core.Environment.dll"
 #endif
+#load "./.fake/build.fsx/intellisense.fsx"
 
 namespace KlusterKite.Build
 

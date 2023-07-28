@@ -1,23 +1,7 @@
 #if FAKE
 #r "paket: groupref netcorebuild //"
-#else
-
-#r "./packages/netcorebuild/Fake.Core.Environment/lib/netstandard2.0/Fake.Core.Environment.dll"
-#r "./packages/netcorebuild/Fake.Core.Target/lib/netstandard2.0/Fake.Core.Target.dll"
-#r "./packages/netcorebuild/Fake.Core.Process/lib/netstandard2.0/Fake.Core.Process.dll"
-#r "./packages/netcorebuild/Fake.Core.SemVer/lib/netstandard2.0/Fake.Core.SemVer.dll"
-#r "./packages/netcorebuild/Fake.DotNet.NuGet/lib/netstandard2.0/Fake.DotNet.NuGet.dll"
-#r "./packages/netcorebuild/Fake.DotNet.MsBuild/lib/netstandard2.0/Fake.DotNet.MsBuild.dll"
-#r "./packages/netcorebuild/Fake.IO.FileSystem/lib/netstandard2.0/Fake.IO.FileSystem.dll"
-#r "./packages/netcorebuild/Microsoft.Build/lib/net7.0/Microsoft.Build.dll"
-#r "./packages/netcorebuild/Newtonsoft.Json/lib/netstandard2.0/Newtonsoft.Json.dll"
-#r "./packages/netcorebuild/NuGet.Protocol/lib/netstandard2.0/NuGet.Protocol.dll"
-#r "./packages/netcorebuild/NuGet.Configuration/lib/netstandard2.0/NuGet.Configuration.dll"
-#r "./packages/netcorebuild/NuGet.Common/lib/netstandard2.0/NuGet.Common.dll"
-#r "./packages/netcorebuild/NuGet.Frameworks/lib/netstandard2.0/NuGet.Frameworks.dll"
-#r "./packages/netcorebuild/NuGet.Versioning/lib/netstandard2.0/NuGet.Versioning.dll"
-#r "./packages/netcorebuild/NuGet.Packaging/lib/netstandard2.0/NuGet.Packaging.dll"
 #endif
+#load "./.fake/build.fsx/intellisense.fsx"
 #load "./build.config.fsx"
 
 namespace KlusterKite.Build
@@ -244,9 +228,11 @@ module  Base =
         let sourcesDir = Path.Combine(buildDir, "src") 
         Directory.ensure packageThirdPartyDir
         CleanDir packageThirdPartyDir
+        
         let packageCache = SettingsUtility.GetGlobalPackagesFolder(NullSettings.Instance)
         let packages = 
             LocalFolderUtility.GetPackagesV3(packageCache, NullLogger.Instance)
+        
         let packageGroups = packages
                                 |> Seq.groupBy (fun (p:LocalPackageInfo) -> p.Identity.Id.ToLower())
                                 |> dict
@@ -279,7 +265,7 @@ module  Base =
                                 |> Seq.distinct
                                 |> Seq.map (fun (p:LocalPackageInfo) -> p.Identity, p)
                                 |> dict
-   
+  
         let getDirectDependecies (packages : IDictionary<NuGet.Packaging.Core.PackageIdentity, LocalPackageInfo>) = 
             packages.Values
                 |> Seq.collect(fun (p:LocalPackageInfo) -> p.Nuspec.GetDependencyGroups())
@@ -321,7 +307,7 @@ module  Base =
                 |> Seq.cast<LocalPackageInfo>
                 |> Seq.distinct
                 |> Seq.filter(fun (p:LocalPackageInfo) -> not (packages.ContainsKey(p.Identity)))  
-
+        
         let rec getPackagesWithDependencies (_packages : IDictionary<NuGet.Packaging.Core.PackageIdentity, LocalPackageInfo>) = 
             let _directDependencies = getDirectDependecies _packages
             if _directDependencies |> Seq.isEmpty then
@@ -332,12 +318,12 @@ module  Base =
                     |> Seq.map (fun (p:LocalPackageInfo) -> p.Identity, p)
                     |> dict                
                     |> getPackagesWithDependencies
-
+        
         printfn "%d start packages"  (directPackages |> Seq.length)
     
         let dependecies = 
             getPackagesWithDependencies directPackages
-
+            
         let filteredDependencies =
             dependecies.Values
             |> Seq.groupBy(fun (p:LocalPackageInfo) -> p.Identity.Id)
@@ -350,6 +336,7 @@ module  Base =
         )
 
         printfn "total %d third party packages"  (filteredDependencies |> Seq.length)      
+        
     )
 
     "PrepareSources" ==> "RestoreThirdPartyPackages"
@@ -381,6 +368,7 @@ module  Base =
         let outputTests = Path.Combine(buildDir, "tests") 
         Directory.ensure  outputTests
         CleanDir outputTests
+
         let runSingleProject project =
             ["restore"]
                 |> CreateProcess.fromRawCommand "dotnet" 
@@ -393,7 +381,7 @@ module  Base =
                 |> Proc.run
                 |> ignore            
 
-
+        
         filesInDirMatchingRecursive "*.csproj" (new DirectoryInfo(sourcesDir))
             |> Seq.map(fun (file:FileInfo) -> new Microsoft.Build.Evaluation.Project(file.FullName, null, null, Microsoft.Build.Evaluation.ProjectCollection.GlobalProjectCollection, Microsoft.Build.Evaluation.ProjectLoadSettings.IgnoreMissingImports))
             |> Seq.collect (fun proj -> proj.ItemsIgnoringCondition |> Seq.map (fun item -> (proj, item)))
@@ -401,5 +389,6 @@ module  Base =
             |> Seq.map (fun (proj, _) -> proj)
             |> Seq.distinct
             |> Seq.iter(fun f -> runSingleProject f.FullPath)
+        
     )
     "PrepareSources" ==> "Tests"

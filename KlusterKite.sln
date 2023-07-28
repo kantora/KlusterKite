@@ -12,7 +12,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_Solution Items", "_Solutio
 		build.config.fsx = build.config.fsx
 		build.fsx = build.fsx
 		build.sh = build.sh
-		buildMono.bat = buildMono.bat
 		BuildScript.md = BuildScript.md
 		common.props = common.props
 		fixDockerFallback.bat = fixDockerFallback.bat
