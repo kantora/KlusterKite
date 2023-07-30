@@ -221,3 +221,4 @@ _Pvt_Extensions
 paket.lock
 packagesOut
 .paket
+build.fsx.lock

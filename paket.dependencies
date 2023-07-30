@@ -2,6 +2,7 @@ version 7.1.5
 group NetcoreBuild
     source https://api.nuget.org/v3/index.json   
     nuget Microsoft.Build 16.11.0
+	nuget Microsoft.Build.Framework 16.11.0
 	
 	nuget FSharp.Core 6.0.3
 	nuget Fake.Core.Target 6.0.0

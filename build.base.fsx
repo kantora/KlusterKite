@@ -34,11 +34,15 @@ module  Base =
     let CleanDirs (directories: string list) = directories |> Seq.iter (fun dir -> CleanDir dir)
 
     let CopyDir (destination: string) (source: string) = 
-        (DirectoryInfo.copyRecursiveTo true, DirectoryInfo(destination), DirectoryInfo(source))
-            |> ignore
+        CleanDir destination
+        DirectoryInfo.copyRecursiveTo true (DirectoryInfo(destination)) (DirectoryInfo(source))         
+          |> ignore
 
-    let CopyFile (destination: string) (source: string) = 
-        FileInfo(source).CopyTo(destination) |> ignore
+    let CopyFile (destination: string) (source: string) =
+        if Directory.Exists(destination) then
+            let path = Path.combine destination (Path.GetFileName(source))
+            FileInfo(source).CopyTo(path) |> ignore
+        else FileInfo(source).CopyTo(destination) |> ignore
     
     let CopyTo (destination: string) (source: string) = 
         FileInfo(source).CopyTo(Path.combine destination (FileInfo(source).Name)) |> ignore
@@ -98,7 +102,7 @@ module  Base =
                             CleanDir (Path.Combine(projectDir, "bin")))
 
                     let fullDir = Path.GetFullPath(dir)
-                    let destinationDir = Path.Combine(sourcesDir, Path.GetFileName(fullDir), ".")                
+                    let destinationDir = Path.Combine(sourcesDir, Path.GetFileName(fullDir))
                     CopyDir destinationDir fullDir )
 
         filesInDirMatching "*.sln" (new DirectoryInfo("."))
@@ -124,18 +128,19 @@ module  Base =
         let sourcesDir = Path.Combine(buildDir, "src")  
         Seq.iter
             (fun (file:FileInfo) ->
-                let setParams defaults = { 
+                let setParams (defaults:MSBuildParams) = { 
                     defaults with
                         Verbosity = Some(Minimal)
                         Targets = ["Restore"; "Build"]
                         RestorePackagesFlag = true
+                        //TODO: uncomment when https://github.com/fsprojects/FAKE/pull/2739 is resolved
                         Properties = 
                         [
-                            "Optimize", "True"
-                            "DebugSymbols", "True"
-                            "Configuration", "Release"                        
+                            //"Optimize", "True"
+                            //"DebugSymbols", "True"
+                            //"Configuration", "Release"
                         ]
-                }
+                }                
                 MSBuild.build setParams file.FullName)
             (filesInDirMatching "*.sln" (new DirectoryInfo(sourcesDir)))
     )
