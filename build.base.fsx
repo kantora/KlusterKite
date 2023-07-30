@@ -53,7 +53,7 @@ module  Base =
                         |> CreateProcess.fromRawCommand "docker" 
                         |> Proc.run
 
-        if result.ExitCode <> 0 then failwith "Error while building %s" path
+        if result.ExitCode <> 0 then failwith (sprintf "Error while building %s" path)
 
 
     let pushPackage (package:string) =
