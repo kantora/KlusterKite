@@ -12,6 +12,7 @@ namespace KlusterKite.Core.Tests.Ping
     using System;
 
     using Akka.Actor;
+    using Akka.Event;
     using Akka.Cluster;
 
     using KlusterKite.Core.Ping;

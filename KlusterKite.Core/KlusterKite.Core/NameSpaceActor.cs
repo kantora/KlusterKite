@@ -199,7 +199,8 @@ namespace KlusterKite.Core
                         singletonName,
                         role,
                         actorConfig.GetTimeSpan("removal-margin", TimeSpan.FromSeconds(1), false),
-                        actorConfig.GetTimeSpan("handover-retry-interval", TimeSpan.FromSeconds(5), false))),
+                        actorConfig.GetTimeSpan("handover-retry-interval", TimeSpan.FromSeconds(5), false),
+                        false)),
                 pathName);
         }
 
@@ -269,7 +270,8 @@ namespace KlusterKite.Core
                             singletonName,
                             role,
                             actorConfig.GetTimeSpan("singleton-identification-interval", TimeSpan.FromSeconds(1), false),
-                            actorConfig.GetInt("buffer-size", 2048))),
+                            actorConfig.GetInt("buffer-size", 2048),
+                            false)),
                 name: pathName);
         }
 

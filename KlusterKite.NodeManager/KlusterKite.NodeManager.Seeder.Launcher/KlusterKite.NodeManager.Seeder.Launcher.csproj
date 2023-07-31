@@ -16,8 +16,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net6.0|x64'" />
   <ItemGroup>
-    <PackageReference Include="Akka" Version="1.3.0" />
-    <PackageReference Include="JetBrains.Annotations" Version="10.4.0" />
+    <PackageReference Include="Akka" Version="1.5.11" />
+    <PackageReference Include="JetBrains.Annotations" Version="2023.2.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\KlusterKite.NodeManager.Launcher.Utils\KlusterKite.NodeManager.Launcher.Utils.csproj" />

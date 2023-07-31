@@ -16,8 +16,8 @@
     <Compile Remove="Migrations\20170703061628_Empty.Designer.cs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="1.1.2" />
-    <PackageReference Include="System.ValueTuple" Version="4.3.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="7.0.9" />
+    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\KlusterKite.Data\KlusterKite.Data.CRUD\KlusterKite.Data.CRUD.csproj" />

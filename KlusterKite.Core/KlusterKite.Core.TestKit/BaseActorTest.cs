@@ -14,6 +14,7 @@ namespace KlusterKite.Core.TestKit
     using System.Reflection;
 
     using Akka.Actor;
+    using Akka.Event;
     using Akka.Configuration;
     using Akka.TestKit;
 

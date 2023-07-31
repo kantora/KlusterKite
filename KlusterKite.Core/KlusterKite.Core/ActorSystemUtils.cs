@@ -16,6 +16,7 @@ namespace KlusterKite.Core
     using System.Reflection;
 
     using Akka.Actor;
+    using Akka.Event;
     using Akka.DI.Core;
 
     using Autofac;

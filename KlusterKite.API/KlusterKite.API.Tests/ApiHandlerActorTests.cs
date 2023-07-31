@@ -14,6 +14,7 @@ namespace KlusterKite.API.Tests
     using System.Threading.Tasks;
 
     using Akka.Actor;
+    using Akka.Event;
 
     using KlusterKite.API.Client;
     using KlusterKite.API.Client.Messages;

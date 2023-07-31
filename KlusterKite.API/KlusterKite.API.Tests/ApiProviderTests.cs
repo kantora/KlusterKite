@@ -65,7 +65,7 @@ namespace KlusterKite.API.Tests
                 this.output.WriteLine($"Generation error: {e}");
             }
 
-            Assert.Equal(0, provider.GenerationErrors.Count);
+            Assert.Empty(provider.GenerationErrors);
 
             var description = provider.ApiDescription;
             Assert.NotNull(description);
@@ -86,45 +86,45 @@ namespace KlusterKite.API.Tests
             var nodeType = description.Types.FirstOrDefault(t => t.TypeName.ToLower().Contains("nodeobject"));
             Assert.NotNull(nodeType);
 
-            Assert.True(description.Fields.Any(f => f.Name == "arrayedObjects"));
+            Assert.Contains(description.Fields, f => f.Name == "arrayedObjects");
             Assert.Equal(nodeType.TypeName, description.Fields.First(f => f.Name == "arrayedObjects").TypeName);
             Assert.Equal(EnFieldFlags.IsConnection | EnFieldFlags.Queryable, description.Fields.First(f => f.Name == "arrayedObjects").Flags);
 
-            Assert.True(description.Fields.Any(f => f.Name == "connectedObjects"));
+            Assert.Contains(description.Fields, f => f.Name == "connectedObjects");
             Assert.Equal(nodeType.TypeName, description.Fields.First(f => f.Name == "connectedObjects").TypeName);
             Assert.Equal(EnFieldFlags.IsConnection | EnFieldFlags.Queryable, description.Fields.First(f => f.Name == "connectedObjects").Flags);
-            Assert.True(description.Mutations.Any(m => m.Name == "connectedObjects.create"));
+            Assert.Contains(description.Mutations, m => m.Name == "connectedObjects.create");
             //// Assert.Equal(nodeType.TypeName, description.Mutations.First(m => m.Name == "connectedObjects.create").TypeName);
             Assert.Equal(nodeType.TypeName, description.Mutations.First(m => m.Name == "connectedObjects.create").Arguments.First().TypeName);
-            Assert.True(description.Mutations.Any(m => m.Name == "connectedObjects.update"));
+            Assert.Contains(description.Mutations, m => m.Name == "connectedObjects.update");
             //// Assert.Equal(nodeType.TypeName, description.Mutations.First(m => m.Name == "connectedObjects.update").TypeName);
             Assert.Equal(EnScalarType.Guid, description.Mutations.First(m => m.Name == "connectedObjects.update").Arguments.First().ScalarType);
             Assert.Equal(nodeType.TypeName, description.Mutations.First(m => m.Name == "connectedObjects.update").Arguments.Skip(1).First().TypeName);
-            Assert.True(description.Mutations.Any(m => m.Name == "connectedObjects.delete"));
+            Assert.Contains(description.Mutations, m => m.Name == "connectedObjects.delete");
             //// Assert.Equal(nodeType.TypeName, description.Mutations.First(m => m.Name == "connectedObjects.delete").TypeName);
             Assert.Equal(EnScalarType.Guid, description.Mutations.First(m => m.Name == "connectedObjects.delete").Arguments.First().ScalarType);
 
-            Assert.True(description.Fields.Any(f => f.Name == "publishedStringProperty"));
+            Assert.Contains(description.Fields, f => f.Name == "publishedStringProperty");
             Assert.Equal(EnScalarType.String, description.Fields.First(f => f.Name == "publishedStringProperty").ScalarType);
             Assert.Equal(EnFieldFlags.IsFilterable | EnFieldFlags.IsSortable | EnFieldFlags.Queryable, description.Fields.First(f => f.Name == "publishedStringProperty").Flags);
 
-            Assert.True(description.Fields.Any(f => f.Name == "stringArray"));
+            Assert.Contains(description.Fields, f => f.Name == "stringArray");
             Assert.Equal(EnScalarType.String, description.Fields.First(f => f.Name == "stringArray").ScalarType);
             Assert.Equal(EnFieldFlags.IsArray | EnFieldFlags.Queryable, description.Fields.First(f => f.Name == "stringArray").Flags);
 
-            Assert.False(description.Fields.Any(f => f.Name == "unPublishedStringProperty"));
+            Assert.DoesNotContain(description.Fields, f => f.Name == "unPublishedStringProperty");
 
-            Assert.True(description.Fields.Any(f => f.Name == "publishedStringMethod"));
+            Assert.Contains(description.Fields, f => f.Name == "publishedStringMethod");
             Assert.Equal(EnScalarType.String, description.Fields.First(f => f.Name == "publishedStringMethod").ScalarType);
             Assert.Equal(EnFieldFlags.Queryable, description.Fields.First(f => f.Name == "publishedStringMethod").Flags);
             Assert.Equal(2, description.Fields.First(f => f.Name == "publishedStringMethod").Arguments.Count);
 
-            Assert.True(description.Fields.Any(f => f.Name == "validateNode"));
+            Assert.Contains(description.Fields, f => f.Name == "validateNode");
             Assert.Equal(EnScalarType.Boolean, description.Fields.First(f => f.Name == "validateNode").ScalarType);
             Assert.Equal(EnFieldFlags.Queryable, description.Fields.First(f => f.Name == "validateNode").Flags);
             Assert.Equal(2, description.Fields.First(f => f.Name == "validateNode").Arguments.Count);
 
-            Assert.True(description.Mutations.Any(m => m.Name == "mutateNode"));
+            Assert.Contains(description.Mutations, m => m.Name == "mutateNode");
             Assert.Equal(nodeType.TypeName, description.Mutations.First(m => m.Name == "mutateNode").TypeName);
             Assert.Equal(nodeType.TypeName, description.Mutations.First(m => m.Name == "mutateNode").Arguments.First().TypeName);
         }

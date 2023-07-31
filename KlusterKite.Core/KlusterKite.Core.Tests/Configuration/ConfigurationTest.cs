@@ -80,7 +80,7 @@ namespace KlusterKite.Core.Tests.Configuration
             /*
             var cluster = Akka.Cluster.Cluster.Get(this.Sys);
             cluster.Join(cluster.SelfAddress);
-            */
+            //*/
 
             this.Sys.StartNameSpaceActorsFromConfiguration();
             this.ExpectNoMsg();

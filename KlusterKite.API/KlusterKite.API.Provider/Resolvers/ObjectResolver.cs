@@ -403,12 +403,12 @@ namespace KlusterKite.API.Provider.Resolvers
                         }
 
                         return new ApiRequest
-                                   {
-                                       Alias = f.Alias,
-                                       Arguments = f.Arguments,
-                                       FieldName = f.FieldName,
-                                       Fields = g.SelectMany(sr => sr.Fields).ToList()
-                                   };
+                        {
+                            Alias = f.Alias,
+                            Arguments = f.Arguments,
+                            FieldName = f.FieldName,
+                            Fields = g.SelectMany(sr => sr.Fields).ToList()
+                        };
                     });
 
             object idValue = null;
@@ -657,11 +657,11 @@ namespace KlusterKite.API.Provider.Resolvers
                 else
                 {
                     var collectionType = typeof(CollectionResolver<>).MakeGenericType(metadata.Type);
+                    Activator.CreateInstance(collectionType);
 
-                    var filterType =
-                        (ApiObjectType)
-                        collectionType.GetProperty("FilterType", BindingFlags.Static | BindingFlags.Public)
-                            ?.GetValue(null);
+                    var filterProperty = collectionType.GetProperty("FilterType", BindingFlags.Static | BindingFlags.Public);
+
+                    var filterType = (ApiObjectType)filterProperty?.GetValue(null);
 
                     if (filterType == null)
                     {
@@ -1221,7 +1221,7 @@ namespace KlusterKite.API.Provider.Resolvers
                 }
 
                 resolvedTypes[apiType.TypeName] = resolver;
-                
+
                 var genericResolver = resolver as ObjectResolver;
                 if (genericResolver == null)
                 {
@@ -1367,13 +1367,13 @@ namespace KlusterKite.API.Provider.Resolvers
                     field.FillAuthorizationProperties(connection.TypeMember);
                     yield return
                         new MutationDescription
-                            {
-                                Field = field,
-                                Path = requestPath,
-                                Type = ApiMutation.EnType.ConnectionCreate,
-                                Resolver = connection.Resolver,
-                                ResolveContainer = nextResolver
-                            };
+                        {
+                            Field = field,
+                            Path = requestPath,
+                            Type = ApiMutation.EnType.ConnectionCreate,
+                            Resolver = connection.Resolver,
+                            ResolveContainer = nextResolver
+                        };
                 }
 
                 if (attribute.CanUpdate)
@@ -1394,13 +1394,13 @@ namespace KlusterKite.API.Provider.Resolvers
                     field.FillAuthorizationProperties(connection.TypeMember);
                     yield return
                         new MutationDescription
-                            {
-                                Field = field,
-                                Path = requestPath,
-                                Type = ApiMutation.EnType.ConnectionUpdate,
-                                Resolver = connection.Resolver,
-                                ResolveContainer = nextResolver
-                            };
+                        {
+                            Field = field,
+                            Path = requestPath,
+                            Type = ApiMutation.EnType.ConnectionUpdate,
+                            Resolver = connection.Resolver,
+                            ResolveContainer = nextResolver
+                        };
                 }
 
                 if (attribute.CanDelete)
@@ -1414,13 +1414,13 @@ namespace KlusterKite.API.Provider.Resolvers
                     field.FillAuthorizationProperties(connection.TypeMember);
                     yield return
                         new MutationDescription
-                            {
-                                Field = field,
-                                Path = requestPath,
-                                Type = ApiMutation.EnType.ConnectionDelete,
-                                Resolver = connection.Resolver,
-                                ResolveContainer = nextResolver
-                            };
+                        {
+                            Field = field,
+                            Path = requestPath,
+                            Type = ApiMutation.EnType.ConnectionDelete,
+                            Resolver = connection.Resolver,
+                            ResolveContainer = nextResolver
+                        };
                 }
             }
         }
@@ -1489,13 +1489,13 @@ namespace KlusterKite.API.Provider.Resolvers
             {
                 yield return
                     new MutationDescription
-                        {
-                            Field = field.Field,
-                            Path = path.Select(p => new ApiRequest { FieldName = p }).ToList(),
-                            Type = ApiMutation.EnType.Untyped,
-                            ResolveContainer = getContainer,
-                            Resolver = this
-                        };
+                    {
+                        Field = field.Field,
+                        Path = path.Select(p => new ApiRequest { FieldName = p }).ToList(),
+                        Type = ApiMutation.EnType.Untyped,
+                        ResolveContainer = getContainer,
+                        Resolver = this
+                    };
             }
         }
 

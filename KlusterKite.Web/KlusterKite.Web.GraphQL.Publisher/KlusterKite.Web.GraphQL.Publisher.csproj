@@ -18,7 +18,7 @@
     <EmbeddedResource Include="Resources\akka.hocon" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="GraphQL" Version="0.17.0" />
+    <PackageReference Include="GraphQL" Version="7.5.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\KlusterKite.API\KlusterKite.API.Client\KlusterKite.API.Client.csproj" />

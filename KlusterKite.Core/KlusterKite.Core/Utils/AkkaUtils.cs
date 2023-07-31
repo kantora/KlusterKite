@@ -13,6 +13,7 @@ namespace KlusterKite.Core.Utils
     using System.Linq;
 
     using Akka.Actor;
+    using Akka.Event;
     using Akka.Routing;
 
     using JetBrains.Annotations;

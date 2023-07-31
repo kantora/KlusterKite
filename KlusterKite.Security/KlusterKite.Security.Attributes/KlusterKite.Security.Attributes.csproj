@@ -11,9 +11,9 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net6.0|x64'" />
   <ItemGroup>
-    <PackageReference Include="JetBrains.Annotations" Version="10.4.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="1.1.2" />
-    <PackageReference Include="Newtonsoft.Json" Version="10.0.2" />
+    <PackageReference Include="JetBrains.Annotations" Version="2023.2.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="7.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.6' ">
     <PackageReference Include="System.Runtime" Version="4.3.0" />    

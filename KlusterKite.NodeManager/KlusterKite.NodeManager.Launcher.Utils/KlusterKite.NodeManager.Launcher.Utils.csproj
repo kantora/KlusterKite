@@ -20,10 +20,10 @@
     <EmbeddedResource Include="Resources\runtimes.json" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="NuGet.Commands" Version="4.0.0" />
-    <PackageReference Include="NuGet.ProjectModel" Version="4.0.0" />
-    <PackageReference Include="NuGet.Protocol.Core.v3" Version="4.0.0" />
-    <PackageReference Include="NuGet.RuntimeModel" Version="4.0.0" />
+    <PackageReference Include="NuGet.Commands" Version="6.6.1" />
+    <PackageReference Include="NuGet.ProjectModel" Version="6.6.1" />
+    <PackageReference Include="NuGet.Protocol.Core.v3" Version="4.2.0" />
+    <PackageReference Include="NuGet.RuntimeModel" Version="4.2.0" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">
@@ -31,7 +31,7 @@
     <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="1.1.2" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
-    <PackageReference Include="RestSharp" Version="105.2.3" />
+    <PackageReference Include="RestSharp" Version="110.2.0" />
   </ItemGroup>
   
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net6.0' ">

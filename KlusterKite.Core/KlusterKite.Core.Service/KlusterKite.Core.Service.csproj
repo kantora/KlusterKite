@@ -14,8 +14,8 @@
     <NetStandardImplicitPackageVersion Condition=" '$(TargetFramework)' == 'netcoreapp1.1' ">1.6.1</NetStandardImplicitPackageVersion>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="docopt.net" Version="0.6.1.9" />
-    <PackageReference Include="Serilog.Sinks.ColoredConsole" Version="2.0.0" />
+    <PackageReference Include="docopt.net" Version="0.8.1" />
+    <PackageReference Include="Serilog.Sinks.ColoredConsole" Version="3.0.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\KlusterKite.Core\KlusterKite.Core.csproj" />
