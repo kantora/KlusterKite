@@ -16,12 +16,13 @@ namespace KlusterKite.NodeManager
     using System.Linq;
     using System.Threading.Tasks;
 
-    using Akka;
+
     using Akka.Actor;
     using Akka.Event;
 
     using JetBrains.Annotations;
 
+    using KlusterKite.Core.Utils;
     using KlusterKite.Data.EF;
     using KlusterKite.NodeManager.Client.Messages.Migration;
     using KlusterKite.NodeManager.Client.MigrationStates;

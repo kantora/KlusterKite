@@ -26,7 +26,7 @@ namespace KlusterKite.Data.Tests
         public void CreatorTest()
         {
             var contextFactory = new InMemoryContextFactory();
-            var context = contextFactory.CreateContext<TestDataContext>((string)null);
+            var context = contextFactory.CreateContext<TestDataContext>(null, "testDB");
             Assert.NotNull(context);
         }
     }

@@ -15,6 +15,7 @@ namespace KlusterKite.Data.Tests
     using System.Reflection;
     using System.Threading.Tasks;
 
+    using Akka.Event;
     using Akka.Actor;
     using Akka.Configuration;
     using Akka.DI.Core;

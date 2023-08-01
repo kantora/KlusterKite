@@ -55,7 +55,7 @@ namespace KlusterKite.Monitoring.Tests
                 this.output.WriteLine($"Error: {error}");
             }
 
-            Assert.Equal(0, api.GenerationErrors.Count);
+            Assert.Empty(api.GenerationErrors);
 
             var webApiProvider = new DirectProvider(api, this.output.WriteLine) { UseJsonRepack = true };
             var schema = SchemaGenerator.Generate(new List<ApiProvider> { webApiProvider });
@@ -66,13 +66,13 @@ namespace KlusterKite.Monitoring.Tests
                 this.output.WriteLine($"Schema error: {error}");
             }
 
-            using (var printer = new SchemaPrinter(schema))
-            {
-                var description = printer.Print();
-                this.output.WriteLine("-------- Schema -----------");
-                this.output.WriteLine(description);
-                Assert.False(string.IsNullOrWhiteSpace(description));
-            }
+            var printer = new SchemaPrinter(schema);
+
+            var description = printer.Print();
+            this.output.WriteLine("-------- Schema -----------");
+            this.output.WriteLine(description);
+            Assert.False(string.IsNullOrWhiteSpace(description));
+
 
             Assert.False(hasSchemaErrors);
 

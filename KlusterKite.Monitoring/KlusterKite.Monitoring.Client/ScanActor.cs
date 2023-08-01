@@ -15,6 +15,7 @@ namespace KlusterKite.Monitoring.Client
 
     using Akka.Actor;
     using Akka.Cluster;
+    using Akka.Event;
 
     using JetBrains.Annotations;
 

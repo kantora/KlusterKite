@@ -16,6 +16,7 @@ namespace KlusterKite.Web
     using System.Threading.Tasks;
 
     using Akka.Actor;
+    using Akka.Event;
     using Akka.Configuration;
 
     using JetBrains.Annotations;

@@ -17,6 +17,7 @@ namespace KlusterKite.Security.SessionRedis
     using System.Threading.Tasks;
 
     using Akka.Actor;
+    using Akka.Event;
 
     using JetBrains.Annotations;
 

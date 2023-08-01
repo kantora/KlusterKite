@@ -15,8 +15,9 @@ namespace KlusterKite.LargeObjects.Client
     using System.Threading;
     using System.Threading.Tasks;
 
-    using Akka;
+    using Akka.Event;
     using Akka.Actor;
+    using KlusterKite.Core.Utils;
 
     using JetBrains.Annotations;
 

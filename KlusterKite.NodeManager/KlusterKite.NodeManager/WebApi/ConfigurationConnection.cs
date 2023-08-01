@@ -14,6 +14,7 @@ namespace KlusterKite.NodeManager.WebApi
     using System.Threading.Tasks;
 
     using Akka.Actor;
+    using Akka.Event;
 
     using JetBrains.Annotations;
 
