@@ -161,7 +161,8 @@ namespace KlusterKite.Web
                 var container = ContainerWaiter.Task.Result;
                 var system = container.Resolve<ActorSystem>();
                 system.Log.Info("{Type}: ConfigureServices done", this.GetType().Name);
-                return new AutofacServiceProvider(container);
+                // TODO: replace IComponentContext with IContainer
+                return new AutofacServiceProvider(((IContainer)container).BeginLifetimeScope());
             }
             catch (Exception exception)
             {

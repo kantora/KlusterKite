@@ -12,11 +12,12 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
     using System.Collections.Generic;
     using System.Linq;
     using System.Text.RegularExpressions;
-
-    using global::GraphQL.Language.AST;
+    using System.Threading.Tasks;
+    using global::GraphQL;
     using global::GraphQL.Resolvers;
     using global::GraphQL.Types;
-
+    using GraphQLParser;
+    using GraphQLParser.AST;
     using KlusterKite.API.Client;
     using KlusterKite.Web.GraphQL.Publisher.GraphTypes;
 
@@ -75,7 +76,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
 
         /// <summary>
         /// Gets the list of requested fields from parent 
-        /// <seealso cref="Field"/>
+        /// <seealso cref="GraphQLField"/>
         /// </summary>
         /// <param name="selectionSet">
         /// The parent field selection set
@@ -89,12 +90,12 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         /// <returns>
         /// The list of fields
         /// </returns>
-        public static IEnumerable<Field> GetRequestedFields(
-            SelectionSet selectionSet,
-            ResolveFieldContext context,
+        public static IEnumerable<GraphQLField> GetRequestedFields(
+            GraphQLSelectionSet selectionSet,
+            IResolveFieldContext context,
             MergedType type)
         {
-            var directFields = selectionSet.Selections.OfType<Field>();
+            var directFields = selectionSet.Selections.OfType<GraphQLField>();
             foreach (var field in directFields)
             {
                 yield return field;
@@ -103,7 +104,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
             var typeNames = type.GetPossibleFragmentTypeNames().ToList();
 
             var inlineFragments =
-                selectionSet.Selections.OfType<InlineFragment>().Where(f => typeNames.Contains(f.Type.Name));
+                selectionSet.Selections.OfType<GraphQLInlineFragment>();//.Where(f => typeNames.Contains(f.Type.Name));
             foreach (var fragment in inlineFragments)
             {
                 foreach (var field in GetRequestedFields(fragment.SelectionSet, context, type))
@@ -113,9 +114,9 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
             }
 
             var fragmentsUsed =
-                selectionSet.Selections.OfType<FragmentSpread>()
-                    .Select(fs => context.Fragments.FindDefinition(fs.Name))
-                    .Where(f => typeNames.Contains(f.Type.Name));
+                selectionSet.Selections.OfType<GraphQLFragmentSpread>()
+                    .Select(fs => context.Document.FindFragmentDefinition(fs.FragmentName.Name))
+                    .Where(f => typeNames.Contains(f.FragmentName.ToString()));
 
             foreach (var fragment in fragmentsUsed)
             {
@@ -153,8 +154,8 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         /// The list of api requests
         /// </returns>
         public virtual IEnumerable<ApiRequest> GatherSingleApiRequest(
-            Field contextFieldAst,
-            ResolveFieldContext context)
+            GraphQLField contextFieldAst,
+            IResolveFieldContext context)
         {
             yield break;
         }
@@ -208,15 +209,15 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         /// </summary>
         /// <param name="context">The request context</param>
         /// <returns>Resolved value</returns>
-        public virtual object Resolve(ResolveFieldContext context)
+        public virtual ValueTask<object> ResolveAsync(IResolveFieldContext context)
         {
             var parentData = context.Source as JObject;
             if (context.ParentType is IArrayContainerGraph && parentData?.Parent?.Type == JTokenType.Array)
             {
-                return parentData;
+                return ValueTask.FromResult((object)parentData);
             }
 
-            return parentData?.GetValue(context.FieldAst.Alias ?? context.FieldName);
+            return ValueTask.FromResult((object)parentData?.GetValue(context.FieldAst.Alias?.Name?.StringValue ?? context.FieldDefinition.Name));
         }
 
         /// <inheritdoc />

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\..\common.props" />
   <PropertyGroup>
-    <TargetFrameworks>net6.0</TargetFrameworks>
+    <TargetFrameworks>net8.0</TargetFrameworks>
     <PackageId>KlusterKite.NodeManager.Seeder.Launcher</PackageId>
     <Version>0.0.0.0-local</Version>
     <ApplicationIcon />
@@ -16,8 +16,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net6.0|x64'" />
   <ItemGroup>
-    <PackageReference Include="Akka" Version="1.5.11" />
-    <PackageReference Include="JetBrains.Annotations" Version="2023.2.0" />
+    <PackageReference Include="Akka" Version="1.5.14" />
+    <PackageReference Include="JetBrains.Annotations" Version="2023.3.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\KlusterKite.NodeManager.Launcher.Utils\KlusterKite.NodeManager.Launcher.Utils.csproj" />
@@ -28,7 +28,7 @@
     </None>
   </ItemGroup>
   
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net8.0' ">
     <DefineConstants>$(DefineConstants);APPDOMAIN</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.1' ">

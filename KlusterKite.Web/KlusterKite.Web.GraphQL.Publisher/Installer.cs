@@ -17,7 +17,7 @@ namespace KlusterKite.Web.GraphQL.Publisher
     using Autofac;
 
     using global::GraphQL;
-    using global::GraphQL.Http;
+    using global::GraphQL.NewtonsoftJson;
 
     using KlusterKite.Core;
 
@@ -55,9 +55,9 @@ namespace KlusterKite.Web.GraphQL.Publisher
             container.RegisterType<SchemaProvider>().SingleInstance();
 
             var documentExecuter = new DocumentExecuter();
-            var writer = new DocumentWriter(false);
+            var writer = new GraphQLSerializer(false);
             container.RegisterInstance(documentExecuter).As<IDocumentExecuter>();
-            container.RegisterInstance(writer).As<IDocumentWriter>();
+            container.RegisterInstance(writer).As<IGraphQLSerializer>();
         }
     }
 }

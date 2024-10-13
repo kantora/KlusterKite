@@ -13,7 +13,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
     using System.Collections.Generic;
     using System.Linq;
 
-    using global::GraphQL.Language.AST;
+    using GraphQLParser.AST;
     using global::GraphQL.Resolvers;
     using global::GraphQL.Types;
 
@@ -24,6 +24,8 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
     using KlusterKite.Web.GraphQL.Publisher.GraphTypes;
 
     using Newtonsoft.Json.Linq;
+    using global::GraphQL;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// The merged api type description
@@ -263,8 +265,8 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         /// </returns>
         public IEnumerable<ApiRequest> GatherMultipleApiRequest(
             ApiProvider provider,
-            Field contextFieldAst,
-            ResolveFieldContext context)
+            GraphQLField contextFieldAst,
+            IResolveFieldContext context)
         {
             if (this.KeyField != null && this.KeyField.Providers.Contains(provider))
             {
@@ -276,7 +278,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
             var usedFields =
                 requestedFields.Join(
                     this.Fields.Where(f => f.Value.Providers.Any(fp => fp == provider)),
-                    s => s.Name,
+                    s => s.Name.StringValue,
                     fp => fp.Key,
                     (s, fp) => new { Ast = s, Field = fp.Value }).ToList();
 
@@ -303,7 +305,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                 var request = new ApiRequest
                                   {
                                       Arguments = usedField.Ast.Arguments.ToJson(context),
-                                      Alias = usedField.Ast.Alias ?? usedField.Ast.Name,
+                                      Alias = usedField.Ast.Alias.Name.StringValue ?? usedField.Ast.Name.StringValue,
                                       FieldName = usedField.Field.FieldName
                                   };
                 var endType = usedField.Field.Type as MergedObjectType;
@@ -336,9 +338,9 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         }
 
         /// <inheritdoc />
-        public override object Resolve(ResolveFieldContext context)
+        public override async ValueTask<object> ResolveAsync(IResolveFieldContext context)
         {
-            var resolve = base.Resolve(context) as JObject;
+            var resolve = await base.ResolveAsync(context) as JObject;
             if (resolve == null)
             {
                 return null;
@@ -362,11 +364,11 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         /// <returns>
         /// The resolved data
         /// </returns>
-        public virtual JObject ResolveData(ResolveFieldContext context, JObject source, bool setLocalRequest = true)
+        public virtual JObject ResolveData(IResolveFieldContext context, JObject source, bool setLocalRequest = true)
         {
             if (setLocalRequest)
             {
-                var localRequest = new JObject { { "f", context.FieldName } };
+                var localRequest = new JObject { { "f", context.FieldDefinition.Name } };
                 if (context.Arguments != null && context.Arguments.Any())
                 {
                     var args =
@@ -409,18 +411,19 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         /// </summary>
         private class GlobalIdResolver : IFieldResolver
         {
+
             /// <inheritdoc />
-            public object Resolve(ResolveFieldContext context)
+            public ValueTask<object> ResolveAsync(IResolveFieldContext context)
             {
                 var id = (context.Source as JObject)?.Property(GlobalIdPropertyName)?.Value;
 
                 if (id == null)
                 {
                     // relay doesn't like null id
-                    return new JObject { { "empty", Guid.NewGuid().ToString("N") } }.PackGlobalId();
+                    return ValueTask.FromResult((object)new JObject { { "empty", Guid.NewGuid().ToString("N") } }.PackGlobalId());
                 }
 
-                return id.PackGlobalId();
+                return ValueTask.FromResult((object)id.PackGlobalId());
             }
         }
     }

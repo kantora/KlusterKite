@@ -16,8 +16,8 @@ namespace KlusterKite.Web.GraphQL.Publisher
     using Akka.Util.Internal;
 
     using global::GraphQL;
-    using global::GraphQL.Http;
     using global::GraphQL.Types;
+    using global::GraphQL.NewtonsoftJson;
 
     using KlusterKite.API.Client;
     using KlusterKite.Security.Attributes;
@@ -25,6 +25,9 @@ namespace KlusterKite.Web.GraphQL.Publisher
     using KlusterKite.Web.GraphQL.Publisher.Internals;
 
     using Newtonsoft.Json.Linq;
+    using Microsoft.AspNetCore.Http;
+    using System.Text;
+    using System.IO;
 
     /// <summary>
     /// Generator of the GraphQL scheme from api providers
@@ -69,8 +72,7 @@ namespace KlusterKite.Web.GraphQL.Publisher
                             continue;
                         }
 
-                        if (!(argumentType is ScalarGraphType) && !(argumentType is IInputGraphType)
-                            && !(argumentType is InputObjectGraphType))
+                        if (!(argumentType is ScalarGraphType) && !(argumentType is InputObjectGraphType))
                         {
                             yield return
                                 $"Field {field.Name} of type {graphType.Name} "
@@ -105,15 +107,25 @@ namespace KlusterKite.Web.GraphQL.Publisher
         /// <returns>List of errors</returns>
         public static IEnumerable<string> CheckSchemaIntrospection(Schema schema)
         {
-            var result = new DocumentExecuter().ExecuteAsync(
-                r =>
-                    {
-                        r.Schema = schema;
-                        r.Query = Queries.IntrospectionQuery;
-                        r.UserContext = new RequestContext();
-                    }).Result;
-            var response = new DocumentWriter(true).Write(result);
-            var json = JObject.Parse(response);
+
+            var opts = new ExecutionOptions
+            {
+                Query = Queries.IntrospectionQuery,
+                Schema = schema
+            };
+
+            var result = new DocumentExecuter().ExecuteAsync(opts).Result;
+            var serializer = new GraphQLSerializer(true);
+            var stringWriter = new StringWriter();
+            serializer.Write(stringWriter, result);
+
+
+
+            var json = JObject.Parse(stringWriter.ToString());
+
+
+
+
             var types =
                 (json.SelectToken("data.__schema.types") as JArray)?.ToDictionary(
                     p => ((JObject)p).Property("name")?.Value,
@@ -290,8 +302,7 @@ namespace KlusterKite.Web.GraphQL.Publisher
                     continue;
                 }
 
-                if (!(fieldResolvedType is ScalarGraphType) && !(fieldResolvedType is IInputGraphType)
-                    && !(fieldResolvedType is InputObjectGraphType))
+                if (!(fieldResolvedType is ScalarGraphType) && !(fieldResolvedType is InputObjectGraphType))
                 {
                     yield return
                         $"Field {field.Name} of type {graphType.Name} "

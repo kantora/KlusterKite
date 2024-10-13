@@ -37,7 +37,7 @@ namespace KlusterKite.Security.Attributes
         {
             if (container.GetTypeInfo().GetCustomAttribute(typeof(PrivilegesContainerAttribute), true) == null)
             {
-                return new PrivilegeDescription[0];
+                return Array.Empty<PrivilegeDescription>();
             }
 
             return SearchDefinedPrivileges(container)

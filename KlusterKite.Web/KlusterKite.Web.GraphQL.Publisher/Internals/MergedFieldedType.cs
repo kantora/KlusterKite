@@ -12,7 +12,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
     using System.Collections.Generic;
     using System.Linq;
 
-    using global::GraphQL.Language.AST;
+    using GraphQLParser.AST;
     using global::GraphQL.Resolvers;
     using global::GraphQL.Types;
 
@@ -21,6 +21,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
     using KlusterKite.Security.Attributes;
     using KlusterKite.Security.Client;
     using KlusterKite.Web.GraphQL.Publisher.GraphTypes;
+    using global::GraphQL;
 
     /// <summary>
     /// The api type with fields description
@@ -58,20 +59,22 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         }
 
         /// <inheritdoc />
-        public override IEnumerable<ApiRequest> GatherSingleApiRequest(Field contextFieldAst, ResolveFieldContext context)
+        public override IEnumerable<ApiRequest> GatherSingleApiRequest(
+            GraphQLField contextFieldAst,
+            IResolveFieldContext context)
         {
             if (this.KeyField != null)
             {
                 yield return new ApiRequest
-                                 {
-                                     Alias = "__id",
-                                     FieldName = this.KeyField.FieldName
-                                 };
+                {
+                    Alias = "__id",
+                    FieldName = this.KeyField.FieldName
+                };
             }
 
             foreach (var field in GetRequestedFields(contextFieldAst.SelectionSet, context, this))
             {
-                if (field.Alias == "__id")
+                if (field.Alias.Name == "__id")
                 {
                     continue;
                 }
@@ -86,7 +89,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                 {
                     localField = this.KeyField;
                 }
-                else if (!this.Fields.TryGetValue(field.Name, out localField))
+                else if (!this.Fields.TryGetValue(field.Name.StringValue, out localField))
                 {
                     continue;
                 }
@@ -109,12 +112,12 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                 }
 
                 var request = new ApiRequest
-                                  {
-                                      Arguments = field.Arguments.ToJson(context),
-                                      FieldName = localField.FieldName,
-                                      Alias = field.Alias ?? field.Name,
-                                      Fields = localField.Type.GatherSingleApiRequest(field, context).ToList()
-                                  };
+                {
+                    Arguments = field.Arguments.ToJson(context),
+                    FieldName = localField.FieldName,
+                    Alias = field.Alias.Name.StringValue ?? field.Name.StringValue,
+                    Fields = localField.Type.GatherSingleApiRequest(field, context).ToList()
+                };
                 if (request.Fields.Count == 0)
                 {
                     request.Fields = null;
@@ -170,14 +173,13 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         protected FieldType ConvertApiField(KeyValuePair<string, MergedField> description, IFieldResolver resolver)
         {
             var field = new FieldType
-                            {
-                                Name = description.Key,
-                                Type = typeof(VirtualGraphType), // to workaround internal library checks
-                                Metadata =
-                                    new Dictionary<string, object> { { MetaDataTypeKey, description.Value } },
-                                Resolver = resolver,
-                                Description = description.Value.Description
-                            };
+            {
+                Name = description.Key,
+                Type = typeof(VirtualGraphType), // to workaround internal library checks
+                Resolver = resolver,
+                Description = description.Value.Description
+            };
+            field.Metadata[MetaDataTypeKey] = description.Value;
             return field;
         }
     }

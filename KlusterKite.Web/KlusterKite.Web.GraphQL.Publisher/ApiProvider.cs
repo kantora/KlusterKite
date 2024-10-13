@@ -39,6 +39,6 @@ namespace KlusterKite.Web.GraphQL.Publisher
         /// <returns>
         /// The resolved data
         /// </returns>
-        public abstract Task<JObject> GetData(List<ApiRequest> requests, RequestContext context);
+        public abstract ValueTask<JObject> GetData(List<ApiRequest> requests, RequestContext context);
     }
 }

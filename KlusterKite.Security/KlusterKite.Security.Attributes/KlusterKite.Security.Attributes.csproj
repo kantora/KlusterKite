@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\..\common.props" />
   <PropertyGroup>
-    <TargetFrameworks>net6.0</TargetFrameworks>
+    <TargetFrameworks>net8.0</TargetFrameworks>
     <PackageId>KlusterKite.Security.Attributes</PackageId>
     <Version>0.0.0.0-local</Version>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -11,7 +11,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net6.0|x64'" />
   <ItemGroup>
-    <PackageReference Include="JetBrains.Annotations" Version="2023.2.0" />
+    <PackageReference Include="JetBrains.Annotations" Version="2023.3.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="7.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
@@ -19,7 +19,7 @@
     <PackageReference Include="System.Runtime" Version="4.3.0" />    
   </ItemGroup>  
 
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net8.0' ">
     <DefineConstants>$(DefineConstants);APPDOMAIN</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">

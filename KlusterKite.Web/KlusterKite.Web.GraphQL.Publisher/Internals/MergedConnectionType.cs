@@ -12,7 +12,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
     using System.Collections.Generic;
     using System.Linq;
 
-    using global::GraphQL.Language.AST;
+    using GraphQLParser.AST;
     using global::GraphQL.Resolvers;
     using global::GraphQL.Types;
 
@@ -22,6 +22,8 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
     using KlusterKite.Web.GraphQL.Publisher.GraphTypes;
 
     using Newtonsoft.Json.Linq;
+    using global::GraphQL;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// The connection representation
@@ -78,15 +80,15 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
 
         /// <inheritdoc />
         public override IEnumerable<ApiRequest> GatherSingleApiRequest(
-            Field contextFieldAst,
-            ResolveFieldContext context)
+            GraphQLField contextFieldAst,
+            IResolveFieldContext context)
         {
             foreach (var field in GetRequestedFields(contextFieldAst.SelectionSet, context, this))
             {
-                switch (field.Name)
+                switch (field.Name.StringValue)
                 {
                     case "count":
-                        yield return new ApiRequest { FieldName = "count", Alias = field.Alias };
+                        yield return new ApiRequest { FieldName = "count", Alias = field.Alias.Name.StringValue };
                         break;
                     case "edges":
                         {
@@ -103,7 +105,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                                         f =>
                                             {
                                                 f.Alias =
-                                                    $"{nodeRequest.Alias ?? nodeRequest.Name}_{f.Alias ?? f.FieldName}";
+                                                    $"{nodeRequest.Alias.Name.StringValue ?? nodeRequest.Name.StringValue}_{f.Alias ?? f.FieldName}";
                                                 return f;
                                             }).ToList());
                             }
@@ -112,7 +114,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                                 new ApiRequest
                                 {
                                     FieldName = "items",
-                                    Alias = field.Alias ?? field.Name,
+                                    Alias = field.Alias?.Name?.StringValue ?? field.Name?.StringValue,
                                     Fields = fields
                                 };
                         }
@@ -125,37 +127,34 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         /// <inheritdoc />
         public override IGraphType GenerateGraphType(NodeInterface nodeInterface, List<TypeInterface> interfaces)
         {
-            var fields = new List<FieldType>
-                             {
-                                 new FieldType
-                                     {
-                                         Name = "count",
-                                         ResolvedType = new IntGraphType(),
-                                         Resolver = new CountResolver(),
-                                         Description =
-                                             "The total count of objects satisfying filter conditions"
-                                     },
-                                 new FieldType
-                                     {
-                                         Name = "edges",
-                                         Description =
-                                             "The list of edges according to filtering and paging conditions",
-                                         ResolvedType = new VirtualGraphType("tmp"),
-                                         Metadata =
-                                             new Dictionary<string, object>
-                                                 {
-                                                     {
-                                                         MetaDataTypeKey,
-                                                         new MergedField(
+            FieldType countField = new FieldType
+            {
+                Name = "count",
+                ResolvedType = new IntGraphType(),
+                Resolver = new CountResolver(),
+                Description =
+                                                         "The total count of objects satisfying filter conditions"
+            };
+            FieldType edgesField = new FieldType
+            {
+                Name = "edges",
+                Description =
+                                                         "The list of edges according to filtering and paging conditions",
+                ResolvedType = new VirtualGraphType("tmp")
+            };
+
+            edgesField.Metadata[MetaDataTypeKey] = new MergedField(
                                                              "edges",
                                                              this.EdgeType,
                                                              this.Provider,
                                                              null,
                                                              EnFieldFlags.IsArray,
-                                                             description: "The list of edges according to filtering and paging conditions")
-                                                     }
-                                                 }
-                                     }
+                                                             description: "The list of edges according to filtering and paging conditions");
+
+            var fields = new List<FieldType>
+                             {
+                                 countField,
+                                 edgesField
                              };
 
             var generateGraphType = new VirtualGraphType(this.ComplexTypeName, fields) { Description = this.Description };
@@ -212,15 +211,15 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         }
 
         /// <inheritdoc />
-        public override object Resolve(ResolveFieldContext context)
+        public override async ValueTask<object> ResolveAsync(IResolveFieldContext context)
         {
-            var source = base.Resolve(context) as JObject;
+            var source = await base.ResolveAsync(context) as JObject;
             if (source == null)
             {
                 return null;
             }
 
-            var localRequest = new JObject { { "f", context.FieldName } };
+            var localRequest = new JObject { { "f", context.FieldAst.Name.StringValue } };
             if (context.Arguments != null && context.Arguments.Any())
             {
                 var args =
@@ -244,10 +243,10 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         private class CountResolver : IFieldResolver
         {
             /// <inheritdoc />
-            public object Resolve(ResolveFieldContext context)
+            public ValueTask<object> ResolveAsync(IResolveFieldContext context)
             {
                 var parentData = context.Source as JObject;
-                return parentData?.GetValue(context.FieldAst.Alias ?? context.FieldAst.Name);
+                return ValueTask.FromResult<object>(parentData?.GetValue(context.FieldAst.Alias?.Name?.StringValue ?? context.FieldAst.Name.StringValue));
             }
         }
     }

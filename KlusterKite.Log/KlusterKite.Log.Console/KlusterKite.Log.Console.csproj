@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\..\common.props" />
   <PropertyGroup>
-    <TargetFrameworks>net6.0</TargetFrameworks>
+    <TargetFrameworks>net8.0</TargetFrameworks>
     <PackageId>KlusterKite.Log.Console</PackageId>
     <Version>0.0.0.0-local</Version>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -27,7 +27,7 @@
     <ProjectReference Include="..\..\KlusterKite.Core\KlusterKite.Core\KlusterKite.Core.csproj" />
   </ItemGroup>
   
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net8.0' ">
     <DefineConstants>$(DefineConstants);APPDOMAIN</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">

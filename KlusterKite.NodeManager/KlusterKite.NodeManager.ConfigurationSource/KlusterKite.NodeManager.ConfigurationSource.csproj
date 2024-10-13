@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\..\common.props" />
   <PropertyGroup>
-    <TargetFrameworks>net6.0</TargetFrameworks>
+    <TargetFrameworks>net8.0</TargetFrameworks>
     <PackageId>KlusterKite.NodeManager.ConfigurationSource</PackageId>
     <Version>0.0.0.0-local</Version>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -16,7 +16,7 @@
     <Compile Remove="Migrations\20170703061628_Empty.Designer.cs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="7.0.9" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="7.0.13" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
   </ItemGroup>
   <ItemGroup>
@@ -34,7 +34,7 @@
     </Compile>
   </ItemGroup>
   
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net8.0' ">
     <DefineConstants>$(DefineConstants);APPDOMAIN</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">

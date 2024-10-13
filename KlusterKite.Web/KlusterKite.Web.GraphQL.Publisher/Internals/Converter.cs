@@ -12,12 +12,12 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
     using System.Collections.Generic;
     using System.Linq;
 
-    using Akka;
+    using KlusterKite.Core.Utils;
 
-    using global::GraphQL.Language.AST;
-    using global::GraphQL.Types;
+    using global::GraphQL;
 
     using Newtonsoft.Json.Linq;
+    using GraphQLParser.AST;
 
     /// <summary>
     /// Provides converter methods
@@ -36,20 +36,20 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         /// <returns>
         /// The corresponding JSON
         /// </returns>
-        public static JObject ToJson(this IEnumerable<Argument> arguments, ResolveFieldContext context)
+        public static JObject ToJson(this IEnumerable<GraphQLArgument> arguments, IResolveFieldContext context)
         {
             var result = new JObject();
             foreach (var argument in arguments)
             {
                 var value = ToJson(argument.Value, context);
-                result.Add(argument.Name, value);
+                result.Add(argument.Name.ToString(), value);
             }
 
             return result;
         }
 
         /// <summary>
-        /// Converts <see cref="ObjectValue"/> to JSON object
+        /// Converts <see cref="GraphQLObjectValue"/> to JSON object
         /// </summary>
         /// <param name="objectValue">
         /// The object value.
@@ -60,20 +60,20 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         /// <returns>
         /// The <see cref="JToken"/>.
         /// </returns>
-        private static JToken ToJson(ObjectValue objectValue, ResolveFieldContext context)
+        private static JToken ToJson(GraphQLObjectValue objectValue, IResolveFieldContext context)
         {
             var result = new JObject();
-            foreach (var field in objectValue.ObjectFields)
+            foreach (var field in objectValue.Fields)
             {
                 var value = ToJson(field.Value, context);
-                result.Add(field.Name, value);
+                result.Add(field.Name.ToString(), value);
             }
 
             return result;
         }
 
         /// <summary>
-        /// Converts <see cref="ObjectValue"/> to JSON object
+        /// Converts <see cref="GraphQLValue"/> to JSON object
         /// </summary>
         /// <param name="value">
         /// The abstract value.
@@ -84,25 +84,25 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         /// <returns>
         /// The <see cref="JToken"/>.
         /// </returns>
-        private static JToken ToJson(IValue value, ResolveFieldContext context)
+        private static JToken ToJson(GraphQLValue value, IResolveFieldContext context)
         {
             return value.Match<JToken>()
-                    .With<VariableReference>(r =>
+                    .With<GraphQLVariable>(r =>
                     {
-                        var variableValue = context.Variables.ValueFor(r.Name);
+                        context.Variables.ValueFor(r.Name, out var variableValue);
                         var token = JToken.FromObject(variableValue);
                         return token;
                     })
-                    .With<IntValue>(v => new JValue(v.Value))
-                    .With<FloatValue>(v => new JValue(v.Value))
-                    .With<StringValue>(v => new JValue(v.Value))
-                    .With<DecimalValue>(v => new JValue(v.Value))
-                    .With<FloatValue>(v => new JValue(v.Value))
-                    .With<BooleanValue>(v => new JValue(v.Value))
-                    .With<LongValue>(v => new JValue(v.Value))
-                    .With<EnumValue>(v => new JValue(v.Name))
-                    .With<ListValue>(v => new JArray(v.Values.Select(sv => ToJson(sv, context))))
-                    .With<ObjectValue>(sv => ToJson(sv, context))
+                    .With<GraphQLIntValue>(v => new JValue(v.Value))
+                    .With<GraphQLFloatValue>(v => new JValue(v.Value))
+                    .With<GraphQLStringValue>(v => new JValue(v.Value))
+                   // .With<GraphQLDecimalValue>(v => new JValue(v.Value))
+                    .With<GraphQLFloatValue>(v => new JValue(v.Value))
+                    .With<GraphQLBooleanValue>(v => new JValue(v.Value))
+                    //.With<GraphQLLongValue>(v => new JValue(v.Value))
+                    .With<GraphQLEnumValue>(v => new JValue(v.Name))
+                    .With<GraphQLListValue>(v => new JArray(v.Values.Select(sv => ToJson(sv, context))))
+                    .With<GraphQLObjectValue>(sv => ToJson(sv, context))
                     .ResultOrDefault(v => null);
         }
     }

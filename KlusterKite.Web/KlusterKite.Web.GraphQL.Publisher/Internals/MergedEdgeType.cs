@@ -11,7 +11,8 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
 {
     using System.Collections.Generic;
     using System.Linq;
-
+    using System.Threading.Tasks;
+    using global::GraphQL;
     using global::GraphQL.Resolvers;
     using global::GraphQL.Types;
 
@@ -61,37 +62,35 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         /// <inheritdoc />
         public override IGraphType GenerateGraphType(NodeInterface nodeInterface, List<TypeInterface> interfaces)
         {
+            FieldType cursorField = new FieldType
+            {
+                Name = "cursor",
+                ResolvedType = new StringGraphType(),
+                Resolver = new CursorResolver(),
+                Description =
+                                                         "A value to use with paging positioning"
+            };
+            FieldType nodeField = new FieldType
+            {
+                Name = "node",
+                ResolvedType = new VirtualGraphType("tmp")
+
+            };
+
+            nodeField.Metadata[MetaDataTypeKey] = new MergedField(
+                "node",
+                this.ObjectType,
+                this.Provider,
+                null,
+                description: ObjectType.Description)
+            {
+                Resolver = new NodeResolver(this.ObjectType)
+            };
+
             var fields = new List<FieldType>
                              {
-                                 new FieldType
-                                     {
-                                         Name = "cursor",
-                                         ResolvedType = new StringGraphType(),
-                                         Resolver = new CursorResolver(),
-                                         Description =
-                                             "A value to use with paging positioning"
-                                     },
-                                 new FieldType
-                                     {
-                                         Name = "node",
-                                         ResolvedType = new VirtualGraphType("tmp"),
-                                         Metadata =
-                                             new Dictionary<string, object>
-                                                 {
-                                                     {
-                                                         MetaDataTypeKey,
-                                                         new MergedField(
-                                                             "node",
-                                                             this.ObjectType,
-                                                             this.Provider,
-                                                             null,
-                                                             description: this.ObjectType.Description)
-                                                             {
-                                                                 Resolver = new NodeResolver(this.ObjectType)
-                                                             }
-                                                     }
-                                                 }
-                                     }
+                                 cursorField,
+                                 nodeField
                              };
 
             var generateGraphType = new VirtualGraphType(this.ComplexTypeName, fields) { Description = this.Description };
@@ -148,10 +147,10 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         }
 
         /// <inheritdoc />
-        public override object Resolve(ResolveFieldContext context)
+        public override async ValueTask<object> ResolveAsync(IResolveFieldContext context)
         {
             var parentData = context.Source as JObject;
-            var token = parentData?.GetValue(context.FieldAst.Alias ?? context.FieldAst.Name);
+            var token = parentData?.GetValue(context.FieldAst.Alias.Name.StringValue ?? context.FieldAst.Name.StringValue);
             if (token == null || (!(token is JArray) && !token.HasValues))
             {
                 return null;
@@ -181,8 +180,9 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                 this.originalType = originalType;
             }
 
+
             /// <inheritdoc />
-            public object Resolve(ResolveFieldContext context)
+            public async ValueTask<object> ResolveAsync(IResolveFieldContext context)
             {
                 var source = context.Source as JObject;
                 if (source == null)
@@ -190,7 +190,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                     return null;
                 }
 
-                var fieldName = context.FieldAst.Alias ?? context.FieldAst.Name;
+                var fieldName = context.FieldAst.Alias.Name.StringValue ?? context.FieldAst.Name.StringValue;
                 var filteredSource = new JObject();
                 var prefix = $"{fieldName}_";
                 foreach (var property in source.Properties().Where(p => p.Name.StartsWith(prefix)))
@@ -209,8 +209,8 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         /// </summary>
         private class CursorResolver : IFieldResolver
         {
-            /// <inheritdoc />
-            public object Resolve(ResolveFieldContext context)
+
+            public async ValueTask<object> ResolveAsync(IResolveFieldContext context)
             {
                 return (context.Source as JObject)?.GetValue("__id");
             }

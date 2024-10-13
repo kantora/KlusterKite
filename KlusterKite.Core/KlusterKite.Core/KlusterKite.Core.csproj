@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\..\common.props" />
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <PackageId>KlusterKite.Core</PackageId>
     <Version>0.0.0.0-local</Version>
     <Description>KlusterKite base plugin description utilities</Description>
@@ -16,22 +16,22 @@
     <EmbeddedResource Include="Resources\akka.hocon" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Autofac" Version="7.0.1" />
-    <PackageReference Include="Akka" Version="1.5.11" />
-    <PackageReference Include="Akka.Cluster" Version="1.5.11" />
-    <PackageReference Include="Akka.Cluster.Sharding" Version="1.5.11" />
-    <PackageReference Include="Akka.Cluster.Tools" Version="1.5.11" />
+    <PackageReference Include="Autofac" Version="7.1.0" />
+    <PackageReference Include="Akka" Version="1.5.14" />
+    <PackageReference Include="Akka.Cluster" Version="1.5.14" />
+    <PackageReference Include="Akka.Cluster.Sharding" Version="1.5.14" />
+    <PackageReference Include="Akka.Cluster.Tools" Version="1.5.14" />
     <PackageReference Include="Akka.DI.AutoFac" Version="1.4.27" />
     <PackageReference Include="Akka.DI.Core" Version="1.4.51" />
-    <PackageReference Include="Akka.Logger.Serilog" Version="1.5.7" />
-    <PackageReference Include="Akka.Remote" Version="1.5.11" />
+    <PackageReference Include="Akka.Logger.Serilog" Version="1.5.12.1" />
+    <PackageReference Include="Akka.Remote" Version="1.5.14" />
 
-    <PackageReference Include="Akka.Serialization.Hyperion" Version="1.5.11" />
+    <PackageReference Include="Akka.Serialization.Hyperion" Version="1.5.14" />
 
-    <PackageReference Include="JetBrains.Annotations" Version="2023.2.0" />
-    <PackageReference Include="Serilog" Version="3.0.1" />    
+    <PackageReference Include="JetBrains.Annotations" Version="2023.3.0" />
+    <PackageReference Include="Serilog" Version="3.1.1" />    
   </ItemGroup>
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net8.0' ">
     <DefineConstants>$(DefineConstants);APPDOMAIN;CONFIGURATION</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.1' ">

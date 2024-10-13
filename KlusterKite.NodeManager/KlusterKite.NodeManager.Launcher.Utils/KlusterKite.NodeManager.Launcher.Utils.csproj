@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\..\common.props" />
   <PropertyGroup>
-    <TargetFrameworks>net6.0</TargetFrameworks>
+    <TargetFrameworks>net8.0</TargetFrameworks>
     <PackageId>KlusterKite.NodeManager.Launcher.Utils</PackageId>
     <Version>0.0.0.0-local</Version>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -20,8 +20,8 @@
     <EmbeddedResource Include="Resources\runtimes.json" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="NuGet.Commands" Version="6.6.1" />
-    <PackageReference Include="NuGet.ProjectModel" Version="6.6.1" />
+    <PackageReference Include="NuGet.Commands" Version="6.7.0" />
+    <PackageReference Include="NuGet.ProjectModel" Version="6.7.0" />
     <PackageReference Include="NuGet.Protocol.Core.v3" Version="4.2.0" />
     <PackageReference Include="NuGet.RuntimeModel" Version="4.2.0" />
   </ItemGroup>
@@ -34,7 +34,7 @@
     <PackageReference Include="RestSharp" Version="110.2.0" />
   </ItemGroup>
   
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net8.0' ">
     <DefineConstants>$(DefineConstants);APPDOMAIN</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">

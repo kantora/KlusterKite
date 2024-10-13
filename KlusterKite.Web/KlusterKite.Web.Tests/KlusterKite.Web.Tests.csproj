@@ -2,7 +2,7 @@
   <Import Project="..\..\common.props" />
 
   <PropertyGroup>
-    <TargetFrameworks>net6.0</TargetFrameworks>
+    <TargetFrameworks>net8.0</TargetFrameworks>
     <PackageId>KlusterKite.Web.Tests</PackageId>
     <Version>0.0.0.0-local</Version>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -17,12 +17,12 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Libuv" Version="1.10.0" />    
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.6.3" />
-    <PackageReference Include="xunit" Version="2.5.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="xunit" Version="2.6.1" />
     <DotNetCliToolReference Include="dotnet-xunit" Version="$(XunitVersion)" />
     <EmbeddedResource Include="GraphQL\Resources\IntrospectionQuery.txt" />
     <EmbeddedResource Include="GraphQL\Resources\SchemaDescriptionTestSnapshot.txt" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.0">
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>    
@@ -52,7 +52,7 @@
     <ProjectReference Include="..\KlusterKite.Web\KlusterKite.Web.csproj" />
   </ItemGroup>
   
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net8.0' ">
     <DefineConstants>$(DefineConstants);APPDOMAIN</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.1' ">

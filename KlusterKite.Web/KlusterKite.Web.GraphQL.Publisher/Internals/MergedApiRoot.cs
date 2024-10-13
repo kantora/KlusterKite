@@ -14,6 +14,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
     using System.Linq;
     using System.Threading.Tasks;
 
+    using GraphQLParser.AST;
     using global::GraphQL.Resolvers;
     using global::GraphQL.Types;
 
@@ -24,6 +25,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
     using KlusterKite.Web.GraphQL.Publisher.GraphTypes;
 
     using Newtonsoft.Json.Linq;
+    using global::GraphQL;
 
     /// <summary>
     /// The merged api root description
@@ -112,10 +114,10 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         {
             var fields = this.Mutations.Select(f => this.ConvertApiField(f, new MutationResolver(f.Value)));
             return new VirtualGraphType("Mutations", fields.ToList())
-                       {
-                           Description =
+            {
+                Description =
                                "The list of all detected mutations"
-                       };
+            };
         }
 
         /// <inheritdoc />
@@ -124,18 +126,10 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
             return $"I{provider.Description.ApiName}";
         }
 
-        /// <summary>
-        /// Resolves request value
-        /// </summary>
-        /// <param name="context">
-        /// The request context
-        /// </param>
-        /// <returns>
-        /// Resolved value
-        /// </returns>
-        public override object Resolve(ResolveFieldContext context)
+        /// <inheritdoc />
+        public override async ValueTask<object> ResolveAsync(IResolveFieldContext context)
         {
-            return this.DoApiRequests(context, context.UserContext as RequestContext);
+            return await this.DoApiRequests(context, context.UserContext as RequestContext);
         }
 
         /// <summary>
@@ -168,9 +162,9 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         /// <returns>
         /// The request data
         /// </returns>
-        private async Task<JObject> DoApiRequests(ResolveFieldContext context, RequestContext requestContext)
+        private async ValueTask<JObject> DoApiRequests(IResolveFieldContext context, RequestContext requestContext)
         {
-            var taskList = new List<Task<JObject>>();
+            var taskList = new List<ValueTask<JObject>>();
             foreach (var provider in this.Providers.Select(fp => fp.Provider))
             {
                 var request = this.GatherMultipleApiRequest(provider, context.FieldAst, context).ToList();
@@ -187,12 +181,12 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
             }
             else
             {
-                var responses = await Task.WhenAll(taskList);
+                var responses = await Task.WhenAll(taskList.Select(t => t.AsTask()));
                 var options = new JsonMergeSettings
-                                  {
-                                      MergeArrayHandling = MergeArrayHandling.Merge,
-                                      MergeNullValueHandling = MergeNullValueHandling.Ignore
-                                  };
+                {
+                    MergeArrayHandling = MergeArrayHandling.Merge,
+                    MergeNullValueHandling = MergeNullValueHandling.Ignore
+                };
 
                 var response = responses.Aggregate(
                     new JObject(),
@@ -243,6 +237,8 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                 this.provider = this.mergedField.Providers.First();
             }
 
+
+
             /// <summary>
             /// Resolves mutation value (sends request to API)
             /// </summary>
@@ -252,7 +248,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
             /// <returns>
             /// The <see cref="object"/>.
             /// </returns>
-            public object Resolve(ResolveFieldContext context)
+            public virtual async ValueTask<object> ResolveAsync(IResolveFieldContext context)
             {
                 var connectionMutationResultType = this.mergedField.Type as MergedConnectionMutationResultType;
                 if (connectionMutationResultType != null)
@@ -274,7 +270,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                             untypedMutationResultType).Result;
                 }
 
-                return this.DoApiRequests(context, context.UserContext as RequestContext);
+                return await this.DoApiRequests(context, context.UserContext as RequestContext);
             }
 
             /// <summary>
@@ -289,19 +285,19 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
             /// <returns>
             /// The request data
             /// </returns>
-            private Task<JObject> DoApiRequests(ResolveFieldContext context, RequestContext requestContext)
+            private async ValueTask<JObject> DoApiRequests(IResolveFieldContext context, RequestContext requestContext)
             {
                 var request = new MutationApiRequest
-                                  {
-                                      Arguments = context.FieldAst.Arguments.ToJson(context),
-                                      FieldName = this.mergedField.FieldName,
-                                      Fields =
+                {
+                    Arguments = context.FieldAst.Arguments.ToJson(context),
+                    FieldName = this.mergedField.FieldName,
+                    Fields =
                                           this.mergedField.Type.GatherSingleApiRequest(
                                               context.FieldAst,
                                               context).ToList()
-                                  };
+                };
 
-                var apiRequests = this.provider.GetData(new List<ApiRequest> { request }, requestContext);
+                var apiRequests = await this.provider.GetData(new List<ApiRequest> { request }, requestContext);
                 return apiRequests;
             }
 
@@ -318,8 +314,8 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
             /// <returns>
             /// The request data
             /// </returns>
-            private async Task<JObject> DoConnectionMutationApiRequests(
-                ResolveFieldContext context,
+            private async ValueTask<JObject> DoConnectionMutationApiRequests(
+                IResolveFieldContext context,
                 RequestContext requestContext,
                 MergedConnectionMutationResultType responseType)
             {
@@ -366,11 +362,11 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                                                       }
                                               };
                 var idRequestRequest = new ApiRequest
-                                           {
-                                               Alias = "__idRequest",
-                                               FieldName = "result",
-                                               Fields = idSubRequestRequest
-                                           };
+                {
+                    Alias = "__idRequest",
+                    FieldName = "result",
+                    Fields = idSubRequestRequest
+                };
                 requestedFields.Add(idRequestRequest);
 
                 var topFields =
@@ -380,8 +376,8 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
 
                 foreach (var nodeRequest in nodeRequests)
                 {
-                    var nodeAlias = nodeRequest.Alias ?? nodeRequest.Name;
-                    switch (nodeRequest.Name)
+                    var nodeAlias = nodeRequest.Alias.Name.StringValue ?? nodeRequest.Name.StringValue;
+                    switch (nodeRequest.Name.StringValue)
                     {
                         case "node":
                             var nodeFields = nodeType.GatherSingleApiRequest(nodeRequest, context).ToList();
@@ -400,7 +396,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                                         f =>
                                             {
                                                 f.Alias =
-                                                    $"{edgeNodeRequests.Alias ?? edgeNodeRequests.Name}_{f.Alias ?? f.FieldName}";
+                                                    $"{edgeNodeRequests.Alias.Name ?? edgeNodeRequests.Name}_{f.Alias ?? f.FieldName}";
                                                 return f;
                                             }));
                             }
@@ -420,22 +416,22 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                     {
                         requestedFields.Add(
                             new ApiRequest
-                                {
-                                    FieldName = "errors",
-                                    Alias = field.Alias,
-                                    Fields =
+                            {
+                                FieldName = "errors",
+                                Alias = field.Alias.Name.ToString(),
+                                Fields =
                                         responseType.ErrorType.GatherSingleApiRequest(field, context)
                                             .ToList()
-                                });
+                            });
                     }
                 }
 
                 var request = new MutationApiRequest
-                                  {
-                                      Arguments = arguments,
-                                      FieldName = this.mergedField.FieldName,
-                                      Fields = requestedFields
-                                  };
+                {
+                    Arguments = arguments,
+                    FieldName = this.mergedField.FieldName,
+                    Fields = requestedFields
+                };
 
                 var data = await this.provider.GetData(new List<ApiRequest> { request }, requestContext);
                 if (data != null)
@@ -473,8 +469,8 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
             /// <returns>
             /// The request data
             /// </returns>
-            private async Task<JObject> DoUntypedMutationApiRequests(
-                ResolveFieldContext context,
+            private async ValueTask<JObject> DoUntypedMutationApiRequests(
+                IResolveFieldContext context,
                 RequestContext requestContext,
                 MergedUntypedMutationResult responseType)
             {
@@ -515,11 +511,11 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                 }
 
                 var request = new MutationApiRequest
-                                  {
-                                      Arguments = arguments,
-                                      FieldName = this.mergedField.FieldName,
-                                      Fields = requestedFields
-                                  };
+                {
+                    Arguments = arguments,
+                    FieldName = this.mergedField.FieldName,
+                    Fields = requestedFields
+                };
 
                 var data = await this.provider.GetData(new List<ApiRequest> { request }, requestContext);
                 data?.Add("clientMutationId", arguments?.Property("clientMutationId")?.ToObject<string>());

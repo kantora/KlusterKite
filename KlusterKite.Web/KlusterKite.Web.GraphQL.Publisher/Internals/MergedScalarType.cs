@@ -11,7 +11,8 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
 {
     using System;
     using System.Collections.Generic;
-
+    using System.Threading.Tasks;
+    using global::GraphQL;
     using global::GraphQL.Types;
 
     using KlusterKite.API.Client;
@@ -76,9 +77,9 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         }
 
         /// <inheritdoc />
-        public override object Resolve(ResolveFieldContext context)
+        public override async ValueTask<object> ResolveAsync(IResolveFieldContext context)
         {
-            var resolve = base.Resolve(context);
+            var resolve = await base.ResolveAsync(context);
             if (resolve is JArray)
             {
                 return resolve;
