@@ -198,6 +198,9 @@ namespace KlusterKite.Core.Tests.Configuration
 
             /// <inheritdoc />
             public string ShardId(object message) => message.GetType().GetTypeInfo().Assembly.FullName;
+
+            /// <inheritdoc />
+            public string ShardId(string entityId, object messageHint = null) => messageHint?.GetType().GetTypeInfo().Assembly.FullName ?? entityId;
         }
     }
 }

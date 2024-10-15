@@ -20,8 +20,8 @@
     <EmbeddedResource Include="Resources\runtimes.json" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="NuGet.Commands" Version="6.7.0" />
-    <PackageReference Include="NuGet.ProjectModel" Version="6.7.0" />
+    <PackageReference Include="NuGet.Commands" Version="6.11.1" />
+    <PackageReference Include="NuGet.ProjectModel" Version="6.11.1" />
     <PackageReference Include="NuGet.Protocol.Core.v3" Version="4.2.0" />
     <PackageReference Include="NuGet.RuntimeModel" Version="4.2.0" />
   </ItemGroup>

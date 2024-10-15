@@ -20,9 +20,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Akka.TestKit" Version="1.5.14" />
-    <PackageReference Include="Akka.TestKit.Xunit2" Version="1.5.14" />
-    <PackageReference Include="Serilog.Sinks.TextWriter" Version="2.1.0" />
+    <PackageReference Include="Akka.TestKit" Version="1.5.30" />
+    <PackageReference Include="Akka.TestKit.Xunit2" Version="1.5.30" />
+    <PackageReference Include="Serilog.Sinks.TextWriter" Version="3.0.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\KlusterKite.Core\KlusterKite.Core.csproj" />
