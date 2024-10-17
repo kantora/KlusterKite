@@ -15,7 +15,7 @@ namespace KlusterKite.Monitoring.Actors
 
     using Akka.Actor;
     using Akka.Cluster;
-
+    using Akka.Event;
     using JetBrains.Annotations;
 
     using KlusterKite.LargeObjects;
@@ -65,7 +65,7 @@ namespace KlusterKite.Monitoring.Actors
                                 },
                                 this.Self));
             this.ReceiveAsync<ParcelNotification>(this.OnParcel);
-            Context.System.Log.Info("{Type}: started", this.GetType().Name);
+            Context.System.Log.Log(LogLevel.InfoLevel, "{Type}: started", [this.GetType().Name]);
         }
 
         /// <summary>

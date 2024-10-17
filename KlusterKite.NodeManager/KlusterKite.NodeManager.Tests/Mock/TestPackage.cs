@@ -16,6 +16,7 @@ namespace KlusterKite.NodeManager.Tests.Mock
 
     using NuGet.Packaging;
     using NuGet.Packaging.Core;
+    using NuGet.Protocol;
     using NuGet.Protocol.Core.Types;
     using NuGet.Versioning;
 
@@ -84,6 +85,23 @@ namespace KlusterKite.NodeManager.Tests.Mock
 
         /// <inheritdoc />
         public string Title { get; }
+
+        public Uri ReadmeUrl { get; }
+
+        public Uri PackageDetailsUrl { get; }
+
+        public IReadOnlyList<string> OwnersList { get; }
+
+        public bool PrefixReserved { get; }
+
+        public LicenseMetadata LicenseMetadata { get; }
+
+        public IEnumerable<PackageVulnerabilityMetadata> Vulnerabilities { get; }
+
+        public Task<PackageDeprecationMetadata> GetDeprecationMetadataAsync()
+        {
+            throw new NotImplementedException();
+        }
 
         /// <inheritdoc />
         public Task<IEnumerable<VersionInfo>> GetVersionsAsync()

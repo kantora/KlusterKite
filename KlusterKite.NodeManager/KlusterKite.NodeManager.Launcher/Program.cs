@@ -29,6 +29,7 @@ namespace KlusterKite.NodeManager.Launcher
 
     using RestSharp;
     using RestSharp.Authenticators;
+    using RestSharp.Authenticators.OAuth2;
 
     /// <summary>
     /// KlusterKite Node launcher
@@ -309,9 +310,10 @@ namespace KlusterKite.NodeManager.Launcher
                 var authenticator = new OAuth2AuthorizationRequestHeaderAuthenticator(
                     this.CurrentApiToken.AccessToken,
                     "Bearer");
-                var client = new RestClient(this.ConfigurationUrl) { Timeout = 5000, Authenticator = authenticator };
+                var options = new RestClientOptions(this.ConfigurationUrl) { Authenticator = authenticator, Timeout = new TimeSpan(0,0,5) };
+                var client = new RestClient(options);
 
-                var request = new RestRequest { Method = Method.POST };
+                var request = new RestRequest { Method = Method.Post };
                 Console.WriteLine($"Requesting configuration for {this.ContainerType} with runtime {this.Runtime} and {PackageRepositoryExtensions.CurrentRuntime}");
                 request.AddJsonBody(
                     new NewNodeTemplateRequest
@@ -322,7 +324,7 @@ namespace KlusterKite.NodeManager.Launcher
                             Runtime = this.Runtime
                         });
 
-                var response = client.ExecuteTaskAsync<NodeStartUpConfiguration>(request).GetAwaiter().GetResult();
+                var response = client.ExecuteAsync<NodeStartUpConfiguration>(request).GetAwaiter().GetResult();
 
                 if (response.ResponseStatus != ResponseStatus.Completed
                     || response.StatusCode == HttpStatusCode.BadGateway)
@@ -361,16 +363,17 @@ namespace KlusterKite.NodeManager.Launcher
         private bool GetToken()
         {
             this.CurrentApiToken = null;
-            var client = new RestClient(this.AuthenticationUrl) { Timeout = 5000 };
+            var options = new RestClientOptions(this.AuthenticationUrl) { Timeout = new TimeSpan(0, 0, 5) };
+            var client = new RestClient(options);
 
-            var request = new RestRequest { Method = Method.POST };
+            var request = new RestRequest { Method = Method.Post };
             request.AddParameter("grant_type", "client_credentials");
             request.AddParameter("client_id", this.ApiClientId);
             request.AddParameter("client_secret", this.ApiClientSecret);
 
             while (true)
             {
-                var result = client.ExecuteTaskAsync(request).GetAwaiter().GetResult();
+                var result = client.ExecuteAsync(request).GetAwaiter().GetResult();
                 if (result.ResponseStatus != ResponseStatus.Completed 
                     || result.StatusCode == HttpStatusCode.BadGateway 
                     || result.StatusCode == HttpStatusCode.NotFound)

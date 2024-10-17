@@ -17,7 +17,7 @@ namespace KlusterKite.NodeManager.Tests
     using System.Threading.Tasks;
 
     using Akka.Configuration;
-
+    using Akka.Event;
     using Autofac;
 
     using KlusterKite.Core;
@@ -38,7 +38,7 @@ namespace KlusterKite.NodeManager.Tests
 
     using RestSharp;
     using RestSharp.Authenticators;
-
+    using RestSharp.Authenticators.OAuth2;
     using Xunit;
     using Xunit.Abstractions;
 
@@ -74,9 +74,15 @@ namespace KlusterKite.NodeManager.Tests
         {
             this.Sys.StartNameSpaceActorsFromConfiguration();
             this.ExpectNoMsg(TimeSpan.FromSeconds(1));
-            var client = new RestClient($"http://localhost:{this.Port}") { Timeout = 5000 };
-
+            var options = new RestClientOptions($"http://localhost:{this.Port}")
+            {
+                Timeout = new TimeSpan(0, 0, 5)
+            };
+            var client = new RestClient(options);
             var token = await Authenticate(client);
+
+            options.Authenticator = new OAuth2AuthorizationRequestHeaderAuthenticator(token, "Bearer");
+            client = new RestClient(options);
 
             var query = @"
                 {
@@ -90,13 +96,12 @@ namespace KlusterKite.NodeManager.Tests
                 }
              ";
 
-            var request = new RestRequest { Resource = "/api/1.x/graphQL/", Method = Method.POST };
-            client.Authenticator = new OAuth2AuthorizationRequestHeaderAuthenticator(token, "Bearer");
+            var request = new RestRequest { Resource = "/api/1.x/graphQL/", Method = Method.Post };
             request.AddHeader("Accept", "application/json, text/json");
             var body = $"{{\"query\": {JsonConvert.SerializeObject(query)}, \"variables\": null}}";
             request.AddParameter("application/json", body, ParameterType.RequestBody);
-            var result = await client.ExecuteTaskAsync(request);
-            
+            var result = await client.ExecuteAsync(request);
+
             Assert.Equal(ResponseStatus.Completed, result.ResponseStatus);
             Assert.Equal(HttpStatusCode.OK, result.StatusCode);
 
@@ -116,7 +121,11 @@ namespace KlusterKite.NodeManager.Tests
         {
             this.Sys.StartNameSpaceActorsFromConfiguration();
             this.ExpectNoMsg(TimeSpan.FromSeconds(1));
-            var client = new RestClient($"http://localhost:{this.Port}") { Timeout = 5000 };
+            var options = new RestClientOptions($"http://localhost:{this.Port}")
+            {
+                Timeout = new TimeSpan(0, 0, 5)
+            };
+            var client = new RestClient(options);
 
             var token = await Authenticate(client);
 
@@ -159,19 +168,20 @@ namespace KlusterKite.NodeManager.Tests
               }}
             }}
             ";
-            
-            var request = new RestRequest { Resource = "/api/1.x/graphQL/", Method = Method.POST };
-            client.Authenticator = new OAuth2AuthorizationRequestHeaderAuthenticator(token, "Bearer");
+
+            var request = new RestRequest { Resource = "/api/1.x/graphQL/", Method = Method.Post };
+            options.Authenticator = new OAuth2AuthorizationRequestHeaderAuthenticator(token, "Bearer");
+            client = new RestClient(options);
             request.AddHeader("Accept", "application/json, text/json");
             var body = $"{{\"query\": {JsonConvert.SerializeObject(query)}, \"variables\": {variables}}}";
             request.AddParameter("application/json", body, ParameterType.RequestBody);
-            var result = await client.ExecuteTaskAsync(request);
+            var result = await client.ExecuteAsync(request);
 
             Assert.Equal(ResponseStatus.Completed, result.ResponseStatus);
 
             if (result.Content != null)
             {
-                this.Sys.Log.Info("RESPONSE CONTENT: {content}", result.Content);
+                this.Sys.Log.Log(LogLevel.InfoLevel, null, "RESPONSE CONTENT: {content}", result.Content);
             }
 
             Assert.Equal(HttpStatusCode.OK, result.StatusCode);
@@ -195,12 +205,12 @@ namespace KlusterKite.NodeManager.Tests
         /// <returns>The access token</returns>
         private static async Task<string> Authenticate(RestClient client)
         {
-            var authenticationRequest = new RestRequest { Method = Method.POST, Resource = "/api/1.x/security/token" };
+            var authenticationRequest = new RestRequest { Method = Method.Post, Resource = "/api/1.x/security/token" };
             authenticationRequest.AddParameter("grant_type", "password");
             authenticationRequest.AddParameter("username", "admin");
             authenticationRequest.AddParameter("password", "admin");
             authenticationRequest.AddParameter("client_id", WebApplication.WebApplicationClientId);
-            var authenticationResult = await client.ExecuteTaskAsync<TokenResponse>(authenticationRequest);
+            var authenticationResult = await client.ExecuteAsync<TokenResponse>(authenticationRequest);
 
             Assert.Equal(ResponseStatus.Completed, authenticationResult.ResponseStatus);
             Assert.Equal(HttpStatusCode.OK, authenticationResult.StatusCode);
@@ -277,7 +287,7 @@ namespace KlusterKite.NodeManager.Tests
                                new KlusterKite.NodeManager.ConfigurationSource.Installer(),
                                new KlusterKite.NodeManager.Authentication.Installer(),
                                new KlusterKite.NodeManager.Installer(),
-                               new Installer(), 
+                               new Installer(),
                            }.ToList();
 
                 // ReSharper restore RedundantNameQualifier

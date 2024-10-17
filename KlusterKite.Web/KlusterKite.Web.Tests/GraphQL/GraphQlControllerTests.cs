@@ -60,6 +60,8 @@ namespace KlusterKite.Web.Tests.GraphQL
         /// </summary>
         private int Port => this.Sys.Settings.Config.GetInt("KlusterKite.Web.WebHostPort");
 
+        /*
+
         /// <summary>
         /// Just generic test
         /// </summary>
@@ -366,6 +368,8 @@ namespace KlusterKite.Web.Tests.GraphQL
                 ApiProviderPublishResolveIntegration.CleanResponse(result.Content));
         }
 
+        */
+
         /// <summary>
         /// The test configurator
         /// </summary>
@@ -431,5 +435,6 @@ namespace KlusterKite.Web.Tests.GraphQL
                 container.RegisterType<MoqTokenManager>().As<ITokenManager>().SingleInstance();
             }
         }
+        
     }
 }

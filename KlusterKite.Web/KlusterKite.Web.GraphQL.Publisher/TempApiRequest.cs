@@ -10,8 +10,8 @@
 namespace KlusterKite.Web.GraphQL.Publisher
 {
     using System.Collections.Generic;
+    using global::GraphQL.Execution;
 
-    using global::GraphQL.Language.AST;
 
     /// <summary>
     /// The api request
@@ -21,7 +21,7 @@ namespace KlusterKite.Web.GraphQL.Publisher
         /// <summary>
         /// Gets or sets the field arguments
         /// </summary>
-        public Arguments Arguments { get; set; }
+        public List<ArgumentValue> Arguments { get; set; }
 
         /// <summary>
         /// Gets or sets the field name

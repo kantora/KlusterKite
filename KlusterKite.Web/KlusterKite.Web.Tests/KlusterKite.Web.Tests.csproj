@@ -17,7 +17,8 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Libuv" Version="1.10.0" />    
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />    
+    <PackageReference Include="RestSharp" Version="112.1.0" />
     <PackageReference Include="xunit" Version="2.9.2" />
     <DotNetCliToolReference Include="dotnet-xunit" Version="$(XunitVersion)" />
     <EmbeddedResource Include="GraphQL\Resources\IntrospectionQuery.txt" />

@@ -13,7 +13,7 @@ namespace KlusterKite.NodeManager.Tests.Mock
     using System.Collections.Generic;
     using System.IO;
     using System.Runtime.Versioning;
-
+    using NuGet.Frameworks;
     using NuGet.Packaging;
 
     /// <summary>
@@ -37,6 +37,10 @@ namespace KlusterKite.NodeManager.Tests.Mock
 
         /// <inheritdoc />
         public FrameworkName TargetFramework { get; set; }
+
+        public NuGetFramework NuGetFramework { get; set; }
+
+        public DateTimeOffset LastWriteTime { get; set; }
 
         /// <inheritdoc />
         public Stream GetStream()

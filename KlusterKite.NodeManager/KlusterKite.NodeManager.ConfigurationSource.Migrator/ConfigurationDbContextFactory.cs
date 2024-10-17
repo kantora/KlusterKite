@@ -10,7 +10,6 @@
 namespace KlusterKite.NodeManager.ConfigurationSource.Migrator
 {
     using Microsoft.EntityFrameworkCore;
-    using Microsoft.EntityFrameworkCore.Infrastructure;
 
     /// <summary>
     /// Creates context in with test database
@@ -18,7 +17,7 @@ namespace KlusterKite.NodeManager.ConfigurationSource.Migrator
     public class ConfigurationDbContextFactory : IDbContextFactory<ConfigurationContext>
     {
         /// <inheritdoc />
-        public ConfigurationContext Create(DbContextFactoryOptions options)
+        public ConfigurationContext CreateDbContext()
         {
             var builder = new DbContextOptionsBuilder<ConfigurationContext>();
             builder.UseNpgsql("configurationContext", b => b.MigrationsAssembly("KlusterKite.NodeManager.ConfigurationSource"));

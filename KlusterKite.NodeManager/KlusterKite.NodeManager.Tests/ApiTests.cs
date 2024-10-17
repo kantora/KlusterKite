@@ -12,7 +12,7 @@ namespace KlusterKite.NodeManager.Tests
     using System.Collections.Generic;
 
     using Akka.Actor;
-
+    using GraphQL;
     using GraphQL.Utilities;
 
     using KlusterKite.NodeManager.Tests.Mock;
@@ -69,14 +69,13 @@ namespace KlusterKite.NodeManager.Tests
                 hasSchemaErrors = true;
                 this.output.WriteLine($"Schema error: {error}");
             }
-            
-            using (var printer = new SchemaPrinter(schema))
-            {
-                var description = printer.Print();
-                this.output.WriteLine("-------- Schema -----------");
-                this.output.WriteLine(description);
-                Assert.False(string.IsNullOrWhiteSpace(description));
-            }
+
+
+            var description = schema.Print();
+            this.output.WriteLine("-------- Schema -----------");
+            this.output.WriteLine(description);
+            Assert.False(string.IsNullOrWhiteSpace(description));
+
 
             Assert.False(hasSchemaErrors);
 

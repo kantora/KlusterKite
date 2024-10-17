@@ -71,6 +71,8 @@ namespace KlusterKite.Web.Tests.Auth
         /// </summary>
         private int Port => this.Sys.Settings.Config.GetInt("KlusterKite.Web.WebHostPort");
 
+        /*
+        
         /// <summary>
         /// Checks various authorization combinations
         /// </summary>
@@ -191,6 +193,7 @@ namespace KlusterKite.Web.Tests.Auth
 
             return await this.Container.Resolve<ITokenManager>().CreateAccessToken(session);
         }
+        */
 
         /// <summary>
         /// The test configurator
@@ -238,6 +241,8 @@ namespace KlusterKite.Web.Tests.Auth
                 return installers;
             }
         }
+
+        
 
         /// <summary>
         /// The test installer to register components

@@ -59,7 +59,7 @@ namespace KlusterKite.Web.GraphQL.Publisher
         public bool UseJsonRepack { get; set; }
 
         /// <inheritdoc />
-        public override async Task<JObject> GetData(List<ApiRequest> requests, RequestContext context)
+        public override async ValueTask<JObject> GetData(List<ApiRequest> requests, RequestContext context)
         {
             JObject result;
             var mutations = requests.OfType<MutationApiRequest>().ToList();

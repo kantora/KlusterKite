@@ -10,7 +10,7 @@
 namespace KlusterKite.Web.GraphQL.Publisher.Internals
 {
     using System.Collections.Generic;
-
+    using System.Threading.Tasks;
     using global::GraphQL.Resolvers;
     using global::GraphQL.Types;
 
@@ -134,10 +134,10 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
             }
 
             /// <inheritdoc />
-            public object Resolve(ResolveFieldContext context)
+            public ValueTask<object> ResolveAsync(global::GraphQL.IResolveFieldContext context)
             {
                 var token = (context.Source as JObject)?.Property("result")?.Value;
-                return this.resultType is MergedScalarType ? (token as JValue)?.Value : token;
+                return new ValueTask<object>(this.resultType is MergedScalarType ? (token as JValue)?.Value : token);
             }
         }
     }

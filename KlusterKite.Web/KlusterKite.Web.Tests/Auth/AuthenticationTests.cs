@@ -16,7 +16,7 @@ namespace KlusterKite.Web.Tests.Auth
     using System.Threading.Tasks;
 
     using Akka.Configuration;
-
+    using Akka.Event;
     using Autofac;
 
     using JetBrains.Annotations;
@@ -94,9 +94,14 @@ namespace KlusterKite.Web.Tests.Auth
         {
             this.ExpectNoMsg();
 
-            var client = new RestClient($"http://localhost:{this.Port}") { Timeout = 5000 };
+            // Creates a client using the options object
+            var options = new RestClientOptions($"http://localhost:{this.Port}")
+            {
+                Timeout = new TimeSpan(0, 0, 1)
+            };
+            var client = new RestClient(options);
 
-            var request = new RestRequest { Method = Method.POST, Resource = "/api/1.x/security/token" };
+            var request = new RestRequest { Method = Method.Post, Resource = "/api/1.x/security/token" };
             request.AddParameter("grant_type", "password");
             request.AddParameter("username", userName);
             request.AddParameter("password", userPassword);
@@ -106,13 +111,14 @@ namespace KlusterKite.Web.Tests.Auth
                 request.AddParameter("client_secret", clientSecret);
             }
 
-            var result = await client.ExecuteTaskAsync<TokenResponse>(request);
+            var result = await client.ExecuteAsync<TokenResponse>(request);
 
             Assert.Equal(ResponseStatus.Completed, result.ResponseStatus);
             Assert.Equal(expectedResult, result.StatusCode);
 
             if (expectedResult == HttpStatusCode.OK)
             {
+                this.Sys.Log.Log(LogLevel.InfoLevel, "Response: {Response}", [result.Content]);
                 this.Sys.Log.Info("Response: {Response}", result.Content);
                 var tokenDescription = result.Data;
                 var tokenManager = this.Container.Resolve<ITokenManager>();
@@ -174,9 +180,14 @@ namespace KlusterKite.Web.Tests.Auth
                                       DateTimeOffset.Now.AddMinutes(1)))
                             : Guid.NewGuid().ToString("N");
 
-            var client = new RestClient($"http://localhost:{this.Port}") { Timeout = 5000 };
+            // Creates a client using the options object
+            var options = new RestClientOptions($"http://localhost:{this.Port}")
+            {
+                Timeout = new TimeSpan(0, 0, 1)
+            };
+            var client = new RestClient(options);
 
-            var request = new RestRequest { Method = Method.POST, Resource = "/api/1.x/security/token" };
+            var request = new RestRequest { Method = Method.Post, Resource = "/api/1.x/security/token" };
             request.AddParameter("grant_type", "refresh_token");
             request.AddParameter("refresh_token", token);
             request.AddParameter("client_id", clientId);
@@ -185,7 +196,7 @@ namespace KlusterKite.Web.Tests.Auth
                 request.AddParameter("client_secret", clientSecret);
             }
 
-            var result = await client.ExecuteTaskAsync(request);
+            var result = await client.ExecuteAsync(request);
             Assert.Equal(expectedResult, result.StatusCode);
             if (expectedResult == HttpStatusCode.OK)
             {

@@ -13,7 +13,7 @@ namespace KlusterKite.Monitoring
     using System.Threading.Tasks;
 
     using Akka.Actor;
-
+    using Akka.Event;
     using JetBrains.Annotations;
 
     using KlusterKite.API.Attributes;
@@ -72,7 +72,7 @@ namespace KlusterKite.Monitoring
             }
             catch (Exception exception)
             {
-                this.system.Log.Error(exception, "{Type}: error on GetClusterTree", this.GetType().Name);
+                this.system.Log.Log(LogLevel.ErrorLevel, exception, "{Type}: error on GetClusterTree", this.GetType().Name);
                 throw;
             }
         }

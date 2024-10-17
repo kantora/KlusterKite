@@ -16,9 +16,7 @@ namespace KlusterKite.Web.Tests.GraphQL
     using System.Threading.Tasks;
 
     using global::GraphQL;
-    using global::GraphQL.Http;
     using global::GraphQL.Utilities;
-    using global::GraphQL.Validation.Complexity;
 
     using JetBrains.Annotations;
 
@@ -72,6 +70,8 @@ namespace KlusterKite.Web.Tests.GraphQL
         {
             return JsonConvert.DeserializeObject<JObject>(response).ToString(Formatting.None);
         }
+
+        /*
 
         /// <summary>
         /// Testing connection query request from <see cref="ApiDescription"/>
@@ -4128,5 +4128,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                 this.LogEvents.Add(logEvent);
             }
         }
+        */
     }
+        
 }

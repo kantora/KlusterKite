@@ -17,8 +17,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net6.0|x64'" />
   <ItemGroup>
     <PackageReference Include="NuGet.Packaging" Version="6.11.1" />
-    <PackageReference Include="NuGet.Protocol.Core.Types" Version="4.2.0" />
-    <PackageReference Include="NuGet.Protocol.Core.v3" Version="4.2.0" />
+    <PackageReference Include="NuGet.Protocol" Version="6.11.1" />
     <PackageReference Include="NuGet.Versioning" Version="6.11.1" />
   </ItemGroup>
   <ItemGroup>

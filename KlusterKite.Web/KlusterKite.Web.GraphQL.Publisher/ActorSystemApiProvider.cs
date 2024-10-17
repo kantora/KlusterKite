@@ -60,7 +60,7 @@ namespace KlusterKite.Web.GraphQL.Publisher
         public ConcurrentDictionary<Address, IActorRef> Endpoints { get; } = new ConcurrentDictionary<Address, IActorRef>();
 
         /// <inheritdoc />
-        public override async Task<JObject> GetData(List<ApiRequest> requests, RequestContext context)
+        public override async ValueTask<JObject> GetData(List<ApiRequest> requests, RequestContext context)
         {
             var endpoint = this.GetEndpoint();
             if (endpoint == null)

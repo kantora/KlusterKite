@@ -22,6 +22,7 @@ namespace KlusterKite.NodeManager.FallbackPackageFixer
 
     using NuGet.Common;
     using NuGet.Packaging;
+    using NuGet.Protocol;
 
     /// <summary>
     /// Fixes the list of packages for dependencies in fall-back files
@@ -59,7 +60,7 @@ namespace KlusterKite.NodeManager.FallbackPackageFixer
             var description = JsonConvert.DeserializeObject<NodeStartUpConfiguration>(File.ReadAllText(fileName));
 
             var installedMetadata = args.Skip(1).SelectMany(
-                d => NuGet.Protocol.LocalFolderUtility.GetPackagesV2(Path.GetFullPath(d), NullLogger.Instance).Select(p => p.Nuspec))
+                d => LocalFolderUtility.GetPackagesV2(Path.GetFullPath(d), NullLogger.Instance).Select(p => p.Nuspec))
                 .ToList();
 
             Console.WriteLine("Installed packages: ");

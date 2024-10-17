@@ -16,7 +16,7 @@ namespace KlusterKite.Web.Tests
     using Akka.Cluster;
     using Akka.Configuration;
     using Akka.DI.Core;
-
+    using Akka.Event;
     using Autofac;
 
     using KlusterKite.Core;
@@ -60,7 +60,7 @@ namespace KlusterKite.Web.Tests
                     ClusterExtensions.MemberCreate(new UniqueAddress(address, 1), 1, MemberStatus.Up, ImmutableHashSet.Create("Web"))));
             this.ExpectTestMsg<WebDescriptionRequest>();
 
-            Assert.Equal(1, configurator.UnderlyingActor.KnownActiveNodes.Count);
+            Assert.Single(configurator.UnderlyingActor.KnownActiveNodes);
 
             configurator.Tell(
                 new WebDescriptionResponse
@@ -102,7 +102,7 @@ namespace KlusterKite.Web.Tests
                 configurator.UnderlyingActor.Configuration["web2"]["/Api"].ActiveNodes[0].NodeUrl);
 
             var config = File.ReadAllText("./nginx.conf");
-            this.Sys.Log.Info(config);
+            this.Sys.Log.Log(LogLevel.InfoLevel, config);
         }
 
         /// <summary>

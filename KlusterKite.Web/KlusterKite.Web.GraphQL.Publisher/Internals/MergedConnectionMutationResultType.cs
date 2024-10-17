@@ -10,10 +10,9 @@
 namespace KlusterKite.Web.GraphQL.Publisher.Internals
 {
     using System.Collections.Generic;
-
+    using System.Threading.Tasks;
     using global::GraphQL.Resolvers;
     using global::GraphQL.Types;
-
     using JetBrains.Annotations;
 
     using KlusterKite.API.Client;
@@ -107,12 +106,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
             return graphType;
         }
 
-        /// <inheritdoc />
-        public override object Resolve(ResolveFieldContext context)
-        {
-            var resolve = base.Resolve(context);
-            return resolve;
-        }
+
 
         /// <summary>
         /// Creates virtual field
@@ -144,9 +138,9 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         internal class ClientMutationIdIdResolver : IFieldResolver
         {
             /// <inheritdoc />
-            public object Resolve(ResolveFieldContext context)
+            public ValueTask<object> ResolveAsync(global::GraphQL.IResolveFieldContext context)
             {
-                return (context.Source as JObject)?.Property("clientMutationId")?.Value;
+                return new ValueTask<object>((context.Source as JObject)?.Property("clientMutationId")?.Value);
             }
         }
 
@@ -172,16 +166,16 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
             }
 
             /// <inheritdoc />
-            public object Resolve(ResolveFieldContext context)
+            public ValueTask<object> ResolveAsync(global::GraphQL.IResolveFieldContext context)
             {
                 var source = context.Source as JObject;
-                var resolvedSource = source?.Property(context.FieldAst.Alias ?? context.FieldAst.Name)?.Value as JObject;
+                var resolvedSource = source?.Property(context.FieldAst.Alias?.Name?.StringValue ?? context.FieldAst.Name?.StringValue)?.Value as JObject;
                 if (resolvedSource == null)
                 {
-                    return null;
+                    return new ValueTask<object>(null);
                 }
 
-                return this.nodeType.ResolveData(context, resolvedSource, false);
+                return new ValueTask<object>(this.nodeType.ResolveData(context, resolvedSource, false));
             }
         }
 
@@ -191,9 +185,9 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         private class ResultErrorsResolver : IFieldResolver
         {
             /// <inheritdoc />
-            public object Resolve(ResolveFieldContext context)
+            public ValueTask<object> ResolveAsync(global::GraphQL.IResolveFieldContext context)
             {
-                return ((JObject)context.Source)?.Property(context.FieldAst.Alias ?? context.FieldName)?.Value?.DeepClone();
+                return new ValueTask<object>(((JObject)context.Source)?.Property(context.FieldAst.Alias?.Name?.StringValue ?? context.FieldAst.Name?.StringValue)?.Value?.DeepClone());
             }
         } 
 
@@ -203,26 +197,26 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         private class DeletedIdResolver : IFieldResolver
         {
             /// <inheritdoc />
-            public object Resolve(ResolveFieldContext context)
+            public ValueTask<object> ResolveAsync(global::GraphQL.IResolveFieldContext context)
             {
                 var contextSource = (JObject)context.Source;
 
                 var value = contextSource.Property("__deletedId")?.Value;
                 if (value == null)
                 {
-                    return null;
+                    return new ValueTask<object>(null);
                 }
 
                 var globalId = contextSource.Property(GlobalIdPropertyName)?.Value?.DeepClone() as JArray;
                 var request = contextSource.Property(RequestPropertyName)?.Value?.DeepClone() as JObject;
                 if (globalId == null || request == null)
                 {
-                    return null;
+                    return new ValueTask<object>(null); 
                 }
 
                 request.Add("id", value);
                 globalId.Add(request);
-                return globalId.PackGlobalId();
+                return new ValueTask<object>(globalId.PackGlobalId());
             }
         }
     }

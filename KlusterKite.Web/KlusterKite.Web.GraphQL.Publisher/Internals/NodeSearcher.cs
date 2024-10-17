@@ -45,10 +45,11 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
             this.apiRoot = apiRoot;
         }
 
+
         /// <inheritdoc />
-        public object Resolve(ResolveFieldContext context)
+        public ValueTask<object> ResolveAsync(global::GraphQL.IResolveFieldContext context)
         {
-            return this.SearchNode(context);
+            return new ValueTask<object>(this.SearchNode(context));
         }
 
         /// <summary>
@@ -112,7 +113,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         /// </summary>
         /// <param name="context">The request context</param>
         /// <returns>The searched node</returns>
-        private async Task<JObject> SearchNode(ResolveFieldContext context)
+        private async Task<JObject> SearchNode(global::GraphQL.IResolveFieldContext context)
         {
             var arguments = context.FieldAst.Arguments.ToJson(context);
             var packedId = arguments?.Property("id")?.Value?.ToObject<string>();
