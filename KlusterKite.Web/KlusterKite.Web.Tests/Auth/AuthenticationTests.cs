@@ -97,7 +97,7 @@ namespace KlusterKite.Web.Tests.Auth
             // Creates a client using the options object
             var options = new RestClientOptions($"http://localhost:{this.Port}")
             {
-                Timeout = new TimeSpan(0, 0, 1)
+                Timeout = new TimeSpan(0, 0, 1)                
             };
             var client = new RestClient(options);
 
@@ -111,16 +111,16 @@ namespace KlusterKite.Web.Tests.Auth
                 request.AddParameter("client_secret", clientSecret);
             }
 
-            var result = await client.ExecuteAsync<TokenResponse>(request);
+            var result = await client.ExecuteAsync(request);
 
-            Assert.Equal(ResponseStatus.Completed, result.ResponseStatus);
+            Assert.Equal(expectedResult == HttpStatusCode.OK ? ResponseStatus.Completed : ResponseStatus.Error, result.ResponseStatus);
             Assert.Equal(expectedResult, result.StatusCode);
 
             if (expectedResult == HttpStatusCode.OK)
             {
                 this.Sys.Log.Log(LogLevel.InfoLevel, "Response: {Response}", [result.Content]);
                 this.Sys.Log.Info("Response: {Response}", result.Content);
-                var tokenDescription = result.Data;
+                var tokenDescription = JsonConvert.DeserializeObject<TokenResponse>(result.Content);
                 var tokenManager = this.Container.Resolve<ITokenManager>();
                 var accessTicket = await tokenManager.ValidateAccessToken(tokenDescription.AccessToken);
                 Assert.NotNull(accessTicket);

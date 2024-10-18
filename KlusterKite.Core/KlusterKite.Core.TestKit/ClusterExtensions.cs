@@ -9,11 +9,13 @@
 
 namespace KlusterKite.Core.TestKit
 {
+    using System;
     using System.Collections.Immutable;
     using System.Linq;
     using System.Reflection;
 
     using Akka.Cluster;
+    using Akka.Util;
 
     /// <summary>
     /// Bundle of extension methods to fake cluster internal messages
@@ -43,9 +45,9 @@ namespace KlusterKite.Core.TestKit
         {
             var createMethod =
                 typeof(Member).GetMethods(BindingFlags.NonPublic | BindingFlags.Static)
-                .First(m => m.Name == "Create" && m.GetParameters().Length == 4);
-
-            return (Member)createMethod.Invoke(null, new object[] { uniqueAddress, upNumber, status, roles });
+                .First(m => m.Name == "Create" && m.GetParameters().Length == 5);
+            var member = (Member)createMethod.Invoke(null, new object[] { uniqueAddress, upNumber, status, roles, AppVersion.Zero });
+            return member;
         }
     }
 }

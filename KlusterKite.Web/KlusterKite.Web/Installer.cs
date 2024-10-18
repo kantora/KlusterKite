@@ -14,7 +14,7 @@ namespace KlusterKite.Web
     using System.Reflection;
     using System.Threading;
     using System.Threading.Tasks;
-    
+
     using Akka.Actor;
     using Akka.Event;
     using Akka.Configuration;
@@ -27,6 +27,7 @@ namespace KlusterKite.Web
     using Microsoft.AspNetCore.Mvc;
 
     using Serilog;
+    using Microsoft.Extensions.Logging;
 
     /// <summary>
     /// Installing components from current library
@@ -80,13 +81,18 @@ namespace KlusterKite.Web
             var bindUrl = GetWebHostingBindUrl(config);
             var host = new WebHostBuilder()
                 .CaptureStartupErrors(true)
-                .ConfigureLogging(
-                    logging =>
-                        {
-                            logging.AddSerilog();
-                        })
                 .UseUrls(bindUrl)
                 .UseKestrel();
+
+            if (config.GetBoolean("KlusterKite.Web.Debug.Trace"))
+            {
+                host = host.ConfigureLogging(
+                        logging =>
+                        {
+                            logging.AddSerilog();
+                        });
+            }
+
 
             Task.Run(
                 async () =>
@@ -102,15 +108,15 @@ namespace KlusterKite.Web
                         {
                             system.Log.Error(exception, "Web server stopped");
                         }
-                    }, 
+                    },
                 this.service.Token);
-            
+
             var timeout = config.GetTimeSpan("KlusterKite.Web.InitializationTimeout", TimeSpan.FromSeconds(15));
             if (!Startup.ServiceConfigurationWaiter.Wait(timeout))
             {
                 throw new Exception("Web server initialization timeout", Startup.LastException);
             }
-            
+
         }
 
         /// <inheritdoc />

@@ -25,14 +25,10 @@ namespace KlusterKite.Web
     using KlusterKite.Core;
 
     using Microsoft.AspNetCore.Builder;
-    using Microsoft.AspNetCore.Hosting;
     using Microsoft.AspNetCore.Http;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.DependencyInjection.Extensions;
-    using Microsoft.Extensions.Logging;
 
-    using Serilog;
-    using Microsoft.AspNetCore.Mvc;
     using Newtonsoft.Json.Converters;
     using Newtonsoft.Json.Serialization;
 
@@ -107,15 +103,10 @@ namespace KlusterKite.Web
         /// The logger Factory.
         /// </param>
         [UsedImplicitly]
-        public void Configure(IApplicationBuilder appBuilder, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        public void Configure(IApplicationBuilder appBuilder)
         {
             try
             {
-                if (Config.GetBoolean("KlusterKite.Web.Debug.Trace"))
-                {
-                    loggerFactory.AddSerilog();
-                }
-
                 var startupConfigurators = this.GetConfigurators(Config);
                 foreach (var configurator in startupConfigurators)
                 {
