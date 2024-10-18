@@ -25,7 +25,7 @@ namespace KlusterKite.Web.Tests.Auth
 
     using RestSharp;
     using RestSharp.Authenticators;
-
+    using RestSharp.Authenticators.OAuth2;
     using Xunit;
     using Xunit.Abstractions;
 
@@ -71,7 +71,7 @@ namespace KlusterKite.Web.Tests.Auth
         /// </summary>
         private int Port => this.Sys.Settings.Config.GetInt("KlusterKite.Web.WebHostPort");
 
-        /*
+        
         
         /// <summary>
         /// Checks various authorization combinations
@@ -101,20 +101,23 @@ namespace KlusterKite.Web.Tests.Auth
         {
             this.ExpectNoMsg();
 
-            var client = new RestClient($"http://localhost:{this.Port}/authorization/test") { Timeout = 5000 };
+            var options = new RestClientOptions($"http://localhost:{this.Port}/authorization/test") { Timeout = new TimeSpan(0, 0, 5) };
+
             switch (authenticationType)
             {
                 case EnAuthenticationType.User:
-                    client.Authenticator = new OAuth2AuthorizationRequestHeaderAuthenticator(await this.SetUserSession(), "Bearer");
+                    options.Authenticator = new OAuth2AuthorizationRequestHeaderAuthenticator(await this.SetUserSession(), "Bearer");
                     break;
                 case EnAuthenticationType.Client:
-                    client.Authenticator = new OAuth2AuthorizationRequestHeaderAuthenticator(await this.SetClientSession(), "Bearer");
+                    options.Authenticator = new OAuth2AuthorizationRequestHeaderAuthenticator(await this.SetClientSession(), "Bearer");
                     break;
             }
 
-            var request = new RestRequest { Method = Method.GET, Resource = method };
+            var client = new RestClient(options);
+
+            var request = new RestRequest { Method = Method.Get, Resource = method };
             request.AddHeader("Accept", "application/json, text/json");
-            var result = await client.ExecuteTaskAsync(request);
+            var result = await client.ExecuteAsync(request);
 
             Assert.Equal(expectedResult, result.StatusCode);
         }
@@ -127,14 +130,15 @@ namespace KlusterKite.Web.Tests.Auth
         public async Task ForbiddenOnInvalidToken()
         {
             this.ExpectNoMsg();
-            var client = new RestClient($"http://localhost:{this.Port}/authorization/public") { Timeout = 5000 };
-            client.Authenticator = new OAuth2AuthorizationRequestHeaderAuthenticator(
+            var options = new RestClientOptions($"http://localhost:{this.Port}/authorization/public") { Timeout = new TimeSpan(0, 0, 5) };            
+            options.Authenticator = new OAuth2AuthorizationRequestHeaderAuthenticator(
                 Guid.NewGuid().ToString("N"),
                 "Bearer");
+            var client = new RestClient(options);
 
-            var request = new RestRequest { Method = Method.GET, Resource = "test" };
+            var request = new RestRequest { Method = Method.Get, Resource = "test" };
             request.AddHeader("Accept", "application/json, text/json");
-            var result = await client.ExecuteTaskAsync(request);
+            var result = await client.ExecuteAsync(request);
 
             Assert.Equal(HttpStatusCode.Unauthorized, result.StatusCode);
         }
@@ -147,11 +151,12 @@ namespace KlusterKite.Web.Tests.Auth
         public async Task ValidOnNoToken()
         {
             this.ExpectNoMsg();
-            var client = new RestClient($"http://localhost:{this.Port}/authorization/public") { Timeout = 5000 };
+            var options = new RestClientOptions($"http://localhost:{this.Port}/authorization/public") { Timeout = new TimeSpan(0, 0, 5) };
+            var client = new RestClient(options);
            
-            var request = new RestRequest { Method = Method.GET, Resource = "test" };
+            var request = new RestRequest { Method = Method.Get, Resource = "test" };
             request.AddHeader("Accept", "application/json, text/json");
-            var result = await client.ExecuteTaskAsync(request);
+            var result = await client.ExecuteAsync(request);
 
             Assert.Equal(HttpStatusCode.OK, result.StatusCode);
         }
@@ -193,7 +198,7 @@ namespace KlusterKite.Web.Tests.Auth
 
             return await this.Container.Resolve<ITokenManager>().CreateAccessToken(session);
         }
-        */
+        
 
         /// <summary>
         /// The test configurator
