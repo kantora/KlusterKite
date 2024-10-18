@@ -26,6 +26,8 @@ namespace KlusterKite.Web
     using Microsoft.AspNetCore.Hosting;
     using Microsoft.AspNetCore.Mvc;
 
+    using Serilog;
+
     /// <summary>
     /// Installing components from current library
     /// </summary>
@@ -78,6 +80,11 @@ namespace KlusterKite.Web
             var bindUrl = GetWebHostingBindUrl(config);
             var host = new WebHostBuilder()
                 .CaptureStartupErrors(true)
+                .ConfigureLogging(
+                    logging =>
+                        {
+                            logging.AddSerilog();
+                        })
                 .UseUrls(bindUrl)
                 .UseKestrel();
 
@@ -97,12 +104,13 @@ namespace KlusterKite.Web
                         }
                     }, 
                 this.service.Token);
-
+            
             var timeout = config.GetTimeSpan("KlusterKite.Web.InitializationTimeout", TimeSpan.FromSeconds(15));
             if (!Startup.ServiceConfigurationWaiter.Wait(timeout))
             {
                 throw new Exception("Web server initialization timeout", Startup.LastException);
             }
+            
         }
 
         /// <inheritdoc />

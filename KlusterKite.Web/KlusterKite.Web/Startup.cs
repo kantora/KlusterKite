@@ -32,6 +32,9 @@ namespace KlusterKite.Web
     using Microsoft.Extensions.Logging;
 
     using Serilog;
+    using Microsoft.AspNetCore.Mvc;
+    using Newtonsoft.Json.Converters;
+    using Newtonsoft.Json.Serialization;
 
     /// <summary>
     /// The web hosting startup class.
@@ -140,15 +143,23 @@ namespace KlusterKite.Web
             try
             {
                 services.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+                
 
-                var builder = services.AddMvcCore();
+                var builder = services.AddMvcCore(options => options.EnableEndpointRouting = false);
+                
                 foreach (var assembly in ActorSystemUtils.GetLoadedAssemblies())
                 {
                     builder.AddApplicationPart(assembly);
                 }
 
+                builder.AddNewtonsoftJson(o =>
+                {
+                    o.SerializerSettings.Converters.Add(new StringEnumConverter());
+                    o.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+                });
+
                 // builder.AddControllersAsServices();
-                builder.AddJsonFormatters();
+                // builder.AddJsonFormatters();
 
                 var startupConfigurators = this.GetConfigurators(Config);
                 foreach (var configurator in startupConfigurators)
