@@ -10,8 +10,11 @@
 namespace KlusterKite.Web.GraphQL.Publisher
 {
     using System;
+    using System.IO;
     using System.Linq;
+    using System.Net;
     using System.Text;
+    using System.Text.Json;
     using System.Threading.Tasks;
 
     using global::GraphQL;
@@ -70,8 +73,7 @@ namespace KlusterKite.Web.GraphQL.Publisher
             this.schemaProvider = schemaProvider;
             this.executor = executor;
             this.writer = writer;
-            //var middleware = new GraphQLHttpMiddleware
-
+  
             /*
             this.complexityConfiguration = new ComplexityConfiguration
                                                {
@@ -104,7 +106,21 @@ namespace KlusterKite.Web.GraphQL.Publisher
             }
             else if (HttpContext.Request.HasJsonContentType())
             {
-                var request = await this.writer.ReadAsync<GraphQLRequest>(HttpContext.Request.Body, HttpContext.RequestAborted);
+                string body;
+                using (var sr = new StreamReader(HttpContext.Request.Body))
+                {
+                    body = await sr.ReadToEndAsync();
+                }
+
+                GraphQLRequest request;
+                try
+                {
+                    request = this.writer.Deserialize<GraphQLRequest>(body);
+                }
+                catch (Newtonsoft.Json.JsonException)
+                {
+                    return BadRequest("Could not parse request");
+                }
                 return await ExecuteGraphQLRequestAsync(request);
             }
             return BadRequest();
@@ -139,7 +155,12 @@ namespace KlusterKite.Web.GraphQL.Publisher
                 IValidationRule rule = HttpMethods.IsGet(HttpContext.Request.Method) ? new HttpGetValidationRule() : new HttpPostValidationRule();
                 opts.ValidationRules = DocumentValidator.CoreRules.Append(rule);
                 opts.CachedDocumentValidationRules = new[] { rule };
-                return new ExecutionResultActionResult(await this.executor.ExecuteAsync(opts));
+                var result = await this.executor.ExecuteAsync(opts);
+                if (!result.Executed && result.Errors.Count == 1 && result.Errors.First().Code == "INVALID_OPERATION")
+                {
+                    return this.Problem(result.Errors.First().Message, statusCode: (int)HttpStatusCode.ServiceUnavailable);
+                }
+                return new ExecutionResultActionResult(result);
             }
             catch
             {
@@ -147,78 +168,6 @@ namespace KlusterKite.Web.GraphQL.Publisher
             }
         }
 
-        /*
-        /// <summary>
-        /// Processes the GraphQL post request
-        /// </summary>
-        /// <param name="query">The query data</param>
-        /// <returns>GraphQL response</returns>
-        [HttpPost]
-        [HttpOptions]
-        [Route("")]
-        public async Task<IActionResult> Post([FromBody] JObject query)
-        {
-
-            var queryToExecute =
-                (string)
-                (query.Properties()
-                         .FirstOrDefault(p => p.Name.Equals("query", StringComparison.OrdinalIgnoreCase))
-                         ?.Value as JValue);
-
-            if (string.IsNullOrWhiteSpace(queryToExecute))
-            {
-                return this.BadRequest();
-            }
-
-            var operationName =
-                (string)
-                (query.Properties()
-                     .FirstOrDefault(p => p.Name.Equals("OperationName", StringComparison.OrdinalIgnoreCase))
-                     ?.Value as JValue);
-
-            var variablesToken =
-                query.Properties()
-                    .FirstOrDefault(
-                        p => p.Name.Equals("variables", StringComparison.OrdinalIgnoreCase))?.Value;
-
-            Inputs inputs = null;
-            if (variablesToken is JObject)
-            {
-                inputs = variablesToken.ToString().ToInputs();
-            }
-            else if (variablesToken is JValue)
-            {
-                inputs = ((JValue)variablesToken).ToObject<string>()?.ToInputs();
-            }
-
-            var requestContext = this.GetRequestDescription();
-            var schema = this.schemaProvider.CurrentSchema;
-            if (schema == null)
-            {
-                return new StatusCodeResult(503);
-            }
-
-            var result = await this.executor.ExecuteAsync(
-                             options =>
-                                 {
-                                     options.Schema = schema;
-                                     options.Query = queryToExecute;
-                                     options.OperationName = operationName;
-                                     options.Inputs = inputs;
-                                     options.UserContext = requestContext;
-
-                                     // options.ComplexityConfiguration = this.complexityConfiguration;
-                                     // options.FieldMiddleware.Use<InstrumentFieldsMiddleware>();
-                                 }).ConfigureAwait(false);
-
-            var json = this.writer.Write(result);
-            var contentResult = this.Content(json, "application/json", Encoding.UTF8);
-
-            contentResult.StatusCode = result.Errors?.Count > 0 ? 400 : 200;
-            return contentResult;
-
-        }
-        //*/
 
         /// <summary>
         /// The GraphQL http request body description 

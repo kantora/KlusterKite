@@ -85,15 +85,15 @@ namespace KlusterKite.Web.Tests.GraphQL
                 Description = api,
                 Data = @"{
 	                    ""viewer"": {
-		                    ""__id"": ""FD73BAFB-3698-4FA1-81F5-27C8C83BB4F0"", 
+		                    ""_id"": ""FD73BAFB-3698-4FA1-81F5-27C8C83BB4F0"", 
 		                    ""name"": ""test name"",
 		                    ""numbers"": [1, 2, 3]
 	                    }, 
 	                    ""object"": {
 		                    ""count"": 2, 
 		                    ""edges"": [
-			                    {""__id"": 10, ""node___id"": 10}, 
-			                    {""__id"": 20, ""node___id"": 20}
+			                    {""_id"": 10, ""node__id"": 10}, 
+			                    {""_id"": 20, ""node__id"": 20}
 		                    ]
 	                    }
                     }"
@@ -116,11 +116,12 @@ namespace KlusterKite.Web.Tests.GraphQL
                              r =>
                                  {
                                      r.Schema = schema;
+                                     r.ThrowOnUnhandledException = true;
                                      r.Query = @"
                                 query {
                                     api {
                                         viewer {
-                                            __id,
+                                            _id,
                                             name,
                                             numbers
                                         },
@@ -129,7 +130,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                             edges {
                                                 cursor,                                                
                                                 node {
-                                                    __id
+                                                    _id
                                                 }
                                             }
                                         }
@@ -147,7 +148,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                       ""data"": {
                                         ""api"": {
                                           ""viewer"": {
-                                            ""__id"": ""fd73bafb-3698-4fa1-81f5-27c8c83bb4f0"",
+                                            ""_id"": ""fd73bafb-3698-4fa1-81f5-27c8c83bb4f0"",
                                             ""name"": ""test name"",
 		                                    ""numbers"": [1, 2, 3]
                                           },
@@ -155,15 +156,15 @@ namespace KlusterKite.Web.Tests.GraphQL
                                             ""count"": 2,
                                             ""edges"": [
                                               {
-                                                ""cursor"": 10,
+                                                ""cursor"": ""10"",
                                                 ""node"": {
-                                                  ""__id"": 10
+                                                  ""_id"": 10
                                                 }
                                               },
                                               {
-                                                ""cursor"": 20,
+                                                ""cursor"": ""20"",
                                                 ""node"": {
-                                                  ""__id"": 20
+                                                  ""_id"": 20
                                                 }
                                               }
                                             ]
@@ -208,6 +209,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                              r =>
                                  {
                                      r.Schema = schema;
+                                     r.ThrowOnUnhandledException = true;
                                      r.Query = "query { api { enumField } } ";
                                  }).ConfigureAwait(true);
 
@@ -309,14 +311,14 @@ namespace KlusterKite.Web.Tests.GraphQL
                                 {
                                     Description = api1,
                                     Data =
-                                        "{\"viewer\": {\"__id\": 1, \"name\": \"test name\"}, \"object1\": {\"__id\": 10}}"
+                                        "{\"viewer\": {\"_id\": 1, \"name\": \"test name\"}, \"object1\": {\"_id\": \"10\"}}"
                                 };
 
             var provider2 = new MoqProvider
                                 {
                                     Description = api2,
                                     Data =
-                                        "{\"viewer\": {\"description\": \"test description\"}, \"object2\": {\"__id\": 123}}"
+                                        "{\"viewer\": {\"description\": \"test description\"}, \"object2\": {\"_id\": \"123\"}}"
                                 };
 
             var schema = SchemaGenerator.Generate(new List<ApiProvider> { provider1, provider2 });
@@ -336,19 +338,20 @@ namespace KlusterKite.Web.Tests.GraphQL
                              r =>
                                  {
                                      r.Schema = schema;
+                                     r.ThrowOnUnhandledException = true;
                                      r.Query = @"
                                 query {
                                     api {
                                         viewer {
-                                            __id,
+                                            _id,
                                             name,
                                             description
                                         },
                                         object1 {
-                                            __id
+                                            _id
                                         },
                                         object2 {
-                                            __id
+                                            _id
                                         }
                                     }
                                 }            
@@ -362,15 +365,15 @@ namespace KlusterKite.Web.Tests.GraphQL
                                       ""data"": {
                                         ""api"": {
                                           ""viewer"": {
-                                            ""__id"": 1,
+                                            ""_id"": 1,
                                             ""name"": ""test name"",
                                             ""description"": ""test description""
                                           },
                                           ""object1"": {
-                                            ""__id"": 10
+                                            ""_id"": ""10""
                                           },
                                           ""object2"": {
-                                            ""__id"": 123
+                                            ""_id"": ""123""
                                           }
                                         }
                                       }
@@ -398,7 +401,7 @@ namespace KlusterKite.Web.Tests.GraphQL
             var provider = new MoqProvider
                                {
                                    Description = api,
-                                   Data = "{\"viewer\": {\"__id\": 1, \"name\": \"test name\"}}"
+                                   Data = "{\"viewer\": {\"_id\": 1, \"name\": \"test name\"}}"
                                };
 
             var schema = SchemaGenerator.Generate(new List<ApiProvider> { provider });
@@ -422,7 +425,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                 query {
                                     api {
                                         viewer {
-                                            __id,
+                                            _id,
                                             name
                                         }
                                     }
@@ -437,7 +440,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                       ""data"": {
                                         ""api"": {
                                           ""viewer"": {
-                                            ""__id"": 1,
+                                            ""_id"": 1,
                                             ""name"": ""test name""
                                           }
                                         }

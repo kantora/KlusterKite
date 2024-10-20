@@ -88,13 +88,13 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                 switch (field.Name.StringValue)
                 {
                     case "count":
-                        yield return new ApiRequest { FieldName = "count", Alias = field.Alias.Name.StringValue };
+                        yield return new ApiRequest { FieldName = "count", Alias = field.Alias?.Name?.StringValue };
                         break;
                     case "edges":
                         {
                             var fields = new List<ApiRequest>
                                              {
-                                                 new ApiRequest { FieldName = this.ElementType.KeyField.FieldName, Alias = "__id" }
+                                                 new ApiRequest { FieldName = this.ElementType.KeyField.FieldName, Alias = "_id" }
                                              };
                             foreach (var nodeRequest in
                                 GetRequestedFields(field.SelectionSet, context, this.ElementType)
@@ -105,7 +105,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                                         f =>
                                             {
                                                 f.Alias =
-                                                    $"{nodeRequest.Alias.Name.StringValue ?? nodeRequest.Name.StringValue}_{f.Alias ?? f.FieldName}";
+                                                    $"{nodeRequest.Alias?.Name?.StringValue ?? nodeRequest.Name.StringValue}_{f.Alias ?? f.FieldName}";
                                                 return f;
                                             }).ToList());
                             }
@@ -131,16 +131,14 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
             {
                 Name = "count",
                 ResolvedType = new IntGraphType(),
-                Resolver = new CountResolver(),
-                Description =
-                                                         "The total count of objects satisfying filter conditions"
+                // Resolver = new CountResolver(),
+                Description = "The total count of objects satisfying filter conditions"
             };
             FieldType edgesField = new FieldType
             {
                 Name = "edges",
-                Description =
-                                                         "The list of edges according to filtering and paging conditions",
-                ResolvedType = new VirtualGraphType("tmp")
+                Description = "The list of edges according to filtering and paging conditions",
+                ResolvedType = new ListGraphType(this.ElementType.GenerateGraphType(nodeInterface, null)),
             };
 
             edgesField.Metadata[MetaDataTypeKey] = new MergedField(
@@ -178,7 +176,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                 return null;
             }
 
-            var nodeType = (ObjectGraphType)this.GenerateGraphType(null, null);
+            var nodeType = (ObjectGraphType)this.GenerateGraphType(nodeInterface, null);
             var apiInterface = new TypeInterface(this.GetInterfaceName(provider), this.Description);
             foreach (var field in nodeType.Fields)
             {
@@ -234,20 +232,30 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
             }
 
             source.Add(MergedObjectType.RequestPropertyName, localRequest);
-            return source;
+            var resolve = new ConnectionResolve
+            {
+                Count = (long?)(source.GetValue("count") as JValue)?.Value,
+                Edges = source.GetValue("edges") as JArray
+            };
+
+            return resolve;
         }
 
+    }
+
+    /// <summary>
+    /// The syntehtic type to represent the result of the <seealso cref="MergedConnectionType.ResolveAsync(IResolveFieldContext)"/>
+    /// </summary>
+    internal class ConnectionResolve
+    {
         /// <summary>
-        /// The count resolver from api
+        /// Gets the total counnt of edges if requested
         /// </summary>
-        private class CountResolver : IFieldResolver
-        {
-            /// <inheritdoc />
-            public ValueTask<object> ResolveAsync(IResolveFieldContext context)
-            {
-                var parentData = context.Source as JObject;
-                return ValueTask.FromResult<object>(parentData?.GetValue(context.FieldAst.Alias?.Name?.StringValue ?? context.FieldAst.Name.StringValue));
-            }
-        }
+        public long? Count { get; init; }
+
+        /// <summary>
+        /// Gets the requested edges data
+        /// </summary>
+        public JArray Edges { get; init; }
     }
 }

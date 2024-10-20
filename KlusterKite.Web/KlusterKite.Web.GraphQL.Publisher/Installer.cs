@@ -57,6 +57,7 @@ namespace KlusterKite.Web.GraphQL.Publisher
             var documentExecuter = new DocumentExecuter();
             var writer = new GraphQLSerializer(false);
             container.RegisterInstance(documentExecuter).As<IDocumentExecuter>();
+            container.RegisterInstance(writer).As<IGraphQLTextSerializer>();
             container.RegisterInstance(writer).As<IGraphQLSerializer>();
         }
     }

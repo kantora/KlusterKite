@@ -679,7 +679,7 @@ namespace KlusterKite.Web.GraphQL.Publisher
                         SetFieldArguments(f, fieldDescription, graphTypes);
                         f.ResolvedType = GetTypeForField(fieldDescription, graphTypes);
 
-                        if (f.Resolver == null)
+                        if (f.Resolver == null && (f.Type == null || !typeof(IInputObjectGraphType).IsAssignableFrom(f.Type)))
                         {
                             f.Resolver = fieldDescription.Resolver ?? fieldDescription.Type;
                         }

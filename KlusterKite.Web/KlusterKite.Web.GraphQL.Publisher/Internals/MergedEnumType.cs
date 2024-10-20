@@ -85,8 +85,8 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
             {
                 graphType.Add(
                     enumValue,
-                    this.apiEnumType.Descriptions.TryGetValue(enumValue, out var description) ? description : null,
-                    enumValue);
+                    new Newtonsoft.Json.Linq.JValue(enumValue),
+                    this.apiEnumType.Descriptions.TryGetValue(enumValue, out var description) ? description : null);
             }
 
             return graphType;

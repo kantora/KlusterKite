@@ -18,7 +18,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.GraphTypes
     /// <summary>
     /// The virtual graph type used to convert <see cref="ApiObjectType"/> to <see cref="InputObjectGraphType"/>
     /// </summary>
-    internal class VirtualInputGraphType : InputObjectGraphType
+    internal class VirtualInputGraphType : InputObjectGraphType, IInputObjectGraphType
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="VirtualInputGraphType"/> class.

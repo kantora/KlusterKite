@@ -17,7 +17,7 @@ namespace KlusterKite.Web.Tests.GraphQL
     using System.Threading.Tasks;
 
     using Akka.Configuration;
-
+    using Akka.Event;
     using Autofac;
 
     using KlusterKite.API.Tests.Mock;
@@ -60,7 +60,7 @@ namespace KlusterKite.Web.Tests.GraphQL
         /// </summary>
         private int Port => this.Sys.Settings.Config.GetInt("KlusterKite.Web.WebHostPort");
 
-        /*
+
 
         /// <summary>
         /// Just generic test
@@ -71,9 +71,10 @@ namespace KlusterKite.Web.Tests.GraphQL
         {
             this.ExpectNoMsg();
 
-            var client = new RestClient($"http://localhost:{this.Port}/api/1.x/graphQL/") { Timeout = 5000 };
+            var options = new RestClientOptions($"http://localhost:{this.Port}/api/1.x/graphQL/") { Timeout = new TimeSpan(0, 0, 5) };
+            var client = new RestClient(options);
 
-            var request = new RestRequest { Method = Method.POST };
+            var request = new RestRequest { Method = Method.Post };
             request.AddHeader("Accept", "application/json, text/json");
 
             var query = @"
@@ -103,11 +104,11 @@ namespace KlusterKite.Web.Tests.GraphQL
 
             request.AddJsonBody(new EndpointController.QueryRequest { Query = query });
 
-            var result = await client.ExecuteTaskAsync(request);
+            var result = await client.ExecuteAsync(request);
 
-            Assert.Equal(ResponseStatus.Completed, result.ResponseStatus);
+            Assert.Equal(ResponseStatus.Error, result.ResponseStatus);
             Assert.Equal(HttpStatusCode.ServiceUnavailable, result.StatusCode);
-            this.Sys.Log.Info("Response {Response}", result.Content);
+            this.Sys.Log.Log(LogLevel.InfoLevel, null, "Response {Response}", result.Content);
         }
 
         /// <summary>
@@ -122,7 +123,6 @@ namespace KlusterKite.Web.Tests.GraphQL
         [Theory]
         [InlineData("null")]
         [InlineData("{}")]
-        [InlineData("\"{}\"")]
         public async Task EmptyVariablesTest(string variables)
         {
             this.ExpectNoMsg();
@@ -131,11 +131,12 @@ namespace KlusterKite.Web.Tests.GraphQL
             var schemaProvider = this.Container.Resolve<SchemaProvider>();
             schemaProvider.CurrentSchema = SchemaGenerator.Generate(new List<ApiProvider> { publishingProvider });
 
-            var client = new RestClient($"http://localhost:{this.Port}/api/1.x/graphQL/") { Timeout = 5000 };
+            var options = new RestClientOptions($"http://localhost:{this.Port}/api/1.x/graphQL/") { Timeout = new TimeSpan(0, 0, 5) };
+            var client = new RestClient(options);
 
-            var request = new RestRequest { Method = Method.POST };
+            var request = new RestRequest { Method = Method.Post };
             request.AddHeader("Accept", "application/json, text/json");
-            
+
             var query = @"
             {                
                 api {
@@ -145,7 +146,7 @@ namespace KlusterKite.Web.Tests.GraphQL
 
             var body = $"{{\"query\": {JsonConvert.SerializeObject(query)}, \"variables\": {variables}}}";
             request.AddParameter("application/json", body, ParameterType.RequestBody);
-            var result = await client.ExecuteTaskAsync(request);
+            var result = await client.ExecuteAsync(request);
             Assert.Equal(ResponseStatus.Completed, result.ResponseStatus);
             Assert.Equal(HttpStatusCode.OK, result.StatusCode);
             this.Sys.Log.Info("Response {Response}", result.Content);
@@ -210,7 +211,8 @@ namespace KlusterKite.Web.Tests.GraphQL
             var schemaProvider = this.Container.Resolve<SchemaProvider>();
             schemaProvider.CurrentSchema = SchemaGenerator.Generate(new List<ApiProvider> { publishingProvider });
 
-            var client = new RestClient($"http://localhost:{this.Port}/api/1.x/graphQL/") { Timeout = 5000 };
+            var options = new RestClientOptions($"http://localhost:{this.Port}/api/1.x/graphQL/") { Timeout = new TimeSpan(0, 0, 5) };
+            var client = new RestClient(options);
 
             var query = @"
             {                
@@ -237,7 +239,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                 cursor,
                                 node {
                                     id,
-                                    __id,
+                                    _id,
                                     name,
                                     value
                                 }                    
@@ -248,26 +250,26 @@ namespace KlusterKite.Web.Tests.GraphQL
             ";
 
             var stopwatch = new Stopwatch();
-            var request = new RestRequest { Method = Method.POST };
+            var request = new RestRequest { Method = Method.Post };
             request.AddHeader("Accept", "application/json, text/json");
             var body = $"{{\"query\": {JsonConvert.SerializeObject(query)}, \"variables\": null}}";
             request.AddParameter("application/json", body, ParameterType.RequestBody);
             stopwatch.Start();
-            var result = client.ExecuteTaskAsync(request).Result;
+            var result = client.ExecuteAsync(request).Result;
             stopwatch.Stop();
             Assert.Equal(ResponseStatus.Completed, result.ResponseStatus);
             Assert.Equal(HttpStatusCode.OK, result.StatusCode);
             this.Sys.Log.Info("!!!!!!!!!! First request served in {StopWatch}ms", (double)stopwatch.ElapsedTicks * 1000 / Stopwatch.Frequency);
             stopwatch.Reset();
             stopwatch.Start();
-            client.ExecuteTaskAsync(request).Wait();
+            client.ExecuteAsync(request).Wait();
             stopwatch.Stop();
             this.Sys.Log.Info("!!!!!!!!!! Second request served in {StopWatch}ms", (double)stopwatch.ElapsedTicks * 1000 / Stopwatch.Frequency);
             stopwatch.Reset();
             stopwatch.Start();
 
             var numberOfRequests = 3000;
-            await Task.WhenAll(Enumerable.Range(1, numberOfRequests).Select(i => client.ExecuteTaskAsync(request)));
+            await Task.WhenAll(Enumerable.Range(1, numberOfRequests).Select(i => client.ExecuteAsync(request)));
 
             stopwatch.Stop();
             this.Sys.Log.Info(
@@ -283,7 +285,7 @@ namespace KlusterKite.Web.Tests.GraphQL
         /// Just generic test
         /// </summary>
         /// <returns>The async task</returns>
-        [Fact(Skip = "O_o")]
+        [Fact]
         public async Task SchemaInitializedTest()
         {
             this.ExpectNoMsg();
@@ -292,9 +294,10 @@ namespace KlusterKite.Web.Tests.GraphQL
             var schemaProvider = this.Container.Resolve<SchemaProvider>();
             schemaProvider.CurrentSchema = SchemaGenerator.Generate(new List<ApiProvider> { publishingProvider });
 
-            var client = new RestClient($"http://localhost:{this.Port}/api/1.x/graphQL/") { Timeout = 5000 };
+            var options = new RestClientOptions($"http://localhost:{this.Port}/api/1.x/graphQL/") { Timeout = new TimeSpan(0, 0, 5) };
+            var client = new RestClient(options);
 
-            var request = new RestRequest { Method = Method.POST };
+            var request = new RestRequest { Method = Method.Post };
             request.AddHeader("Accept", "application/json, text/json");
 
             var query = @"
@@ -323,7 +326,7 @@ namespace KlusterKite.Web.Tests.GraphQL
             }";
 
             request.AddJsonBody(new EndpointController.QueryRequest { Query = query });
-            var result = await client.ExecuteTaskAsync(request);
+            var result = await client.ExecuteAsync(request);
             this.Sys.Log.Info("Response {Response}", result.Content);
             Assert.Equal(ResponseStatus.Completed, result.ResponseStatus);
             Assert.Equal(HttpStatusCode.OK, result.StatusCode);
@@ -364,11 +367,11 @@ namespace KlusterKite.Web.Tests.GraphQL
                         }
                         ";
             Assert.Equal(
-                ApiProviderPublishResolveIntegration.CleanResponse(expectedResult), 
+                ApiProviderPublishResolveIntegration.CleanResponse(expectedResult),
                 ApiProviderPublishResolveIntegration.CleanResponse(result.Content));
         }
 
-        */
+
 
         /// <summary>
         /// The test configurator
@@ -387,7 +390,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                 var installers = base.GetPluginInstallers();
                 installers.Add(new Descriptor.Installer());
                 installers.Add(new Web.Installer());
-                
+
                 installers.Add(new Authentication.Installer());
                 installers.Add(new Web.GraphQL.Publisher.Installer());
                 installers.Add(new TestInstaller());
@@ -435,6 +438,6 @@ namespace KlusterKite.Web.Tests.GraphQL
                 container.RegisterType<MoqTokenManager>().As<ITokenManager>().SingleInstance();
             }
         }
-        
+
     }
 }

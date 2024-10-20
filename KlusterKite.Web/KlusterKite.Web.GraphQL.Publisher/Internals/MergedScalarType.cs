@@ -11,6 +11,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Threading.Tasks;
     using global::GraphQL;
     using global::GraphQL.Types;
@@ -82,10 +83,18 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
             var resolve = await base.ResolveAsync(context);
             if (resolve is JArray)
             {
-                return resolve;
+                return ((JArray)resolve).Select(element => (element as JValue)?.Value).ToArray();
             }
 
-            return (resolve as JValue)?.Value;
+            switch (this.ScalarType)
+            {
+                case EnScalarType.Guid:
+                    return Guid.Parse(resolve.ToString());
+                default:
+                    return (resolve as JValue)?.Value;
+            }
+
+            
         }
     }
 }

@@ -206,7 +206,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
             var idField = fields.FirstOrDefault(f => f.Name == "id");
             if (idField != null)
             {
-                idField.Name = "__id";
+                idField.Name = "_id";
             }
 
             fields.Insert(0, new FieldType { Name = "id", ResolvedType = new IdGraphType() });
@@ -227,8 +227,8 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         public override string GetInterfaceName(ApiProvider provider)
         {
             var fieldProvider = this.providers.FirstOrDefault(fp => fp.Provider == provider);
-            return fieldProvider == null 
-                ? null : 
+            return fieldProvider == null
+                ? null :
                 $"I{EscapeName(provider.Description.ApiName)}_{EscapeName(fieldProvider.FieldType.TypeName)}";
         }
 
@@ -270,7 +270,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         {
             if (this.KeyField != null && this.KeyField.Providers.Contains(provider))
             {
-                yield return new ApiRequest { Alias = "__id", FieldName = this.KeyField.FieldName };
+                yield return new ApiRequest { Alias = "_id", FieldName = this.KeyField.FieldName };
             }
 
             var requestedFields =
@@ -303,11 +303,11 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                 }
 
                 var request = new ApiRequest
-                                  {
-                                      Arguments = usedField.Ast.Arguments.ToJson(context),
-                                      Alias = usedField.Ast.Alias.Name.StringValue ?? usedField.Ast.Name.StringValue,
-                                      FieldName = usedField.Field.FieldName
-                                  };
+                {
+                    Arguments = usedField.Ast.Arguments?.ToJson(context),
+                    Alias = usedField.Ast.Alias?.Name.StringValue ?? usedField.Ast.Name?.StringValue,
+                    FieldName = usedField.Field.FieldName
+                };
                 var endType = usedField.Field.Type as MergedObjectType;
 
                 request.Fields = endType?.Category == EnCategory.MultipleApiType
@@ -321,18 +321,32 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         /// <inheritdoc />
         public override IGraphType GenerateGraphType(NodeInterface nodeInterface, List<TypeInterface> interfaces)
         {
-            var graphType = (VirtualGraphType)base.GenerateGraphType(nodeInterface, interfaces);
-            var idField = graphType.Fields.FirstOrDefault(f => f.Name == "id");
-            if (idField != null)
+            var graphType = nodeInterface.PossibleTypes.FirstOrDefault(t => t.Name == this.ComplexTypeName) as VirtualGraphType;
+
+            if (graphType == null)
             {
-                idField.Name = "__id";
+                graphType = (VirtualGraphType)base.GenerateGraphType(nodeInterface, null);
+                var idField = graphType.Fields.FirstOrDefault(f => f.Name == "id");
+                if (idField != null)
+                {
+                    idField.Name = "_id";
+                }
+                graphType.AddField(new FieldType { Name = "id", ResolvedType = new IdGraphType(), Resolver = new GlobalIdResolver() });
+                graphType.AddResolvedInterface(nodeInterface);
+                nodeInterface.AddImplementedType(this.ComplexTypeName, graphType);
             }
 
-            graphType.AddField(
-                new FieldType { Name = "id", ResolvedType = new IdGraphType(), Resolver = new GlobalIdResolver() });
-
-            graphType.AddResolvedInterface(nodeInterface);
-            nodeInterface.AddImplementedType(this.ComplexTypeName, graphType);
+            if (interfaces != null)
+            {
+                foreach (var typeInterface in interfaces)
+                {
+                    if (typeInterface.PossibleTypes.FirstOrDefault(t => t.Name == this.ComplexTypeName) == null)
+                    {
+                        typeInterface.AddImplementedType(this.ComplexTypeName, graphType);
+                        graphType.AddResolvedInterface(typeInterface);
+                    }
+                }
+            }
 
             return graphType;
         }
@@ -384,9 +398,9 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
 
                 source.Add(RequestPropertyName, localRequest);
             }
-            
+
             // generating self globalId data
-            var globalId = GetGlobalId(source, source.Property("__id")?.Value);
+            var globalId = GetGlobalId(source, source.Property("_id")?.Value);
             if (globalId != null)
             {
                 source.Add(GlobalIdPropertyName, globalId);

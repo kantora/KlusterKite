@@ -92,17 +92,24 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         public override IGraphType ExtractInterface(ApiProvider provider, NodeInterface nodeInterface)
         {
             var extractInterface = (TypeInterface)base.ExtractInterface(provider, nodeInterface);
-            extractInterface.AddField(this.CreateNodeField(nodeInterface));
+            extractInterface.AddField(this.CreateNodeField(nodeInterface, false));
             return extractInterface;
         }
 
         /// <inheritdoc />
         public override IGraphType GenerateGraphType(NodeInterface nodeInterface, List<TypeInterface> interfaces)
         {
-            var graphType = (VirtualGraphType)base.GenerateGraphType(nodeInterface, interfaces);
-            var nodeFieldType = this.CreateNodeField(nodeInterface);
+            var graphType = (VirtualGraphType)base.GenerateGraphType(nodeInterface, null);
+            var nodeFieldType = this.CreateNodeField(nodeInterface, true);
             graphType.AddField(nodeFieldType);
-
+            if (interfaces != null)
+            {
+                foreach (var typeInterface in interfaces)
+                {
+                    typeInterface.AddImplementedType(this.ComplexTypeName, graphType);
+                    graphType.AddResolvedInterface(typeInterface);
+                }
+            }
             return graphType;
         }
 
@@ -136,17 +143,21 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         /// Creates the node searcher field for the graph type
         /// </summary>
         /// <param name="nodeInterface">The node interface</param>
+        /// <param name="addResolver">Whether resolver should be defined for the field. Interface fields should not have resolvers.</param>
         /// <returns>The node field</returns>
-        private FieldType CreateNodeField(NodeInterface nodeInterface)
+        private FieldType CreateNodeField(NodeInterface nodeInterface, bool addResolver)
         {
             var nodeFieldType = new FieldType();
-            nodeFieldType.Name = "__node";
+            nodeFieldType.Name = "_node";
             nodeFieldType.ResolvedType = nodeInterface;
             nodeFieldType.Description = "The node global searcher according to Relay specification";
             nodeFieldType.Arguments =
                 new QueryArguments(
                     new QueryArgument(typeof(IdGraphType)) { Name = "id", Description = "The node global id" });
-            nodeFieldType.Resolver = this.NodeSearher;
+            if (addResolver)
+            {
+                nodeFieldType.Resolver = this.NodeSearher;
+            }
             return nodeFieldType;
         }
 
@@ -358,12 +369,12 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                                                       {
                                                           FieldName =
                                                               nodeType.KeyField.FieldName,
-                                                          Alias = "__id"
+                                                          Alias = "_id"
                                                       }
                                               };
                 var idRequestRequest = new ApiRequest
                 {
-                    Alias = "__idRequest",
+                    Alias = "_idRequest",
                     FieldName = "result",
                     Fields = idSubRequestRequest
                 };
@@ -381,7 +392,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                     {
                         case "node":
                             var nodeFields = nodeType.GatherSingleApiRequest(nodeRequest, context).ToList();
-                            nodeFields.Add(new ApiRequest { Alias = "__id", FieldName = nodeType.KeyField.FieldName });
+                            nodeFields.Add(new ApiRequest { Alias = "_id", FieldName = nodeType.KeyField.FieldName });
                             requestedFields.Add(
                                 new ApiRequest { Alias = nodeAlias, FieldName = "result", Fields = nodeFields });
                             break;
@@ -401,7 +412,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                                             }));
                             }
 
-                            edgeFields.Add(new ApiRequest { Alias = "__id", FieldName = nodeType.KeyField.FieldName });
+                            edgeFields.Add(new ApiRequest { Alias = "_id", FieldName = nodeType.KeyField.FieldName });
                             requestedFields.Add(
                                 new ApiRequest { Alias = nodeAlias, FieldName = "result", Fields = edgeFields });
 

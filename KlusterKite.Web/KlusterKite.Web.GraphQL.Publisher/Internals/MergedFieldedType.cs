@@ -67,14 +67,14 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
             {
                 yield return new ApiRequest
                 {
-                    Alias = "__id",
+                    Alias = "_id",
                     FieldName = this.KeyField.FieldName
                 };
             }
 
             foreach (var field in GetRequestedFields(contextFieldAst.SelectionSet, context, this))
             {
-                if (field.Alias.Name == "__id")
+                if (field.Alias?.Name == "_id")
                 {
                     continue;
                 }
@@ -85,7 +85,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                     continue;
                 }
 
-                if (field.Name == "__id" && this.KeyField != null)
+                if (field.Name == "_id" && this.KeyField != null)
                 {
                     localField = this.KeyField;
                 }
@@ -113,9 +113,9 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
 
                 var request = new ApiRequest
                 {
-                    Arguments = field.Arguments.ToJson(context),
+                    Arguments = field.Arguments?.ToJson(context),
                     FieldName = localField.FieldName,
-                    Alias = field.Alias.Name.StringValue ?? field.Name.StringValue,
+                    Alias = field.Alias?.Name?.StringValue ?? field.Name.StringValue,
                     Fields = localField.Type.GatherSingleApiRequest(field, context).ToList()
                 };
                 if (request.Fields.Count == 0)

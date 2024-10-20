@@ -66,14 +66,13 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
             {
                 Name = "cursor",
                 ResolvedType = new StringGraphType(),
-                Resolver = new CursorResolver(),
-                Description =
-                                                         "A value to use with paging positioning"
+                // Resolver = new CursorResolver(),
+                Description = "A value to use with paging positioning"
             };
             FieldType nodeField = new FieldType
             {
                 Name = "node",
-                ResolvedType = new VirtualGraphType("tmp")
+                ResolvedType = this.ObjectType.GenerateGraphType(nodeInterface,null)
 
             };
 
@@ -114,7 +113,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                 return null;
             }
 
-            var nodeType = (ObjectGraphType)this.GenerateGraphType(null, null);
+            var nodeType = (ObjectGraphType)this.GenerateGraphType(nodeInterface, null);
             var apiInterface = new TypeInterface(this.GetInterfaceName(provider), this.Description);
             foreach (var field in nodeType.Fields)
             {
@@ -149,14 +148,25 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         /// <inheritdoc />
         public override async ValueTask<object> ResolveAsync(IResolveFieldContext context)
         {
-            var parentData = context.Source as JObject;
-            var token = parentData?.GetValue(context.FieldAst.Alias.Name.StringValue ?? context.FieldAst.Name.StringValue);
-            if (token == null || (!(token is JArray) && !token.HasValues))
+            var parentData = context.Source as ConnectionResolve;
+            if (parentData == null)
             {
                 return null;
             }
 
-            return token;
+
+            return parentData.Edges.Select(node => new EdgeValue { 
+                Cursor = (node as JObject)?.GetValue("_id")?.ToString(),
+                Node = node as JObject
+            });
+
+        }
+
+        private class EdgeValue
+        {
+            public string Cursor { get; set; }
+
+            public JObject Node { get; set; }
         }
 
         /// <summary>
@@ -184,23 +194,26 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
             /// <inheritdoc />
             public async ValueTask<object> ResolveAsync(IResolveFieldContext context)
             {
-                var source = context.Source as JObject;
+                var source = context.Source as EdgeValue;
                 if (source == null)
                 {
                     return null;
                 }
 
-                var fieldName = context.FieldAst.Alias.Name.StringValue ?? context.FieldAst.Name.StringValue;
+                /*
+                var fieldName = context.FieldAst.Alias?.Name?.StringValue ?? context.FieldAst.Name.StringValue;
                 var filteredSource = new JObject();
                 var prefix = $"{fieldName}_";
                 foreach (var property in source.Properties().Where(p => p.Name.StartsWith(prefix)))
                 {
                     filteredSource.Add(property.Name.Substring(prefix.Length), property.Value);
                 }
+                
 
                 source.Add(fieldName, filteredSource);
+                */
 
-                return this.originalType.ResolveData(context, filteredSource, false);
+                return this.originalType.ResolveData(context, source.Node, false);
             }
         }
 
@@ -212,7 +225,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
 
             public async ValueTask<object> ResolveAsync(IResolveFieldContext context)
             {
-                return (context.Source as JObject)?.GetValue("__id");
+                return (context.Source as JObject)?.GetValue("_id");
             }
         }
     }
