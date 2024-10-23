@@ -57,8 +57,7 @@ namespace KlusterKite.NodeManager.Client.ORM
 
         /// <summary>
         /// Gets or sets the configuration id
-        /// </summary>
-        [ForeignKey(nameof(Configuration))]
+        /// </summary>        
         [DeclareField("the configuration id")]
         [UsedImplicitly]
         public int ConfigurationId { get; set; }
@@ -68,6 +67,7 @@ namespace KlusterKite.NodeManager.Client.ORM
         /// </summary>
         [DeclareField("the configuration")]
         [UsedImplicitly]
+        [ForeignKey(nameof(ConfigurationId))]
         public Configuration Configuration { get; set; }
 
         /// <summary>

@@ -53,11 +53,7 @@ namespace KlusterKite.NodeManager.Tests.Mock
         public static IPackageRepository CreateRepositoryFromLoadedAssemblies()
         {
             var loadedAssemblies = GetLoadedAssemblies()
-#if APPDOMAIN
-                .Where(a => !a.GlobalAssemblyCache && !a.IsDynamic)
-#elif CORECLR
                 .Where(a => !a.IsDynamic)
-#endif
                 .ToList();
 
             var ignoredAssemblies = loadedAssemblies.SelectMany(a => a.GetReferencedAssemblies())
@@ -140,9 +136,6 @@ namespace KlusterKite.NodeManager.Tests.Mock
                     {
                         var dependentAssembly = allAssemblies.FirstOrDefault(a => a.GetName().Name == d.Name);
                         return dependentAssembly != null && !dependentAssembly.IsDynamic
-#if APPDOMAIN
-                               && !dependentAssembly.GlobalAssemblyCache
-#endif
                                    ? dependentAssembly
                                    : null;
                     }).Where(d => d != null).Select(
@@ -168,22 +161,32 @@ namespace KlusterKite.NodeManager.Tests.Mock
                         throw new InvalidOperationException("Assembly has no location");
                     }
 
+
                     var fileName = Path.GetFileName(assembly.Location);
-                    File.Copy(assembly.Location, Path.Combine(destination, fileName));
+                    var assemblyFolder = Path.GetDirectoryName(assembly.Location);
+
+                    Directory.GetFiles(assemblyFolder, $"{Path.GetFileNameWithoutExtension(fileName)}.*").ToList()
+                    .ForEach(file =>
+                    {
+                        file = Path.GetFileName(file);
+                        File.Copy(Path.Combine(assemblyFolder, file), Path.Combine(destination, file), true);
+                    });
+
+
                     return new[] { fileName };
                 };
 
             return new TestPackage(assembly.GetName().Name, assembly.GetName().Version.ToString())
-                       {
-                           DependencySets =
+            {
+                DependencySets =
                                new[]
                                    {
                                        standardDependencies,
                                        net46Dependencies
                                    },
-                           Extract =
+                Extract =
                                extaction
-                       };
+            };
         }
 
         /// <summary>
@@ -199,7 +202,7 @@ namespace KlusterKite.NodeManager.Tests.Mock
             {
                 try
                 {
-                    assemblies.Add(Assembly.ReflectionOnlyLoadFrom(file));
+                    assemblies.Add(Assembly.LoadFrom(file));
                 }
                 catch
                 {
@@ -211,7 +214,7 @@ namespace KlusterKite.NodeManager.Tests.Mock
             {
                 try
                 {
-                    assemblies.Add(Assembly.ReflectionOnlyLoadFrom(file));
+                    assemblies.Add(Assembly.LoadFrom(file));
                 }
                 catch
                 {

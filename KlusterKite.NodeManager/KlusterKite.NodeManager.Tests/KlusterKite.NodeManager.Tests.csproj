@@ -33,7 +33,10 @@
     <ProjectReference Include="..\..\KlusterKite.Web\KlusterKite.Web.GraphQL.Publisher\KlusterKite.Web.GraphQL.Publisher.csproj" />
     <ProjectReference Include="..\KlusterKite.NodeManager.Authentication\KlusterKite.NodeManager.Authentication.csproj" />
     <ProjectReference Include="..\KlusterKite.NodeManager.ConfigurationSource.Seeder\KlusterKite.NodeManager.ConfigurationSource.Seeder.csproj" />
-    <ProjectReference Include="..\KlusterKite.NodeManager.Migrator.Executor\KlusterKite.NodeManager.Migrator.Executor.csproj" />
+    <ProjectReference Include="..\KlusterKite.NodeManager.Migrator.Executor\KlusterKite.NodeManager.Migrator.Executor.csproj">
+      <Private>True</Private>
+      <CopyLocalSatelliteAssemblies>True</CopyLocalSatelliteAssemblies>
+    </ProjectReference>
     <ProjectReference Include="..\KlusterKite.NodeManager\KlusterKite.NodeManager.csproj" />
   </ItemGroup>
   <ItemGroup>

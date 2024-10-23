@@ -112,7 +112,7 @@ namespace KlusterKite.NodeManager.Client.ORM
         /// </summary>
         [UsedImplicitly]
         [DeclareField("the list of compatible node templates", Access = EnAccessFlag.Queryable)]
-        [ForeignKey(nameof(CompatibleTemplate.ConfigurationId))]
+        [InverseProperty(nameof(CompatibleTemplate.Configuration))]
         public List<CompatibleTemplate> CompatibleTemplatesBackward { get; set; }
 
         /// <summary>
@@ -120,7 +120,7 @@ namespace KlusterKite.NodeManager.Client.ORM
         /// </summary>
         [UsedImplicitly]
         [DeclareField("the list of compatible node templates", Access = EnAccessFlag.Queryable)]
-        [ForeignKey(nameof(CompatibleTemplate.CompatibleConfigurationId))]
+        [InverseProperty(nameof(CompatibleTemplate.CompatibleConfiguration))]
         public List<CompatibleTemplate> CompatibleTemplatesForward { get; set; }
 
         /// <summary>
@@ -128,6 +128,7 @@ namespace KlusterKite.NodeManager.Client.ORM
         /// </summary>
         [UsedImplicitly]
         [DeclareField("the list of migration logs")]
+        [InverseProperty(nameof(MigrationLogRecord.Configuration))]
         public List<MigrationLogRecord> MigrationLogs { get; set; }
 
         /// <summary>
