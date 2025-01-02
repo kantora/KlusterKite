@@ -237,7 +237,8 @@ namespace KlusterKite.API.Tests.Mock
             get
             {
                 var date = new DateTime(1980, 9, 25, 10, 0, 0, DateTimeKind.Utc);
-                return TimeZoneInfo.ConvertTime(date, TimeZoneInfo.FindSystemTimeZoneById("Russian Standard Time"));
+                //date = TimeZoneInfo.ConvertTime(date, TimeZoneInfo.FindSystemTimeZoneById("Russian Standard Time"));
+                return date;
             }
         }
 

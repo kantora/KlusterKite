@@ -75,8 +75,7 @@ namespace KlusterKite.NodeManager.Authentication.Clients
         /// <inheritdoc />
         public async Task<AuthenticationResult> AuthenticateWithRefreshTicket(RefreshTicket refreshTicket)
         {
-            Guid uid;
-            if (!Guid.TryParseExact(refreshTicket.UserId, "N", out uid))
+            if (!Guid.TryParseExact(refreshTicket.UserId, "N", out Guid uid))
             {
                 return null;
             }

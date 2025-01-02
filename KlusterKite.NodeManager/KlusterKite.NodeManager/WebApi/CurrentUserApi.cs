@@ -60,8 +60,13 @@ namespace KlusterKite.NodeManager.WebApi
         /// Gets the current user data
         /// </summary>
         [UsedImplicitly]
+        [RequireSession]
         [DeclareField("Authenticated user")]
-        public UserDescription KlusterKiteUser => this.context?.Authentication?.User as UserDescription;
+        public UserDescription KlusterKiteUser { 
+            get { 
+                return this.context?.Authentication?.User as UserDescription;
+            } 
+        }
 
         /// <summary>
         /// Gets the current user privileges

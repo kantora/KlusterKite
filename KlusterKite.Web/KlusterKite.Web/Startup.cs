@@ -96,12 +96,6 @@ namespace KlusterKite.Web
         /// <param name="appBuilder">
         /// The builder
         /// </param>
-        /// <param name="env">
-        /// The env.
-        /// </param>
-        /// <param name="loggerFactory">
-        /// The logger Factory.
-        /// </param>
         [UsedImplicitly]
         public void Configure(IApplicationBuilder appBuilder)
         {

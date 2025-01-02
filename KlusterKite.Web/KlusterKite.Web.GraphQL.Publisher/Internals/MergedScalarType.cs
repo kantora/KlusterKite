@@ -71,7 +71,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                 case EnScalarType.Guid:
                     return new GuidGraphType();
                 case EnScalarType.DateTime:
-                    return new DateGraphType();
+                    return new DateTimeGraphType();
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -90,6 +90,8 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
             {
                 case EnScalarType.Guid:
                     return Guid.Parse(resolve.ToString());
+                case EnScalarType.DateTime:
+                    return ((resolve as JValue)?.Value as DateTime?)?.ToUniversalTime();
                 default:
                     return (resolve as JValue)?.Value;
             }

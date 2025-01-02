@@ -286,7 +286,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
             {
                 var apiField = usedField.Field.OriginalFields[provider.Description.ApiName];
                 if (apiField != null
-                    && !apiField.CheckAuthorization(context.UserContext as RequestContext, EnConnectionAction.Query))
+                    && !apiField.CheckAuthorization(context.UserContext.ToRequestContext(), EnConnectionAction.Query))
                 {
                     var severity = apiField.LogAccessRules.Any()
                                        ? apiField.LogAccessRules.Max(l => l.Severity)
@@ -295,7 +295,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                     SecurityLog.CreateRecord(
                         EnSecurityLogType.OperationDenied,
                         severity,
-                        context.UserContext as RequestContext,
+                        context.UserContext.ToRequestContext(),
                         "Unauthorized call to {ApiPath}",
                         $"{contextFieldAst.Name}.{apiField.Name}");
 

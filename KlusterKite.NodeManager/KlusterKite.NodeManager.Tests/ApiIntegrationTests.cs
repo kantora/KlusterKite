@@ -277,10 +277,14 @@ namespace KlusterKite.NodeManager.Tests
                 // ReSharper disable RedundantNameQualifier
                 return new BaseInstaller[]
                            {
-                               new KlusterKite.API.Endpoint.Installer(), new KlusterKite.Data.Installer(),
-                               new KlusterKite.Data.EF.Installer(), new KlusterKite.Data.EF.InMemory.Installer(),
-                               new KlusterKite.Core.Installer(), new KlusterKite.Core.TestKit.Installer(),
-                               new KlusterKite.Web.Installer(), new KlusterKite.Web.GraphQL.Publisher.Installer(),
+                               new KlusterKite.API.Endpoint.Installer(), 
+                               new KlusterKite.Data.Installer(),
+                               new KlusterKite.Data.EF.Installer(), 
+                               new KlusterKite.Data.EF.InMemory.Installer(),
+                               new KlusterKite.Core.Installer(), 
+                               new KlusterKite.Core.TestKit.Installer(),
+                               new KlusterKite.Web.Installer(), 
+                               new KlusterKite.Web.GraphQL.Publisher.Installer(),
                                new KlusterKite.Web.Authorization.Installer(),
                                new KlusterKite.Web.Authentication.Installer(),
                                new KlusterKite.NodeManager.Client.Installer(),

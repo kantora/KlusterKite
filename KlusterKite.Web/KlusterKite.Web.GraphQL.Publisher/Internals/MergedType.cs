@@ -116,7 +116,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
             var fragmentsUsed =
                 selectionSet.Selections.OfType<GraphQLFragmentSpread>()
                     .Select(fs => context.Document.FindFragmentDefinition(fs.FragmentName.Name))
-                    .Where(f => typeNames.Contains(f.FragmentName.ToString()));
+                    .Where(f => typeNames.Contains(f.TypeCondition.Type.Name.StringValue));
 
             foreach (var fragment in fragmentsUsed)
             {
@@ -217,7 +217,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                 return ValueTask.FromResult((object)parentData);
             }
 
-            return ValueTask.FromResult((object)parentData?.GetValue(context.FieldAst.Alias?.Name?.StringValue ?? context.FieldDefinition.Name));
+            return ValueTask.FromResult((object)parentData?.GetValue(context.FieldAst.Alias?.Name?.StringValue ?? context.FieldDefinition.Name));            
         }
 
         /// <inheritdoc />

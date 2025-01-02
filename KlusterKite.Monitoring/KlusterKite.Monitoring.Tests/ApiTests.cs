@@ -12,7 +12,7 @@ namespace KlusterKite.Monitoring.Tests
     using System.Collections.Generic;
 
     using Akka.Actor;
-
+    using GraphQL;
     using GraphQL.Utilities;
 
     using KlusterKite.Web.GraphQL.Publisher;
@@ -66,9 +66,7 @@ namespace KlusterKite.Monitoring.Tests
                 this.output.WriteLine($"Schema error: {error}");
             }
 
-            var printer = new SchemaPrinter(schema);
-
-            var description = printer.Print();
+            var description = schema.Print();
             this.output.WriteLine("-------- Schema -----------");
             this.output.WriteLine(description);
             Assert.False(string.IsNullOrWhiteSpace(description));

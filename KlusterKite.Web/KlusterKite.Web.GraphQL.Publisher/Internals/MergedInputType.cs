@@ -11,7 +11,6 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
 {
     using System.Collections.Generic;
     using System.Linq;
-    using Akka.Util.Internal;
     using global::GraphQL.Types;
 
     using KlusterKite.Web.GraphQL.Publisher.GraphTypes;

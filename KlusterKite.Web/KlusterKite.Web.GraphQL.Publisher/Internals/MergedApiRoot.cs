@@ -23,6 +23,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
     using KlusterKite.Security.Attributes;
     using KlusterKite.Security.Client;
     using KlusterKite.Web.GraphQL.Publisher.GraphTypes;
+    using KlusterKite.Web.GraphQL.Publisher.Internals;
 
     using Newtonsoft.Json.Linq;
     using global::GraphQL;
@@ -136,7 +137,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         /// <inheritdoc />
         public override async ValueTask<object> ResolveAsync(IResolveFieldContext context)
         {
-            return await this.DoApiRequests(context, context.UserContext as RequestContext);
+            return await this.DoApiRequests(context, context.UserContext.ToRequestContext());
         }
 
         /// <summary>
@@ -148,7 +149,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         private FieldType CreateNodeField(NodeInterface nodeInterface, bool addResolver)
         {
             var nodeFieldType = new FieldType();
-            nodeFieldType.Name = "_node";
+            nodeFieldType.Name = "node";
             nodeFieldType.ResolvedType = nodeInterface;
             nodeFieldType.Description = "The node global searcher according to Relay specification";
             nodeFieldType.Arguments =
@@ -267,7 +268,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                     return
                         this.DoConnectionMutationApiRequests(
                             context,
-                            context.UserContext as RequestContext,
+                            context.UserContext.ToRequestContext(),
                             connectionMutationResultType).Result;
                 }
 
@@ -277,11 +278,11 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                     return
                         this.DoUntypedMutationApiRequests(
                             context,
-                            context.UserContext as RequestContext,
+                            context.UserContext.ToRequestContext(),
                             untypedMutationResultType).Result;
                 }
 
-                return await this.DoApiRequests(context, context.UserContext as RequestContext);
+                return await this.DoApiRequests(context, context.UserContext.ToRequestContext());
             }
 
             /// <summary>
@@ -346,7 +347,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                     SecurityLog.CreateRecord(
                         EnSecurityLogType.OperationDenied,
                         severity,
-                        context.UserContext as RequestContext,
+                        context.UserContext.ToRequestContext(),
                         "Unauthorized call to {ApiPath}",
                         context.FieldAst.Name);
 
@@ -387,7 +388,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
 
                 foreach (var nodeRequest in nodeRequests)
                 {
-                    var nodeAlias = nodeRequest.Alias.Name.StringValue ?? nodeRequest.Name.StringValue;
+                    var nodeAlias = nodeRequest.Alias?.Name?.StringValue ?? nodeRequest.Name.StringValue;
                     switch (nodeRequest.Name.StringValue)
                     {
                         case "node":
@@ -507,7 +508,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                     SecurityLog.CreateRecord(
                         EnSecurityLogType.OperationDenied,
                         severity,
-                        context.UserContext as RequestContext,
+                        context.UserContext.ToRequestContext(),
                         "Unauthorized call to {ApiPath}",
                         context.FieldAst.Name);
 

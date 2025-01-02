@@ -140,7 +140,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
             /// <inheritdoc />
             public ValueTask<object> ResolveAsync(global::GraphQL.IResolveFieldContext context)
             {
-                return new ValueTask<object>((context.Source as JObject)?.Property("clientMutationId")?.Value);
+                return new ValueTask<object>(((context.Source as JObject)?.Property("clientMutationId")?.Value as JValue)?.Value);
             }
         }
 

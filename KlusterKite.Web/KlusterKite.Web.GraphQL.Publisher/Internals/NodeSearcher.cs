@@ -10,6 +10,7 @@
 namespace KlusterKite.Web.GraphQL.Publisher.Internals
 {
     using System.Collections.Generic;
+    using System.ComponentModel.DataAnnotations;
     using System.Linq;
     using System.Threading.Tasks;
 
@@ -47,9 +48,9 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
 
 
         /// <inheritdoc />
-        public ValueTask<object> ResolveAsync(global::GraphQL.IResolveFieldContext context)
-        {
-            return new ValueTask<object>(this.SearchNode(context));
+        public async ValueTask<object> ResolveAsync(global::GraphQL.IResolveFieldContext context)
+        {           
+            return await this.SearchNode(context);
         }
 
         /// <summary>
@@ -197,7 +198,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
 
                     path = new List<string>();
                     var requests = CreateRequest(globalId, typesList, path, tailRequests);
-                    result.Merge(await provider.Provider.GetData(requests, context.UserContext as RequestContext));
+                    result.Merge(await provider.Provider.GetData(requests, context.UserContext.ToRequestContext()));
                 }
             }
             else
@@ -206,7 +207,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                 var provider = finalType.Providers.First().Provider;
                 
                 tailRequests = CreateRequest(globalId, typesList, path, tailRequests);
-                result = await provider.GetData(tailRequests, context.UserContext as RequestContext);
+                result = await provider.GetData(tailRequests, context.UserContext.ToRequestContext());
             }
 
             var item = result.SelectToken(string.Join(".", path)) as JObject;

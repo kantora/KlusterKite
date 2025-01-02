@@ -101,6 +101,10 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                                     .Where(f => f.Name == "node"))
                             {
                                 fields.AddRange(
+                                    this.ElementType.GatherSingleApiRequest(nodeRequest, context));
+
+                                /*
+                                fields.AddRange(
                                     this.ElementType.GatherSingleApiRequest(nodeRequest, context).Select(
                                         f =>
                                             {
@@ -108,6 +112,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                                                     $"{nodeRequest.Alias?.Name?.StringValue ?? nodeRequest.Name.StringValue}_{f.Alias ?? f.FieldName}";
                                                 return f;
                                             }).ToList());
+                                */
                             }
 
                             yield return
@@ -232,6 +237,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
             }
 
             source.Add(MergedObjectType.RequestPropertyName, localRequest);
+
             var resolve = new ConnectionResolve
             {
                 Count = (long?)(source.GetValue("count") as JValue)?.Value,

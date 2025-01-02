@@ -18,12 +18,19 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
 
     using Newtonsoft.Json.Linq;
     using GraphQLParser.AST;
+    using KlusterKite.Security.Attributes;
+    using System.Globalization;
 
     /// <summary>
     /// Provides converter methods
     /// </summary>
-    internal static class Converter
+    public static class Converter
     {
+        /// <summary>
+        /// The key to dictionary used to pass the request context to the execution options
+        /// </summary>
+        private const string RequestContextKey = "RequestContext";
+
         /// <summary>
         /// Converts arguments to JSON object
         /// </summary>
@@ -39,6 +46,11 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         public static JObject ToJson(this IEnumerable<GraphQLArgument> arguments, IResolveFieldContext context)
         {
             var result = new JObject();
+            if (arguments == null)
+            {
+                return result;
+            }
+
             foreach (var argument in arguments)
             {
                 var value = ToJson(argument.Value, context);
@@ -90,20 +102,56 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                     .With<GraphQLVariable>(r =>
                     {
                         context.Variables.ValueFor(r.Name, out var variableValue);
-                        var token = JToken.FromObject(variableValue);
+                        var token = JToken.FromObject(variableValue.Value);
                         return token;
                     })
-                    .With<GraphQLIntValue>(v => new JValue(v.Value))
+                    .With<GraphQLIntValue>(v => new JValue(int.Parse(v.Value.ToString(), CultureInfo.InvariantCulture)))
                     .With<GraphQLFloatValue>(v => new JValue(v.Value))
-                    .With<GraphQLStringValue>(v => new JValue(v.Value))
+                    .With<GraphQLStringValue>(v => new JValue(v.Value.ToString()))
                    // .With<GraphQLDecimalValue>(v => new JValue(v.Value))
                     .With<GraphQLFloatValue>(v => new JValue(v.Value))
                     .With<GraphQLBooleanValue>(v => new JValue(v.Value))
                     //.With<GraphQLLongValue>(v => new JValue(v.Value))
-                    .With<GraphQLEnumValue>(v => new JValue(v.Name))
-                    .With<GraphQLListValue>(v => new JArray(v.Values.Select(sv => ToJson(sv, context))))
+                    .With<GraphQLEnumValue>(v => new JValue(v.Name.StringValue))
+                    .With<GraphQLListValue>(v => {
+                        var values = v.Values ?? new List<GraphQLValue>();
+                        return new JArray(values.Select(sv => ToJson(sv, context)));
+                        }                    )
                     .With<GraphQLObjectValue>(sv => ToJson(sv, context))
                     .ResultOrDefault(v => null);
+        }
+
+        /// <summary>
+        /// Converts the request context to the execution options user context
+        /// </summary>
+        /// <param name="context">The context to convert</param>
+        /// <returns>GrqphQL execution options user context</returns>
+        public static IDictionary<string, object?> ToExecutionOptionsUserContext(this RequestContext context)
+        {
+            return new Dictionary<string, object?>
+                       {
+                           { RequestContextKey, context },
+                       };
+        }
+
+        /// <summary>
+        /// Converts the execution options user context to the request context
+        /// </summary>
+        /// <param name="dict">The execution options user context to convert</param>
+        /// <returns>the request context</returns>
+        public static RequestContext? ToRequestContext(this IDictionary<string, object?> dict)
+        {
+            if (dict == null)
+            {
+                return null;
+            }
+
+            if (dict.TryGetValue(RequestContextKey, out var value) && value is RequestContext context)
+            {
+                return context;
+            }
+
+            return null;
         }
     }
 }

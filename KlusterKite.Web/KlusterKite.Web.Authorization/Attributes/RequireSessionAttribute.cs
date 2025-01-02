@@ -21,7 +21,7 @@ namespace KlusterKite.Web.Authorization.Attributes
     /// <summary>
     /// Marks api method to check for authentication
     /// </summary>
-    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method | AttributeTargets.Property)]
     public class RequireSessionAttribute : Attribute, IAuthorizationFilter
     {        
         /// <inheritdoc />

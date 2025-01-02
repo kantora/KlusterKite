@@ -312,7 +312,7 @@ namespace KlusterKite.API.Provider.Resolvers
                 rule.Severity,
                 context,
                 rule.LogMessage,
-                ((JObject)request.Arguments).ToString(Formatting.None));
+                ((JObject)request.Arguments)?.ToString(Formatting.None));
         }
 
         /// <summary>

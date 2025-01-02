@@ -16,6 +16,7 @@ namespace KlusterKite.Web.Tests.GraphQL
     using System.Threading.Tasks;
 
     using global::GraphQL;
+    using global::GraphQL.NewtonsoftJson;
     using global::GraphQL.Utilities;
 
     using JetBrains.Annotations;
@@ -26,7 +27,10 @@ namespace KlusterKite.Web.Tests.GraphQL
     using KlusterKite.Core;
     using KlusterKite.Core.Log;
     using KlusterKite.Security.Attributes;
+
     using KlusterKite.Web.GraphQL.Publisher;
+    using KlusterKite.Web.GraphQL.Publisher.Internals;
+
 
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
@@ -71,7 +75,7 @@ namespace KlusterKite.Web.Tests.GraphQL
             return JsonConvert.DeserializeObject<JObject>(response).ToString(Formatting.None);
         }
 
-        /*
+
 
         /// <summary>
         /// Testing connection query request from <see cref="ApiDescription"/>
@@ -136,7 +140,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                             edges {
                                 cursor,
                                 node {                                    
-                                    __id,
+                                    _id,
                                     name,
                                     value
                                 }                    
@@ -151,15 +155,17 @@ namespace KlusterKite.Web.Tests.GraphQL
                                  {
                                      r.Schema = schema;
                                      r.Query = query;
-                                     r.UserContext = new RequestContext();
+                                     r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
+                                     /*
                                      r.ComplexityConfiguration = new ComplexityConfiguration
                                                                      {
                                                                          FieldImpact = 2.0,
                                                                          MaxDepth = 15,
                                                                          MaxComplexity = 200
                                                                      };
+                                     */
                                  }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
             var expectedResult = @"
                             {
@@ -171,7 +177,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                       {
                                         ""cursor"": ""67885ba0-b284-438f-8393-ee9a9eb299d1"",
                                         ""node"": {
-                                          ""__id"": ""67885ba0-b284-438f-8393-ee9a9eb299d1"",
+                                          ""_id"": ""67885ba0-b284-438f-8393-ee9a9eb299d1"",
                                           ""name"": ""3-test"",
                                           ""value"": 50.0
                                         }
@@ -179,7 +185,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                       {
                                         ""cursor"": ""3af2c973-d985-4f95-a0c7-aa928d276881"",
                                         ""node"": {                                          
-                                          ""__id"": ""3af2c973-d985-4f95-a0c7-aa928d276881"",
+                                          ""_id"": ""3af2c973-d985-4f95-a0c7-aa928d276881"",
                                           ""name"": ""4-test"",
                                           ""value"": 70.0
                                         }
@@ -243,15 +249,17 @@ namespace KlusterKite.Web.Tests.GraphQL
                              {
                                  r.Schema = schema;
                                  r.Query = query;
-                                 r.UserContext = new RequestContext();
+                                 r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
+                                 /*
                                  r.ComplexityConfiguration = new ComplexityConfiguration
                                  {
                                      FieldImpact = 2.0,
                                      MaxDepth = 15,
                                      MaxComplexity = 200
                                  };
+                                 */
                              }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
             var expectedResult = $@"
                             {{
@@ -348,9 +356,9 @@ namespace KlusterKite.Web.Tests.GraphQL
                              {
                                  r.Schema = schema;
                                  r.Query = query;
-                                 r.UserContext = new RequestContext();
+                                 r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
                              }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
             var expectedResult = $@"
                             {{
@@ -464,15 +472,17 @@ namespace KlusterKite.Web.Tests.GraphQL
                              {
                                  r.Schema = schema;
                                  r.Query = query;
-                                 r.UserContext = new RequestContext();
+                                 r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
+                                 /*
                                  r.ComplexityConfiguration = new ComplexityConfiguration
                                  {
                                      FieldImpact = 2.0,
                                      MaxDepth = 15,
                                      MaxComplexity = 200
                                  };
+                                 */
                              }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
             var expectedResult = @"
                             {
@@ -574,7 +584,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                     naming: name,
                                 },
                                 item2: node {
-                                    id2: __id,
+                                    id2: _id,
                                     v2: value
                                 },                      
                             },
@@ -585,7 +595,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                     type
                                 },
                                 item2: node {
-                                    id2: __id,
+                                    id2: _id,
                                     naming2: name,
                                     v2: value,
                                     type
@@ -601,9 +611,9 @@ namespace KlusterKite.Web.Tests.GraphQL
                                  {
                                      r.Schema = schema;
                                      r.Query = query;
-                                     r.UserContext = new RequestContext();
+                                     r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
                                  }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
             var expectedResult = @"
                                     {
@@ -774,11 +784,11 @@ namespace KlusterKite.Web.Tests.GraphQL
                                  {
                                      r.Schema = schema;
                                      r.Query = query;
-                                     r.UserContext = new RequestContext();
+                                     r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
                                  }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
-            
+
             var expectedResult = $@"
                                     {{
                                       ""data"": {{
@@ -940,9 +950,9 @@ namespace KlusterKite.Web.Tests.GraphQL
                                  {
                                      r.Schema = schema;
                                      r.Query = query;
-                                     r.UserContext = new RequestContext();
+                                     r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
                                  }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
 
             var expectedResult = $@"
@@ -1109,11 +1119,11 @@ namespace KlusterKite.Web.Tests.GraphQL
                                  {
                                      r.Schema = schema;
                                      r.Query = query;
-                                     r.UserContext = new RequestContext();
+                                     r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
                                  }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
-            
+
             var expectedResult = $@"
                                 {{
                                   ""data"": {{
@@ -1250,9 +1260,9 @@ namespace KlusterKite.Web.Tests.GraphQL
                              {
                                  r.Schema = schema;
                                  r.Query = query;
-                                 r.UserContext = new RequestContext();
+                                 r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
                              }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
 
             var expectedResult = $@"
@@ -1400,11 +1410,11 @@ namespace KlusterKite.Web.Tests.GraphQL
                                  {
                                      r.Schema = schema;
                                      r.Query = query;
-                                     r.UserContext = new RequestContext();
+                                     r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
                                  }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
-            
+
             var expectedResult = $@"
                                     {{
                                       ""data"": {{
@@ -1553,9 +1563,9 @@ namespace KlusterKite.Web.Tests.GraphQL
                              {
                                  r.Schema = schema;
                                  r.Query = query;
-                                 r.UserContext = new RequestContext();
+                                 r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
                              }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
 
             var expectedResult = $@"
@@ -1708,9 +1718,9 @@ namespace KlusterKite.Web.Tests.GraphQL
                                  {
                                      r.Schema = schema;
                                      r.Query = query;
-                                     r.UserContext = new RequestContext();
+                                     r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
                                  }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
 
             var expectedResult = @"
@@ -1749,7 +1759,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                       }
                                     }
                                 ";
-             Assert.Equal(CleanResponse(expectedResult), CleanResponse(response));
+            Assert.Equal(CleanResponse(expectedResult), CleanResponse(response));
         }
 
         /// <summary>
@@ -1789,10 +1799,10 @@ namespace KlusterKite.Web.Tests.GraphQL
 
             var internalApiProvider = new TestProvider(initialObjects);
             var publishingProvider = new DirectProvider(internalApiProvider, this.output.WriteLine)
-                                         {
-                                             UseJsonRepack =
+            {
+                UseJsonRepack =
                                                  true
-                                         };
+            };
             var schema = SchemaGenerator.Generate(new List<ApiProvider> { publishingProvider });
 
             var globalId =
@@ -1809,7 +1819,7 @@ namespace KlusterKite.Web.Tests.GraphQL
 
                 fragment F0 on TestApi_TestObject 
                 {{
-                    __id,
+                    _id,
                     id,
                     name,
                     value
@@ -1821,15 +1831,16 @@ namespace KlusterKite.Web.Tests.GraphQL
                                  {
                                      r.Schema = schema;
                                      r.Query = query;
-                                     r.UserContext = new RequestContext();
+                                     r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
+                                     r.ThrowOnUnhandledException = true;
                                  }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
             var expectedResult = $@"
                             {{
                               ""data"": {{
                                 ""node"": {{
-                                  ""__id"": ""67885ba0-b284-438f-8393-ee9a9eb299d1"",
+                                  ""_id"": ""67885ba0-b284-438f-8393-ee9a9eb299d1"",
                                   ""id"": ""{globalId.Replace("\"", "\\\"")}"",
                                   ""name"": ""1-test"",
                                   ""value"": 100.0
@@ -1876,10 +1887,10 @@ namespace KlusterKite.Web.Tests.GraphQL
 
             var internalApiProvider = new TestProvider(initialObjects);
             var publishingProvider = new DirectProvider(internalApiProvider, this.output.WriteLine)
-                                         {
-                                             UseJsonRepack =
+            {
+                UseJsonRepack =
                                                  true
-                                         };
+            };
             var schema = SchemaGenerator.Generate(new List<ApiProvider> { publishingProvider });
 
             var globalId =
@@ -1899,9 +1910,10 @@ namespace KlusterKite.Web.Tests.GraphQL
                                  {
                                      r.Schema = schema;
                                      r.Query = query;
-                                     r.UserContext = new RequestContext();
+                                     r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
+                                     r.ThrowOnUnhandledException = true;
                                  }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
             var expectedResult = $@"
                             {{
@@ -1949,10 +1961,10 @@ namespace KlusterKite.Web.Tests.GraphQL
 
             var internalApiProvider = new TestProvider(initialObjects);
             var publishingProvider = new DirectProvider(internalApiProvider, this.output.WriteLine)
-                                         {
-                                             UseJsonRepack =
+            {
+                UseJsonRepack =
                                                  true
-                                         };
+            };
             var schema = SchemaGenerator.Generate(new List<ApiProvider> { publishingProvider });
 
             var globalId =
@@ -1970,7 +1982,7 @@ namespace KlusterKite.Web.Tests.GraphQL
 
                 fragment F0 on TestApi_TestObject 
                 {{
-                    __id,
+                    _id,
                     id,
                     name,
                     value
@@ -1982,15 +1994,15 @@ namespace KlusterKite.Web.Tests.GraphQL
                                  {
                                      r.Schema = schema;
                                      r.Query = query;
-                                     r.UserContext = new RequestContext();
+                                     r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
                                  }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
             var expectedResult = $@"
                             {{
                               ""data"": {{
                                 ""node"": {{
-                                  ""__id"": ""67885ba0-b284-438f-8393-ee9a9eb299d1"",
+                                  ""_id"": ""67885ba0-b284-438f-8393-ee9a9eb299d1"",
                                   ""id"": ""{globalId.Replace("\"", "\\\"")}"",
                                   ""name"": ""1-test"",
                                   ""value"": 100.0
@@ -2023,10 +2035,10 @@ namespace KlusterKite.Web.Tests.GraphQL
 
             var internalApiProvider = new TestProvider(initialObjects);
             var publishingProvider = new DirectProvider(internalApiProvider, this.output.WriteLine)
-                                         {
-                                             UseJsonRepack =
+            {
+                UseJsonRepack =
                                                  true
-                                         };
+            };
             var schema = SchemaGenerator.Generate(new List<ApiProvider> { publishingProvider });
             var globalId = JArray.Parse("[{\"f\":\"nestedSync\"}, {\"f\":\"this\"}]").PackGlobalId();
             Assert.NotNull(globalId);
@@ -2049,9 +2061,9 @@ namespace KlusterKite.Web.Tests.GraphQL
                                  {
                                      r.Schema = schema;
                                      r.Query = query;
-                                     r.UserContext = new RequestContext();
+                                     r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
                                  }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
             var expectedResult = @"
                                         {
@@ -2115,9 +2127,9 @@ namespace KlusterKite.Web.Tests.GraphQL
                              {
                                  r.Schema = schema;
                                  r.Query = query;
-                                 r.UserContext = new RequestContext();
+                                 r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
                              }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
             var expectedResult = @"
                                         {
@@ -2153,10 +2165,10 @@ namespace KlusterKite.Web.Tests.GraphQL
 
             var internalApiProvider = new TestProvider(initialObjects);
             var publishingProvider = new DirectProvider(internalApiProvider, this.output.WriteLine)
-                                         {
-                                             UseJsonRepack =
+            {
+                UseJsonRepack =
                                                  true
-                                         };
+            };
             var schema = SchemaGenerator.Generate(new List<ApiProvider> { publishingProvider });
 
             var globalId = JArray.Parse("[{\"f\":\"connection\","
@@ -2166,7 +2178,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                 {{
                     api {{
                         
-                        __node(id: ""{globalId.Replace("\"", "\\\"")}"") 
+                        node(id: ""{globalId.Replace("\"", "\\\"")}"") 
                         {{
                             ...F0
                         }}
@@ -2175,7 +2187,7 @@ namespace KlusterKite.Web.Tests.GraphQL
 
                 fragment F0 on TestApi_TestObject 
                 {{
-                    __id,
+                    _id,
                     id,
                     name,
                     value
@@ -2187,16 +2199,16 @@ namespace KlusterKite.Web.Tests.GraphQL
                                  {
                                      r.Schema = schema;
                                      r.Query = query;
-                                     r.UserContext = new RequestContext();
+                                     r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
                                  }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
             var expectedResult = $@"
                             {{
                               ""data"": {{
                                 ""api"": {{
-                                    ""__node"": {{
-                                      ""__id"": ""67885ba0-b284-438f-8393-ee9a9eb299d1"",
+                                    ""node"": {{
+                                      ""_id"": ""67885ba0-b284-438f-8393-ee9a9eb299d1"",
                                       ""id"": ""{globalId.Replace("\"", "\\\"")}"",
                                       ""name"": ""1-test"",
                                       ""value"": 100.0
@@ -2238,7 +2250,7 @@ namespace KlusterKite.Web.Tests.GraphQL
             }
 
             fragment F0 on TestApi_TestObject {
-                __id,
+                _id,
                 id,
                 name,
                 value
@@ -2260,16 +2272,16 @@ namespace KlusterKite.Web.Tests.GraphQL
                                  {
                                      r.Schema = schema;
                                      r.Query = query;
-                                     r.UserContext = new RequestContext();
-                                     r.Inputs = variables.ToInputs();
+                                     r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
+                                     r.Variables = new GraphQLSerializer(false).Deserialize<Inputs>(variables);
                                  }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
             var expectedResult = $@"
                             {{
                               ""data"": {{
                                 ""node"": {{
-                                  ""__id"": ""67885ba0-b284-438f-8393-ee9a9eb299d1"",
+                                  ""_id"": ""67885ba0-b284-438f-8393-ee9a9eb299d1"",
                                   ""id"": ""{globalId.Replace("\"", "\\\"")}"",
                                   ""name"": ""1-test"",
                                   ""value"": 100.0
@@ -2307,9 +2319,9 @@ namespace KlusterKite.Web.Tests.GraphQL
                                  {
                                      r.Schema = schema;
                                      r.Query = query;
-                                     r.UserContext = new RequestContext();
+                                     r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
                                  }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
 
             var expectedResult = @"
@@ -2358,19 +2370,20 @@ namespace KlusterKite.Web.Tests.GraphQL
             }
             ";
 
-            var inputs = variables.ToInputs();
+            var writer = new GraphQLSerializer(false);
+            var inputs = writer.Deserialize<Inputs>(variables);
 
             Action<ExecutionOptions> configure = r =>
                 {
                     r.Schema = schema;
                     r.Query = query;
-                    r.Inputs = inputs;
-                    r.UserContext = new RequestContext();
+                    r.Variables = inputs;
+                    r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
                 };
 
             var result = await new DocumentExecuter().ExecuteAsync(
                              configure).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
 
             var expectedResult = @"
@@ -2418,9 +2431,10 @@ namespace KlusterKite.Web.Tests.GraphQL
                                  {
                                      r.Schema = schema;
                                      r.Query = query;
-                                     r.UserContext = new RequestContext();
+                                     r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
+                                     r.ThrowOnUnhandledException = true;
                                  }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
 
             var expectedResult = @"
@@ -2512,9 +2526,10 @@ namespace KlusterKite.Web.Tests.GraphQL
                                  {
                                      r.Schema = schema;
                                      r.Query = query;
-                                     r.UserContext = new RequestContext();
+                                     r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
+                                     r.ThrowOnUnhandledException = true;
                                  }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
             var json = JObject.Parse(response);
             Assert.Equal(name, json.SelectToken("data.call.result.name")?.Value<string>());
@@ -2558,9 +2573,9 @@ namespace KlusterKite.Web.Tests.GraphQL
                              {
                                  r.Schema = schema;
                                  r.Query = query;
-                                 r.UserContext = new RequestContext();
+                                 r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
                              }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
 
             var expectedResult = @"
@@ -2602,9 +2617,9 @@ namespace KlusterKite.Web.Tests.GraphQL
                              {
                                  r.Schema = schema;
                                  r.Query = query;
-                                 r.UserContext = new RequestContext();
+                                 r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
                              }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
 
             var expectedResult = @"
@@ -2646,13 +2661,12 @@ namespace KlusterKite.Web.Tests.GraphQL
                 this.output.WriteLine(error);
             }
 
-            using (var printer = new SchemaPrinter(schema))
-            {
-                var description = printer.Print();
-                this.output.WriteLine("-------- Schema -----------");
-                this.output.WriteLine(description);
-                Assert.False(string.IsNullOrWhiteSpace(description));
-            }
+
+            var description = schema.Print();
+            this.output.WriteLine("-------- Schema -----------");
+            this.output.WriteLine(description);
+            Assert.False(string.IsNullOrWhiteSpace(description));
+
 
             Assert.NotNull(schema.Query);
             Assert.Equal(3, schema.Query.Fields.Count());
@@ -2667,9 +2681,9 @@ namespace KlusterKite.Web.Tests.GraphQL
                                  {
                                      r.Schema = schema;
                                      r.Query = query;
-                                     r.UserContext = new RequestContext();
+                                     r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
                                  }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
 
             Assert.False(hasErrors);
@@ -2719,9 +2733,9 @@ namespace KlusterKite.Web.Tests.GraphQL
                                  {
                                      r.Schema = schema;
                                      r.Query = query;
-                                     r.UserContext = new RequestContext();
+                                     r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
                                  }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
 
             var expectedResult = @"
@@ -2826,9 +2840,9 @@ namespace KlusterKite.Web.Tests.GraphQL
             var sink = CreateSecurityLogger();
             var internalApiProvider = new TestProvider();
             var publishingProvider = new DirectProvider(internalApiProvider, this.output.WriteLine)
-                                         {
-                                             UseJsonRepack = true
-                                         };
+            {
+                UseJsonRepack = true
+            };
 
             var schema = SchemaGenerator.Generate(new List<ApiProvider> { publishingProvider });
             var query = $@"
@@ -2860,13 +2874,13 @@ namespace KlusterKite.Web.Tests.GraphQL
             }
 
             var result = await new DocumentExecuter().ExecuteAsync(
-                r => 
+                r =>
                 {
-                                     r.Schema = schema;
-                                     r.Query = query;
-                                     r.UserContext = context;
+                    r.Schema = schema;
+                    r.Query = query;
+                    r.UserContext = context.ToExecutionOptionsUserContext();
                 }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
 
             var expectedResult = $@"
@@ -2896,10 +2910,10 @@ namespace KlusterKite.Web.Tests.GraphQL
             var sink = CreateSecurityLogger();
             var internalApiProvider = new TestProvider();
             var publishingProvider = new DirectProvider(internalApiProvider, this.output.WriteLine)
-                                         {
-                                             UseJsonRepack =
+            {
+                UseJsonRepack =
                                                  true
-                                         };
+            };
 
             var schema = SchemaGenerator.Generate(new List<ApiProvider> { publishingProvider });
             var query = @"
@@ -2933,12 +2947,12 @@ namespace KlusterKite.Web.Tests.GraphQL
                                  {
                                      r.Schema = schema;
                                      r.Query = query;
-                                     r.UserContext = context;
+                                     r.UserContext = context.ToExecutionOptionsUserContext();
                                  }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
 
-            var expectedResult = expectingResult 
+            var expectedResult = expectingResult
                       ? @"
                         {
                             ""data"": {
@@ -2980,10 +2994,10 @@ namespace KlusterKite.Web.Tests.GraphQL
             var sink = CreateSecurityLogger();
             var internalApiProvider = new TestProvider();
             var publishingProvider = new DirectProvider(internalApiProvider, this.output.WriteLine)
-                                         {
-                                             UseJsonRepack =
+            {
+                UseJsonRepack =
                                                  true
-                                         };
+            };
             var schema = SchemaGenerator.Generate(new List<ApiProvider> { publishingProvider });
 
             var query = @"
@@ -3003,9 +3017,9 @@ namespace KlusterKite.Web.Tests.GraphQL
                                  {
                                      r.Schema = schema;
                                      r.Query = query;
-                                     r.UserContext = new RequestContext();
+                                     r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
                                  }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
 
             var expectedResult = @"
@@ -3029,13 +3043,11 @@ namespace KlusterKite.Web.Tests.GraphQL
             }
 
             Assert.Equal(3, sink.LogEvents.Count);
-            Assert.True(events.Any(e => e.RenderMessage() == "Connection queried"));
-            Assert.True(events.Any(e => e.RenderMessage() == "LoggedWithMessageField accessed"));
-            Assert.True(
-                events.Any(
-                    e =>
+            Assert.Contains(events, e => e.RenderMessage() == "Connection queried");
+            Assert.Contains(events, e => e.RenderMessage() == "LoggedWithMessageField accessed");
+            Assert.Contains(events, e =>
                         e.RenderMessage()
-                        == "The property LoggedNoMessageField of KlusterKite.API.Tests.Mock.TestProvider with id null was accessed"));
+                        == "The property LoggedNoMessageField of KlusterKite.API.Tests.Mock.TestProvider with id null was accessed");
         }
 
         /// <summary>
@@ -3048,10 +3060,10 @@ namespace KlusterKite.Web.Tests.GraphQL
             var sink = CreateSecurityLogger();
             var internalApiProvider = new TestProvider();
             var publishingProvider = new DirectProvider(internalApiProvider, this.output.WriteLine)
-                                         {
-                                             UseJsonRepack =
+            {
+                UseJsonRepack =
                                                  true
-                                         };
+            };
             var schema = SchemaGenerator.Generate(new List<ApiProvider> { publishingProvider });
 
             var query = @"
@@ -3082,9 +3094,10 @@ namespace KlusterKite.Web.Tests.GraphQL
                                  {
                                      r.Schema = schema;
                                      r.Query = query;
-                                     r.UserContext = new RequestContext();
+                                     r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
+                                     r.ThrowOnUnhandledException = true;
                                  }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
 
             var expectedResult = @"
@@ -3199,11 +3212,11 @@ namespace KlusterKite.Web.Tests.GraphQL
                              {
                                  r.Schema = schema;
                                  r.Query = query;
-                                 r.UserContext = context;
+                                 r.UserContext = context.ToExecutionOptionsUserContext();
                              }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
-            
+
             var expectedResult = expectingResult
                             ? @"
                             {
@@ -3271,7 +3284,7 @@ namespace KlusterKite.Web.Tests.GraphQL
         [InlineData(true, "allow", "authorizedNamedConnection_delete", "input: {id: \"3BEEE369-11DF-4A30-BF11-1D8465C87110\"}", "{\"data\": {\"m\":  {\"node\": null}}}", false)]
         [InlineData(true, "allow.Delete", "authorizedNamedConnection_delete", "input: {id: \"3BEEE369-11DF-4A30-BF11-1D8465C87110\"}", "{\"data\": {\"m\": {\"node\": {\"name\": \"1-test\"}}}}", true)]
         public async Task AuthorizationConnectionMutationTest(
-            bool setSession, 
+            bool setSession,
             string privilege,
             string mutationName,
             string arguments,
@@ -3324,9 +3337,9 @@ namespace KlusterKite.Web.Tests.GraphQL
                              {
                                  r.Schema = schema;
                                  r.Query = query;
-                                 r.UserContext = context;
+                                 r.UserContext = context.ToExecutionOptionsUserContext();
                              }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
             Assert.Equal(CleanResponse(expectedResult), CleanResponse(response));
             Assert.Equal(expectingResult ? 0 : 1, sink.LogEvents.Count);
@@ -3359,9 +3372,11 @@ namespace KlusterKite.Web.Tests.GraphQL
                              {
                                  r.Schema = schema;
                                  r.Query = query;
-                                 r.UserContext = new RequestContext();
+                                 r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
+                                 r.ThrowOnUnhandledException = true;
                              }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+          
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
 
             var expectedResult = @"
@@ -3378,7 +3393,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                         ";
             Assert.Equal(CleanResponse(expectedResult), CleanResponse(response));
         }
-        
+
         /// <summary>
         /// Testing simple fields requests from <see cref="ApiDescription"/>
         /// </summary>
@@ -3405,28 +3420,39 @@ namespace KlusterKite.Web.Tests.GraphQL
                              {
                                  r.Schema = schema;
                                  r.Query = faultingQuery;
-                                 r.UserContext = new RequestContext();
+                                 r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
                              }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
 
             var expectedResult = @"
-                        {
-                          ""data"": null,
-                          ""errors"": [
-                            {
-                              ""message"": ""Error trying to resolve api."",
-                              ""locations"": [
-                                {
-                                  ""Line"": 3,
-                                  ""Column"": 17
-                                }
-                              ]
-                            }
-                          ]
-                        }";
+                                    {
+                                      ""errors"": [
+                                        {
+                                          ""message"": ""Error trying to resolve field 'api'."",
+                                          ""locations"": [
+                                            {
+                                              ""line"": 3,
+                                              ""column"": 17
+                                            }
+                                          ],
+                                          ""path"": [
+                                            ""api""
+                                          ],
+                                          ""extensions"": {
+                                            ""code"": """",
+                                            ""codes"": [
+                                              """"
+                                            ]
+                                          }
+                                        }
+                                      ],
+                                      ""data"": {
+                                        ""api"": null
+                                      }
+                                    }";
             Assert.Equal(CleanResponse(expectedResult), CleanResponse(response));
-            
+
             var successQuery = @"
             {                
                 api {                    
@@ -3440,9 +3466,9 @@ namespace KlusterKite.Web.Tests.GraphQL
                              {
                                  r.Schema = schema;
                                  r.Query = successQuery;
-                                 r.UserContext = new RequestContext();
+                                 r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
                              }).ConfigureAwait(true);
-            response = new DocumentWriter(true).Write(result);
+            response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
 
             expectedResult = @"
@@ -3471,9 +3497,9 @@ namespace KlusterKite.Web.Tests.GraphQL
                              {
                                  r.Schema = schema;
                                  r.Query = Queries.IntrospectionQuery;
-                                 r.UserContext = new RequestContext();
+                                 r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
                              }).ConfigureAwait(true);
-            var response = JObject.Parse(new DocumentWriter(true).Write(result));
+            var response = JObject.Parse(new GraphQLSerializer(true).Serialize(result));
             Assert.NotNull(response);
 
             var queryType = response.SelectToken("$.data.__schema.types[?(@.name == 'TestApi_NestedProvider')]");
@@ -3517,9 +3543,9 @@ namespace KlusterKite.Web.Tests.GraphQL
                              {
                                  r.Schema = schema;
                                  r.Query = query;
-                                 r.UserContext = new RequestContext();
+                                 r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
                              }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
 
             var expectedResult = @"
@@ -3543,7 +3569,7 @@ namespace KlusterKite.Web.Tests.GraphQL
         /// Testing simple fields requests from <see cref="ApiDescription"/>
         /// </summary>
         /// <returns>Async task</returns>
-        [Fact(Skip = "Core lib problem")]
+        [Fact()]
         public async Task SimpleFieldsMergeWithRootTest()
         {
             var internalApiProvider = new TestProvider();
@@ -3589,9 +3615,9 @@ namespace KlusterKite.Web.Tests.GraphQL
                                  {
                                      r.Schema = schema;
                                      r.Query = query;
-                                     r.UserContext = new RequestContext();
+                                     r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
                                  }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
 
             var expectedResult = @"
@@ -3624,10 +3650,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                 ""syncScalarField"": ""SyncScalarField""
                               },
                               ""syncScalarField"": ""SyncScalarField"",
-                              ""faultedASyncMethod"": {
-                                ""asyncScalarField"": null,
-                                ""syncScalarField"": null
-                              },
+                              ""faultedASyncMethod"": null,
                               ""syncEnumField"": ""EnumItem1"",
                               ""syncFlagsField"": 1,
                             }
@@ -3676,9 +3699,9 @@ namespace KlusterKite.Web.Tests.GraphQL
                                  {
                                      r.Schema = schema;
                                      r.Query = query;
-                                     r.UserContext = new RequestContext();
+                                     r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
                                  }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
 
             var expectedResult = @"
@@ -3714,7 +3737,7 @@ namespace KlusterKite.Web.Tests.GraphQL
 
             Assert.Equal(CleanResponse(expectedResult), CleanResponse(response));
         }
-        
+
         /// <summary>
         /// Testing querying the objects virtual id
         /// </summary>
@@ -3765,9 +3788,10 @@ namespace KlusterKite.Web.Tests.GraphQL
                              {
                                  r.Schema = schema;
                                  r.Query = query;
-                                 r.UserContext = new RequestContext();
+                                 r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
+                                 r.ThrowOnUnhandledException = true;
                              }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
 
             var expectedResult = $@"
@@ -3833,9 +3857,10 @@ namespace KlusterKite.Web.Tests.GraphQL
                                  {
                                      r.Schema = schema;
                                      r.Query = query;
-                                     r.UserContext = new RequestContext();
+                                     r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
+                                     r.ThrowOnUnhandledException = true;
                                  }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
 
             var expectedResult = @"
@@ -3876,9 +3901,9 @@ namespace KlusterKite.Web.Tests.GraphQL
                                  {
                                      r.Schema = schema;
                                      r.Query = query;
-                                     r.UserContext = new RequestContext();
+                                     r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
                                  }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
 
             var expectedResult = @"
@@ -3919,9 +3944,9 @@ namespace KlusterKite.Web.Tests.GraphQL
                              {
                                  r.Schema = schema;
                                  r.Query = query;
-                                 r.UserContext = new RequestContext();
+                                 r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
                              }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
 
             var expectedResult = @"
@@ -3967,9 +3992,9 @@ namespace KlusterKite.Web.Tests.GraphQL
                                  {
                                      r.Schema = schema;
                                      r.Query = query;
-                                     r.UserContext = new RequestContext();
+                                     r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
                                  }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
 
             var expectedResult = @"
@@ -4023,9 +4048,9 @@ namespace KlusterKite.Web.Tests.GraphQL
                                  {
                                      r.Schema = schema;
                                      r.Query = query;
-                                     r.UserContext = new RequestContext();
+                                     r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
                                  }).ConfigureAwait(true);
-            var response = new DocumentWriter(true).Write(result);
+            var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
 
             var expectedResult = @"
@@ -4044,7 +4069,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                         ";
 
             Assert.Equal(
-                CleanResponse(expectedResult), 
+                CleanResponse(expectedResult),
                 CleanResponse(response));
         }
 
@@ -4096,7 +4121,7 @@ namespace KlusterKite.Web.Tests.GraphQL
             }
 
             /// <inheritdoc />
-            public override async Task<JObject> GetData(List<ApiRequest> requests, RequestContext context)
+            public override async ValueTask<JObject> GetData(List<ApiRequest> requests, RequestContext context)
             {
                 await base.GetData(requests, context);
                 throw new Exception("Test exception");
@@ -4128,7 +4153,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                 this.LogEvents.Add(logEvent);
             }
         }
-        */
+
     }
-        
+
 }

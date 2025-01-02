@@ -27,6 +27,7 @@ namespace KlusterKite.Web.GraphQL.Publisher
     using JetBrains.Annotations;
 
     using KlusterKite.Web.Authorization;
+    using KlusterKite.Web.GraphQL.Publisher.Internals;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
 
@@ -92,7 +93,6 @@ namespace KlusterKite.Web.GraphQL.Publisher
         /// <summary>
         /// Processes the GraphQL post request
         /// </summary>
-        /// <param name="query">The query data</param>
         /// <returns>GraphQL response</returns>
         [HttpPost]
         [HttpOptions]
@@ -141,6 +141,7 @@ namespace KlusterKite.Web.GraphQL.Publisher
         {
             try
             {
+                var requestContext = this.GetRequestDescription();
                 var opts = new ExecutionOptions
                 {
                     Query = request?.Query,
@@ -148,13 +149,14 @@ namespace KlusterKite.Web.GraphQL.Publisher
                     Variables = request?.Variables,
                     Extensions = request?.Extensions,
                     CancellationToken = HttpContext.RequestAborted,
-                    RequestServices = HttpContext.RequestServices,
-                    User = HttpContext.User,
-                    Schema = this.schemaProvider.CurrentSchema
+                    RequestServices = HttpContext.RequestServices,                   
+                    Schema = this.schemaProvider.CurrentSchema,
+                    UserContext = requestContext.ToExecutionOptionsUserContext(),
+                    //ThrowOnUnhandledException = true,
                 };
                 IValidationRule rule = HttpMethods.IsGet(HttpContext.Request.Method) ? new HttpGetValidationRule() : new HttpPostValidationRule();
                 opts.ValidationRules = DocumentValidator.CoreRules.Append(rule);
-                opts.CachedDocumentValidationRules = new[] { rule };
+                opts.CachedDocumentValidationRules = [rule];
                 var result = await this.executor.ExecuteAsync(opts);
                 if (!result.Executed && result.Errors.Count == 1 && result.Errors.First().Code == "INVALID_OPERATION")
                 {
