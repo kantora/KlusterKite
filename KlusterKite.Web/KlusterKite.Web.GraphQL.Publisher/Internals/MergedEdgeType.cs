@@ -15,7 +15,8 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
     using global::GraphQL;
     using global::GraphQL.Resolvers;
     using global::GraphQL.Types;
-
+    using GraphQLParser.AST;
+    using KlusterKite.API.Client;
     using KlusterKite.Web.GraphQL.Publisher.GraphTypes;
 
     using Newtonsoft.Json.Linq;
@@ -66,13 +67,24 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
             {
                 Name = "cursor",
                 ResolvedType = new StringGraphType(),
-                // Resolver = new CursorResolver(),
+                //Resolver = new CursorResolver(),
                 Description = "A value to use with paging positioning"
             };
+
+            cursorField.Metadata[MetaDataTypeKey] = new MergedField(
+                "cursor",
+                new MergedScalarType(EnScalarType.String),
+                this.Provider,
+                null,
+                description: "A value to use with paging positioning")
+            {
+                Resolver = new CursorResolver()
+            };
+
             FieldType nodeField = new FieldType
             {
                 Name = "node",
-                ResolvedType = this.ObjectType.GenerateGraphType(nodeInterface,null)
+                ResolvedType = this.ObjectType.GenerateGraphType(nodeInterface, null)
 
             };
 
@@ -148,18 +160,20 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         /// <inheritdoc />
         public override async ValueTask<object> ResolveAsync(IResolveFieldContext context)
         {
-            var parentData = context.Source as ConnectionResolve;
+            var parentData = context.Source as JObject;
             if (parentData == null)
             {
                 return null;
             }
 
+            var edges = parentData.GetValue(context.FieldAst.Alias?.Name?.StringValue ?? context.FieldAst.Name.StringValue) as JArray;
+            if (edges == null)
+            {
+                return null;
+            }
 
-            return parentData.Edges.Select(node => new EdgeValue { 
-                Cursor = (node as JObject)?.GetValue("_id")?.ToString(),
-                Node = node as JObject
-            });
 
+            return edges.Select(obj => new EdgeValue { Node = obj as JObject });
         }
 
         private class EdgeValue
@@ -194,7 +208,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
             /// <inheritdoc />
             public async ValueTask<object> ResolveAsync(IResolveFieldContext context)
             {
-                var source = context.Source as EdgeValue;
+                var source = (context.Source as EdgeValue)?.Node;
                 if (source == null)
                 {
                     return null;
@@ -213,7 +227,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                 source.Add(fieldName, filteredSource);
                 */
 
-                return this.originalType.ResolveData(context, source.Node, false);
+                return this.originalType.ResolveData(context, source, false);
             }
         }
 
@@ -222,10 +236,9 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         /// </summary>
         private class CursorResolver : IFieldResolver
         {
-
             public async ValueTask<object> ResolveAsync(IResolveFieldContext context)
             {
-                return (context.Source as JObject)?.GetValue("_id");
+                return (context.Source as EdgeValue)?.Node.GetValue("_id")?.ToString();
             }
         }
     }

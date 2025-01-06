@@ -217,7 +217,9 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                 return ValueTask.FromResult((object)parentData);
             }
 
-            return ValueTask.FromResult((object)parentData?.GetValue(context.FieldAst.Alias?.Name?.StringValue ?? context.FieldDefinition.Name));            
+            var result = parentData?.GetValue(context.FieldAst.Alias?.Name?.StringValue ?? context.FieldDefinition.Name);
+
+            return ValueTask.FromResult((object)result);            
         }
 
         /// <inheritdoc />

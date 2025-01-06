@@ -234,7 +234,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                 cursor,
                                 node { 
                                     id,                                   
-                                    __id,
+                                    _id,
                                     name,
                                     value
                                 }                    
@@ -272,7 +272,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                         ""cursor"": ""3beee369-11df-4a30-bf11-1d8465c87110"",
                                         ""node"": {{
                                           ""id"": ""{globalId}"",
-                                          ""__id"": ""3beee369-11df-4a30-bf11-1d8465c87110"",
+                                          ""_id"": ""3beee369-11df-4a30-bf11-1d8465c87110"",
                                           ""name"": ""1-test"",
                                           ""value"": 100.0
                                         }}
@@ -453,7 +453,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                             edges {
                                 cursor,
                                 node {                                    
-                                    __id,
+                                    _id,
                                     name
                                 }                    
                             }
@@ -494,7 +494,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                       {
                                         ""cursor"": ""67885ba0-b284-438f-8393-ee9a9eb299d1"",
                                         ""node"": {
-                                          ""__id"": ""67885ba0-b284-438f-8393-ee9a9eb299d1"",
+                                          ""_id"": ""67885ba0-b284-438f-8393-ee9a9eb299d1"",
                                           ""name"": ""3-test"",
                                           ""value"": 50.0
                                         }
@@ -502,7 +502,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                       {
                                         ""cursor"": ""3af2c973-d985-4f95-a0c7-aa928d276881"",
                                         ""node"": {                                          
-                                          ""__id"": ""3af2c973-d985-4f95-a0c7-aa928d276881"",
+                                          ""_id"": ""3af2c973-d985-4f95-a0c7-aa928d276881"",
                                           ""name"": ""4-test"",
                                           ""value"": 70.0
                                         }
@@ -549,6 +549,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                                  Name = "3-test",
                                                  Value = 50m
                                              },
+                                         
                                          new TestObject
                                              {
                                                  Id =
@@ -556,7 +557,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                                          "{3AF2C973-D985-4F95-A0C7-AA928D276881}"),
                                                  Name = "4-test",
                                                  Value = 70m
-                                             },
+                                             },                                         
                                          new TestObject
                                              {
                                                  Id =
@@ -565,6 +566,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                                  Name = "5-test",
                                                  Value = 6m
                                              },
+                                         
                                      };
 
             var internalApiProvider = new TestProvider(initialObjects);
@@ -612,6 +614,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                      r.Schema = schema;
                                      r.Query = query;
                                      r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
+                                     r.ThrowOnUnhandledException = true;
                                  }).ConfigureAwait(true);
             var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
@@ -747,7 +750,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                     clientMutationId,
                     node {
                         id,
-                        __id,
+                        _id,
                         name,
                         value
                     },
@@ -755,7 +758,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                         cursor,
                         node {
                             id,
-                            __id,
+                            _id,
                             name,
                             value
                         }
@@ -768,7 +771,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                 cursor,
                                 node {
                                     id,
-                                    __id,
+                                    _id,
                                     name,
                                     value
                                 }                    
@@ -796,7 +799,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                           ""clientMutationId"": ""testClientMutationId"",
                                           ""node"": {{
                                             ""id"": ""{newItemGlobalId}"",
-                                            ""__id"": ""251feea8-d3ac-461d-a385-0cf2ba7a74e8"",
+                                            ""_id"": ""251feea8-d3ac-461d-a385-0cf2ba7a74e8"",
                                             ""name"": ""hello world"",
                                             ""value"": 13.0
                                           }},
@@ -804,7 +807,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                             ""cursor"": ""251feea8-d3ac-461d-a385-0cf2ba7a74e8"",
                                             ""node"": {{
                                               ""id"": ""{newItemGlobalId}"",
-                                              ""__id"": ""251feea8-d3ac-461d-a385-0cf2ba7a74e8"",
+                                              ""_id"": ""251feea8-d3ac-461d-a385-0cf2ba7a74e8"",
                                               ""name"": ""hello world"",
                                               ""value"": 13.0
                                             }}
@@ -818,7 +821,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                                   ""cursor"": ""251feea8-d3ac-461d-a385-0cf2ba7a74e8"",
                                                   ""node"": {{
                                                     ""id"": ""{newItemGlobalId}"",
-                                                    ""__id"": ""251feea8-d3ac-461d-a385-0cf2ba7a74e8"",
+                                                    ""_id"": ""251feea8-d3ac-461d-a385-0cf2ba7a74e8"",
                                                     ""name"": ""hello world"",
                                                     ""value"": 13.0
                                                   }}
@@ -896,13 +899,13 @@ namespace KlusterKite.Web.Tests.GraphQL
                     mutationId: clientMutationId,
                     nodeElement: node {
                         globalId: id,
-                        realId: __id,
+                        realId: _id,
                         elementName: name,
                         value
                     },
                     nodeElement2: node {
                         globalId2: id,
-                        realId2: __id,
+                        realId2: _id,
                         elementName2: name,
                         value
                     },
@@ -913,7 +916,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                             edgeName: name,
                         },
                         object2: node {
-                            shortId: __id,
+                            shortId: _id,
                             value
                         },
                     },
@@ -921,7 +924,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                         id2: cursor,
                         object2: node {
                             longId2: id,
-                            shortId2: __id,
+                            shortId2: _id,
                             edgeName2: name,
                             value
                         }
@@ -934,7 +937,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                 itemId: cursor,
                                 element: node {
                                     elementGlobalId: id,
-                                    elementId: __id,
+                                    elementId: _id,
                                     elementName: name,
                                     elementValue: value
                                 }             
@@ -1082,7 +1085,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                     call: testApi_connection_delete(input: {id: ""3BEEE369-11DF-4A30-BF11-1D8465C87110""}) {
                     node {
                         id,
-                        __id,
+                        _id,
                         name,
                         value
                     },
@@ -1090,7 +1093,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                         cursor,
                         node {
                             id,
-                            __id,
+                            _id,
                             name,
                             value
                         }
@@ -1103,7 +1106,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                 cursor,
                                 node {
                                     id,
-                                    __id,
+                                    _id,
                                     name,
                                     value
                                 }                    
@@ -1130,7 +1133,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                     ""call"": {{
                                       ""node"": {{
                                         ""id"": ""{node1Id}"",
-                                        ""__id"": ""3beee369-11df-4a30-bf11-1d8465c87110"",
+                                        ""_id"": ""3beee369-11df-4a30-bf11-1d8465c87110"",
                                         ""name"": ""1-test"",
                                         ""value"": 100.0
                                       }},
@@ -1138,7 +1141,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                         ""cursor"": ""3beee369-11df-4a30-bf11-1d8465c87110"",
                                         ""node"": {{
                                           ""id"": ""{node1Id}"",
-                                          ""__id"": ""3beee369-11df-4a30-bf11-1d8465c87110"",
+                                          ""_id"": ""3beee369-11df-4a30-bf11-1d8465c87110"",
                                           ""name"": ""1-test"",
                                           ""value"": 100.0
                                         }}
@@ -1152,7 +1155,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                               ""cursor"": ""f0607502-5b77-4a3c-9142-e6197a7ee61e"",
                                               ""node"": {{
                                                 ""id"": ""{node5Id}"",
-                                                ""__id"": ""f0607502-5b77-4a3c-9142-e6197a7ee61e"",
+                                                ""_id"": ""f0607502-5b77-4a3c-9142-e6197a7ee61e"",
                                                 ""name"": ""5-test"",
                                                 ""value"": 6.0
                                               }}
@@ -1161,7 +1164,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                               ""cursor"": ""b500ca20-f649-4dcd-bda8-1fa5031ecdd3"",
                                               ""node"": {{
                                                 ""id"": ""{node2Id}"",
-                                                ""__id"": ""b500ca20-f649-4dcd-bda8-1fa5031ecdd3"",
+                                                ""_id"": ""b500ca20-f649-4dcd-bda8-1fa5031ecdd3"",
                                                 ""name"": ""2-test"",
                                                 ""value"": 50.0
                                               }}
@@ -1170,7 +1173,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                               ""cursor"": ""67885ba0-b284-438f-8393-ee9a9eb299d1"",
                                               ""node"": {{
                                                 ""id"": ""{node3Id}"",
-                                                ""__id"": ""67885ba0-b284-438f-8393-ee9a9eb299d1"",
+                                                ""_id"": ""67885ba0-b284-438f-8393-ee9a9eb299d1"",
                                                 ""name"": ""3-test"",
                                                 ""value"": 50.0
                                               }}
@@ -1179,7 +1182,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                               ""cursor"": ""3af2c973-d985-4f95-a0c7-aa928d276881"",
                                               ""node"": {{
                                                 ""id"": ""{node4Id}"",
-                                                ""__id"": ""3af2c973-d985-4f95-a0c7-aa928d276881"",
+                                                ""_id"": ""3af2c973-d985-4f95-a0c7-aa928d276881"",
                                                 ""name"": ""4-test"",
                                                 ""value"": 70.0
                                               }}
@@ -1223,7 +1226,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                     call: testApi_connection_typedMutation(input: {uid: ""3BEEE369-11DF-4A30-BF11-1D8465C87110""}) {
                     node {
                         id,
-                        __id,
+                        _id,
                         name,
                         value
                     },
@@ -1231,7 +1234,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                         cursor,
                         node {
                             id,
-                            __id,
+                            _id,
                             name,
                             value
                         }
@@ -1244,7 +1247,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                 cursor,
                                 node {
                                     id,
-                                    __id,
+                                    _id,
                                     name,
                                     value
                                 }                    
@@ -1271,7 +1274,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                     ""call"": {{
                                       ""node"": {{
                                         ""id"": ""{node1Id}"",
-                                        ""__id"": ""3beee369-11df-4a30-bf11-1d8465c87110"",
+                                        ""_id"": ""3beee369-11df-4a30-bf11-1d8465c87110"",
                                         ""name"": ""1-test"",
                                         ""value"": 100.0
                                       }},
@@ -1279,7 +1282,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                         ""cursor"": ""3beee369-11df-4a30-bf11-1d8465c87110"",
                                         ""node"": {{
                                           ""id"": ""{node1Id}"",
-                                          ""__id"": ""3beee369-11df-4a30-bf11-1d8465c87110"",
+                                          ""_id"": ""3beee369-11df-4a30-bf11-1d8465c87110"",
                                           ""name"": ""1-test"",
                                           ""value"": 100.0
                                         }}
@@ -1293,7 +1296,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                               ""cursor"": ""3beee369-11df-4a30-bf11-1d8465c87110"",
                                               ""node"": {{
                                                 ""id"": ""{node1Id}"",
-                                                ""__id"": ""3beee369-11df-4a30-bf11-1d8465c87110"",
+                                                ""_id"": ""3beee369-11df-4a30-bf11-1d8465c87110"",
                                                 ""name"": ""1-test"",
                                                 ""value"": 100.0
                                               }}
@@ -1373,7 +1376,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                     call: testApi_connection_update(input: {id: ""3BEEE369-11DF-4A30-BF11-1D8465C87110"", newNode: {id: ""3BEEE369-11DF-4A30-BF11-1D8465C87111"", name: ""hello world"", value: 13}}) {
                     node {
                         id,
-                        __id,
+                        _id,
                         name,
                         value
                     },
@@ -1381,7 +1384,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                         cursor,
                         node {
                             id,
-                            __id,
+                            _id,
                             name,
                             value
                         }
@@ -1394,7 +1397,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                 cursor,
                                 node {
                                     id,
-                                    __id,
+                                    _id,
                                     name,
                                     value
                                 }                    
@@ -1421,7 +1424,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                         ""call"": {{
                                           ""node"": {{
                                             ""id"": ""{newId}"",
-                                            ""__id"": ""3beee369-11df-4a30-bf11-1d8465c87111"",
+                                            ""_id"": ""3beee369-11df-4a30-bf11-1d8465c87111"",
                                             ""name"": ""hello world"",
                                             ""value"": 13.0
                                           }},
@@ -1429,7 +1432,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                             ""cursor"": ""3beee369-11df-4a30-bf11-1d8465c87111"",
                                             ""node"": {{
                                               ""id"": ""{newId}"",
-                                              ""__id"": ""3beee369-11df-4a30-bf11-1d8465c87111"",
+                                              ""_id"": ""3beee369-11df-4a30-bf11-1d8465c87111"",
                                               ""name"": ""hello world"",
                                               ""value"": 13.0
                                             }}
@@ -1443,7 +1446,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                                   ""cursor"": ""3beee369-11df-4a30-bf11-1d8465c87111"",
                                                   ""node"": {{
                                                     ""id"": ""{newId}"",
-                                                    ""__id"": ""3beee369-11df-4a30-bf11-1d8465c87111"",
+                                                    ""_id"": ""3beee369-11df-4a30-bf11-1d8465c87111"",
                                                     ""name"": ""hello world"",
                                                     ""value"": 13.0
                                                   }}
@@ -1526,7 +1529,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                     call: testApi_nestedSync_connection_update(input: {id: ""3BEEE369-11DF-4A30-BF11-1D8465C87110"", newNode: {id: ""3BEEE369-11DF-4A30-BF11-1D8465C87111"", name: ""hello world"", value: 13}}) {
                     node {
                         id,
-                        __id,
+                        _id,
                         name,
                         value
                     },
@@ -1534,7 +1537,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                         cursor,
                         node {
                             id,
-                            __id,
+                            _id,
                             name,
                             value
                         }
@@ -1547,7 +1550,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                 cursor,
                                 node {
                                     id,
-                                    __id,
+                                    _id,
                                     name,
                                     value
                                 }                    
@@ -1574,7 +1577,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                         ""call"": {{
                                           ""node"": {{
                                             ""id"": ""{newId}"",
-                                            ""__id"": ""3beee369-11df-4a30-bf11-1d8465c87111"",
+                                            ""_id"": ""3beee369-11df-4a30-bf11-1d8465c87111"",
                                             ""name"": ""hello world"",
                                             ""value"": 13.0
                                           }},
@@ -1582,7 +1585,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                             ""cursor"": ""3beee369-11df-4a30-bf11-1d8465c87111"",
                                             ""node"": {{
                                               ""id"": ""{newId}"",
-                                              ""__id"": ""3beee369-11df-4a30-bf11-1d8465c87111"",
+                                              ""_id"": ""3beee369-11df-4a30-bf11-1d8465c87111"",
                                               ""name"": ""hello world"",
                                               ""value"": 13.0
                                             }}
@@ -1596,7 +1599,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                                   ""cursor"": ""3beee369-11df-4a30-bf11-1d8465c87111"",
                                                   ""node"": {{
                                                     ""id"": ""{shortId}"",
-                                                    ""__id"": ""3beee369-11df-4a30-bf11-1d8465c87111"",
+                                                    ""_id"": ""3beee369-11df-4a30-bf11-1d8465c87111"",
                                                     ""name"": ""hello world"",
                                                     ""value"": 13.0
                                                   }}
@@ -1681,7 +1684,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                     },
                     node {
                         id,
-                        __id,
+                        _id,
                         name,
                         value
                     },
@@ -1689,7 +1692,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                        cursor,
                         node {
                             id,
-                            __id,
+                            _id,
                             name,
                             value
                         }
@@ -1702,7 +1705,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                 cursor,
                                 node {
                                     id,
-                                    __id,
+                                    _id,
                                     name,
                                     value
                                 }                    
@@ -3793,6 +3796,12 @@ namespace KlusterKite.Web.Tests.GraphQL
                              }).ConfigureAwait(true);
             var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
+            var jsonRespons = JObject.Parse(response);
+            Assert.Equal(jsonRespons.SelectToken("$.data.api.id")?.ToString(), apiId);
+            Assert.Equal(jsonRespons.SelectToken("$.data.api.nestedAsync.id")?.ToString(), nestedId);
+            Assert.Equal(jsonRespons.SelectToken("$.data.api.nestedAsync.this.id")?.ToString(), nestedNestedId);
+            Assert.Equal(jsonRespons.SelectToken("$.data.api.nestedSync.id")?.ToString(), nested2Id);
+            Assert.Equal(jsonRespons.SelectToken("$.data.api.arrayOfObjectNoIds.edges[0].node.id")?.ToString(), nodeId);
 
             var expectedResult = $@"
                                 {{

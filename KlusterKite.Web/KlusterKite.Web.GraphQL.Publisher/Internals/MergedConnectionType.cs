@@ -103,7 +103,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                                 fields.AddRange(
                                     this.ElementType.GatherSingleApiRequest(nodeRequest, context));
 
-                                /*
+                                
                                 fields.AddRange(
                                     this.ElementType.GatherSingleApiRequest(nodeRequest, context).Select(
                                         f =>
@@ -112,7 +112,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                                                     $"{nodeRequest.Alias?.Name?.StringValue ?? nodeRequest.Name.StringValue}_{f.Alias ?? f.FieldName}";
                                                 return f;
                                             }).ToList());
-                                */
+                                
                             }
 
                             yield return
@@ -139,6 +139,17 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                 // Resolver = new CountResolver(),
                 Description = "The total count of objects satisfying filter conditions"
             };
+
+            countField.Metadata[MetaDataTypeKey] = new MergedField(
+                "count",
+                new MergedScalarType(EnScalarType.Integer),
+                this.Provider,
+                null,
+                description: "The total count of objects satisfying filter conditions")
+            {
+                Resolver = new CountResolver()
+            };
+
             FieldType edgesField = new FieldType
             {
                 Name = "edges",
@@ -238,13 +249,31 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
 
             source.Add(MergedObjectType.RequestPropertyName, localRequest);
 
-            var resolve = new ConnectionResolve
-            {
-                Count = (long?)(source.GetValue("count") as JValue)?.Value,
-                Edges = source.GetValue("edges") as JArray
-            };
+            return source;
+        }
 
-            return resolve;
+        /// <summary>
+        /// Resolves value for the edge cursor
+        /// </summary>
+        private class CountResolver : IFieldResolver
+        {
+            /// <inheritdoc />
+            public async ValueTask<object> ResolveAsync(IResolveFieldContext context)
+            {
+                var source = context.Source as JObject;
+                if (source == null)
+                {
+                    return null;
+                }
+
+                var count = source.GetValue(context.FieldAst.Alias?.Name?.StringValue ?? context.FieldAst.Name.StringValue);
+                if (count == null)
+                {
+                    return null;
+                }
+
+                return int.Parse(count.ToString());
+            }
         }
 
     }
@@ -264,4 +293,6 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         /// </summary>
         public JArray Edges { get; init; }
     }
+
+
 }
