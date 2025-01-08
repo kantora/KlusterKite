@@ -408,7 +408,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                                         f =>
                                             {
                                                 f.Alias =
-                                                    $"{edgeNodeRequests.Alias.Name ?? edgeNodeRequests.Name}_{f.Alias ?? f.FieldName}";
+                                                    $"{edgeNodeRequests.Alias?.Name.StringValue ?? edgeNodeRequests.Name.StringValue}_{f.Alias ?? f.FieldName}";
                                                 return f;
                                             }));
                             }

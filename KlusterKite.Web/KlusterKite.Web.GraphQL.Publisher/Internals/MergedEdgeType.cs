@@ -166,14 +166,19 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                 return null;
             }
 
-            var edges = parentData.GetValue(context.FieldAst.Alias?.Name?.StringValue ?? context.FieldAst.Name.StringValue) as JArray;
-            if (edges == null)
+            var data = parentData.GetValue(context.FieldAst.Alias?.Name?.StringValue ?? context.FieldAst.Name.StringValue);
+
+            if (data is JArray edges)
             {
-                return null;
+                return edges.Select(obj => new EdgeValue { Node = obj as JObject });
             }
 
+            if (data is JObject edge)
+            {
+                return new EdgeValue { Node = edge };
+            }
 
-            return edges.Select(obj => new EdgeValue { Node = obj as JObject });
+            return null;
         }
 
         private class EdgeValue
@@ -214,7 +219,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                     return null;
                 }
 
-                /*
+                
                 var fieldName = context.FieldAst.Alias?.Name?.StringValue ?? context.FieldAst.Name.StringValue;
                 var filteredSource = new JObject();
                 var prefix = $"{fieldName}_";
@@ -222,12 +227,9 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                 {
                     filteredSource.Add(property.Name.Substring(prefix.Length), property.Value);
                 }
-                
-
                 source.Add(fieldName, filteredSource);
-                */
 
-                return this.originalType.ResolveData(context, source, false);
+                return this.originalType.ResolveData(context, filteredSource.Count > 0 ? filteredSource : source, false);
             }
         }
 

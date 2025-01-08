@@ -1414,6 +1414,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                      r.Schema = schema;
                                      r.Query = query;
                                      r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
+                                     r.ThrowOnUnhandledException = true;
                                  }).ConfigureAwait(true);
             var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
@@ -3796,12 +3797,12 @@ namespace KlusterKite.Web.Tests.GraphQL
                              }).ConfigureAwait(true);
             var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
-            var jsonRespons = JObject.Parse(response);
-            Assert.Equal(jsonRespons.SelectToken("$.data.api.id")?.ToString(), apiId);
-            Assert.Equal(jsonRespons.SelectToken("$.data.api.nestedAsync.id")?.ToString(), nestedId);
-            Assert.Equal(jsonRespons.SelectToken("$.data.api.nestedAsync.this.id")?.ToString(), nestedNestedId);
-            Assert.Equal(jsonRespons.SelectToken("$.data.api.nestedSync.id")?.ToString(), nested2Id);
-            Assert.Equal(jsonRespons.SelectToken("$.data.api.arrayOfObjectNoIds.edges[0].node.id")?.ToString(), nodeId);
+            var jsonResponse = JObject.Parse(response);
+            Assert.Equal(apiId, jsonResponse.SelectToken("$.data.api.id")?.ToString());
+            Assert.Equal(nestedId, jsonResponse.SelectToken("$.data.api.nestedAsync.id")?.ToString());
+            Assert.Equal(nestedNestedId, jsonResponse.SelectToken("$.data.api.nestedAsync.this.id")?.ToString());
+            Assert.Equal(nested2Id, jsonResponse.SelectToken("$.data.api.nestedSync.id")?.ToString());
+            Assert.Equal(nodeId, jsonResponse.SelectToken("$.data.api.arrayOfObjectNoIds.edges[0].node.id")?.ToString());
 
             var expectedResult = $@"
                                 {{

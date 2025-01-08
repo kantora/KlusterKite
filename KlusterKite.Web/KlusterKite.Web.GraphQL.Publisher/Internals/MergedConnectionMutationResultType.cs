@@ -107,7 +107,6 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         }
 
 
-
         /// <summary>
         /// Creates virtual field
         /// </summary>
