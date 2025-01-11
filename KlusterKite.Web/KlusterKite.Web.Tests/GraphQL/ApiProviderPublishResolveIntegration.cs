@@ -2921,8 +2921,7 @@ namespace KlusterKite.Web.Tests.GraphQL
             var internalApiProvider = new TestProvider();
             var publishingProvider = new DirectProvider(internalApiProvider, this.output.WriteLine)
             {
-                UseJsonRepack =
-                                                 true
+                UseJsonRepack = true
             };
 
             var schema = SchemaGenerator.Generate(new List<ApiProvider> { publishingProvider });
@@ -2943,10 +2942,10 @@ namespace KlusterKite.Web.Tests.GraphQL
             {
                 context.Authentication = new AccessTicket(
                     null,
+                    new[] { "allow" },                    
+                    "test",
+                    "test",
                     new string[0],
-                    "test",
-                    "test",
-                    new[] { "allow" },
                     DateTimeOffset.Now,
                     null,
                     null);
@@ -2958,6 +2957,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                      r.Schema = schema;
                                      r.Query = query;
                                      r.UserContext = context.ToExecutionOptionsUserContext();
+                                     r.ThrowOnUnhandledException = true;
                                  }).ConfigureAwait(true);
             var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
