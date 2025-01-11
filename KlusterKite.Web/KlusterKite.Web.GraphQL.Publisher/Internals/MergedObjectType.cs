@@ -388,7 +388,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                     var args =
                         context.Arguments
                             .OrderBy(p => p.Key)
-                            .ToDictionary(p => p.Key, p => p.Value);
+                            .ToDictionary(p => p.Key, p => p.Value.Value);
                     if (args.Any())
                     {
                         var argumentsValue = JObject.FromObject(args);

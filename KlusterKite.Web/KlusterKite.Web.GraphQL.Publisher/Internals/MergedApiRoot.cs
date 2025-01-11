@@ -430,7 +430,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                             new ApiRequest
                             {
                                 FieldName = "errors",
-                                Alias = field.Alias.Name.ToString(),
+                                Alias = field.Alias?.Name.StringValue,
                                 Fields =
                                         responseType.ErrorType.GatherSingleApiRequest(field, context)
                                             .ToList()

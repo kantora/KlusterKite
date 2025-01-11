@@ -13,6 +13,7 @@ namespace KlusterKite.Web.Tests.GraphQL
     using System.Collections.Generic;
     using System.Linq;
     using System.Reflection;
+    using System.Text.Json.Nodes;
     using System.Threading.Tasks;
 
     using global::GraphQL;
@@ -72,7 +73,7 @@ namespace KlusterKite.Web.Tests.GraphQL
         /// <returns>Cleaned json string</returns>
         public static string CleanResponse(string response)
         {
-            return JsonConvert.DeserializeObject<JObject>(response).ToString(Formatting.None);
+            return JToken.Parse(response).ToString(Formatting.None);
         }
 
 
@@ -221,10 +222,8 @@ namespace KlusterKite.Web.Tests.GraphQL
             var internalApiProvider = new TestProvider(initialObjects);
             var publishingProvider = new DirectProvider(internalApiProvider, this.output.WriteLine) { UseJsonRepack = true };
             var schema = SchemaGenerator.Generate(new List<ApiProvider> { publishingProvider });
-            var globalId =
-                JArray.Parse(
-                    "[{\"f\":\"connectionMethod\", \"a\": {\"key\": \"test\", \"obj\": {\"name\": \"hello\"}}, \"id\":\"3beee369-11df-4a30-bf11-1d8465c87110" + "\"}]")
-                    .PackGlobalId().Replace("\"", "\\\"");
+            var expectedGlobalId = "[{\"f\":\"connectionMethod\", \"a\": {\"key\": \"test\", \"obj\": {\"name\": \"hello\"}}, \"id\":\"3beee369-11df-4a30-bf11-1d8465c87110" + "\"}]";
+            var globalId = JArray.Parse(expectedGlobalId).PackGlobalId().Replace("\"", "\\\"");
             var query = @"
             {                
                 api {
@@ -261,6 +260,11 @@ namespace KlusterKite.Web.Tests.GraphQL
                              }).ConfigureAwait(true);
             var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
+            var jsonResponse = JObject.Parse(response);
+
+            var respondedId = jsonResponse.SelectToken("data.api.connectionMethod.edges[0].node.id")?.ToString().UnpackGlobalId();
+            Assert.Equal(CleanResponse(expectedGlobalId), CleanResponse(respondedId));
+
             var expectedResult = $@"
                             {{
                               ""data"": {{
@@ -954,6 +958,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                      r.Schema = schema;
                                      r.Query = query;
                                      r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
+                                     r.ThrowOnUnhandledException = true;
                                  }).ConfigureAwait(true);
             var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
@@ -1723,6 +1728,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                      r.Schema = schema;
                                      r.Query = query;
                                      r.UserContext = new RequestContext().ToExecutionOptionsUserContext();
+                                     r.ThrowOnUnhandledException = true;
                                  }).ConfigureAwait(true);
             var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
@@ -1735,14 +1741,14 @@ namespace KlusterKite.Web.Tests.GraphQL
                                             ""count"": 2,
                                             ""edges"": [
                                               {
-                                                ""cursor"": 1,
+                                                ""cursor"": ""1"",
                                                 ""node"": {
                                                   ""field"": null,
                                                   ""message"": ""Update failed""
                                                 }
                                               },
                                               {
-                                                ""cursor"": 2,
+                                                ""cursor"": ""2"",
                                                 ""node"": {
                                                   ""field"": ""id"",
                                                   ""message"": ""Node not found""
@@ -3035,6 +3041,7 @@ namespace KlusterKite.Web.Tests.GraphQL
                                 ""loggedConnection"": {
                                     ""count"": 0
                                 }
+                            }
                           }
                         }
                         ";

@@ -171,7 +171,7 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                 var resolvedSource = source?.Property(context.FieldAst.Alias?.Name?.StringValue ?? context.FieldAst.Name?.StringValue)?.Value as JObject;
                 if (resolvedSource == null)
                 {
-                    return new ValueTask<object>(null);
+                    return new ValueTask<object>((object)null);
                 }
 
                 return new ValueTask<object>(this.nodeType.ResolveData(context, resolvedSource, false));
@@ -203,14 +203,14 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                 var value = contextSource.Property("__deletedId")?.Value;
                 if (value == null)
                 {
-                    return new ValueTask<object>(null);
+                    return new ValueTask<object>((object)null);
                 }
 
                 var globalId = contextSource.Property(GlobalIdPropertyName)?.Value?.DeepClone() as JArray;
                 var request = contextSource.Property(RequestPropertyName)?.Value?.DeepClone() as JObject;
                 if (globalId == null || request == null)
                 {
-                    return new ValueTask<object>(null); 
+                    return new ValueTask<object>((object)null); 
                 }
 
                 request.Add("id", value);
