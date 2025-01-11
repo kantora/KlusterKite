@@ -913,7 +913,7 @@
               "deprecationReason": null
             },
             {
-              "name": "_node",
+              "name": "node",
               "description": "The node global searcher according to Relay specification",
               "args": [
                 {
@@ -1073,7 +1073,7 @@
               "deprecationReason": null
             },
             {
-              "name": "_node",
+              "name": "node",
               "description": "The node global searcher according to Relay specification",
               "args": [
                 {

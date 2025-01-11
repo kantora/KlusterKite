@@ -339,10 +339,10 @@ namespace KlusterKite.API.Tests.Mock
         /// </summary>
         [UsedImplicitly]
         [RequireSession]
-        [RequirePrivilege("read", ConnectionActions = EnConnectionAction.Query)]
-        [RequirePrivilege("create", ConnectionActions = EnConnectionAction.Create)]
-        [RequirePrivilege("update", ConnectionActions = EnConnectionAction.Update)]
-        [RequirePrivilege("delete", ConnectionActions = EnConnectionAction.Delete)]
+        [RequirePrivilege("read", ConnectionActions = EnConnectionAction.Query, Scope = EnPrivilegeScope.Client)]
+        [RequirePrivilege("create", ConnectionActions = EnConnectionAction.Create, Scope = EnPrivilegeScope.Client)]
+        [RequirePrivilege("update", ConnectionActions = EnConnectionAction.Update, Scope = EnPrivilegeScope.Client)]
+        [RequirePrivilege("delete", ConnectionActions = EnConnectionAction.Delete, Scope = EnPrivilegeScope.Client)]
         [DeclareConnection(CanCreate = true, CanUpdate = true, CanDelete = true)]
         public TestObjectConnection AuthorizedConnection => this.Connection;
 
@@ -351,7 +351,7 @@ namespace KlusterKite.API.Tests.Mock
         /// </summary>
         [UsedImplicitly]
         [RequireSession]
-        [RequirePrivilege("allow", AddActionNameToRequiredPrivilege = true)]
+        [RequirePrivilege("allow", AddActionNameToRequiredPrivilege = true, Scope = EnPrivilegeScope.Client)]
         [DeclareConnection(CanCreate = true, CanUpdate = true, CanDelete = true)]
         public TestObjectConnection AuthorizedNamedConnection => this.Connection;
 
