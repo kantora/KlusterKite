@@ -294,7 +294,7 @@ namespace KlusterKite.Web.Tests.GraphQL
             var schemaProvider = this.Container.Resolve<SchemaProvider>();
             schemaProvider.CurrentSchema = SchemaGenerator.Generate(new List<ApiProvider> { publishingProvider });
 
-            var options = new RestClientOptions($"http://localhost:{this.Port}/api/1.x/graphQL/") { Timeout = new TimeSpan(0, 0, 5) };
+            var options = new RestClientOptions($"http://localhost:{this.Port}/api/1.x/graphQL/") { Timeout = new TimeSpan(0, 0, 10) };
             var client = new RestClient(options);
 
             var request = new RestRequest { Method = Method.Post };

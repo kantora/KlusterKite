@@ -11,11 +11,12 @@ namespace KlusterKite.Web.Tests.GraphQL
 {
     using System;
     using System.Collections.Generic;
+    using System.IO;
     using System.Linq;
     using System.Reflection;
     using System.Text.Json.Nodes;
     using System.Threading.Tasks;
-
+    using Akka.Remote;
     using global::GraphQL;
     using global::GraphQL.NewtonsoftJson;
     using global::GraphQL.Utilities;
@@ -3353,6 +3354,7 @@ namespace KlusterKite.Web.Tests.GraphQL
             var response = new GraphQLSerializer(true).Serialize(result);
             this.output.WriteLine(response);
             Assert.Equal(CleanResponse(expectedResult), CleanResponse(response));
+            Log.CloseAndFlush();
             Assert.Equal(expectingResult ? 0 : 1, sink.LogEvents.Count);
         }
 
@@ -4094,21 +4096,25 @@ namespace KlusterKite.Web.Tests.GraphQL
         /// Creates a virtual logger for security events
         /// </summary>
         /// <returns>The test sink</returns>
-        private static ArraySink CreateSecurityLogger()
+        private ArraySink CreateSecurityLogger()
         {
             var loggerConfig = new LoggerConfiguration().MinimumLevel.Is(LogEventLevel.Verbose);
             var sink = new ArraySink();
             Func<LogEvent, bool> logFilter = log =>
             {
-                LogEventPropertyValue value;
-                return log.Properties.TryGetValue(Constants.LogRecordTypeKey, out value)
+                return log.Properties.TryGetValue(Constants.LogRecordTypeKey, out LogEventPropertyValue value)
                        && (value as ScalarValue)?.Value is EnLogRecordType
                        && (EnLogRecordType)((ScalarValue)value).Value == EnLogRecordType.Security;
             };
 
+            loggerConfig = loggerConfig.WriteTo.TestOutput(this.output);
+
             loggerConfig =
-                loggerConfig.WriteTo.Logger(c => c.Filter.ByIncludingOnly(logFilter).WriteTo.Sink(sink, LogEventLevel.Verbose));
+                loggerConfig.AuditTo.Logger(c => c.Filter.ByIncludingOnly(logFilter).AuditTo.Sink(sink, LogEventLevel.Verbose));           
+            
+
             Log.Logger = loggerConfig.CreateLogger();
+           
             return sink;
         }
 
