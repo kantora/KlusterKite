@@ -30,6 +30,6 @@
     <PackageReference Include="Fake.IO.FileSystem">
       <Version>6.1.3</Version>
     </PackageReference>
-    <PackageReference Include="FSharp.Core" Version="8.0.401" />
+    <PackageReference Include="FSharp.Core" Version="9.0.100" />
   </ItemGroup>
 </Project>

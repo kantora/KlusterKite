@@ -21,10 +21,10 @@
     <EmbeddedResource Include="Resources\akka.hocon" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="GraphQL" Version="8.1.0" />
-    <PackageReference Include="GraphQL.NewtonsoftJson" Version="8.1.0" />
-    <PackageReference Include="GraphQL.Server.Transports.AspNetCore" Version="8.0.3" />
-    <PackageReference Include="GraphQL.Server.Ui.GraphiQL" Version="8.0.3" />
+    <PackageReference Include="GraphQL" Version="8.2.1" />
+    <PackageReference Include="GraphQL.NewtonsoftJson" Version="8.2.1" />
+    <PackageReference Include="GraphQL.Server.Transports.AspNetCore" Version="8.2.0" />
+    <PackageReference Include="GraphQL.Server.Ui.GraphiQL" Version="8.2.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\KlusterKite.API\KlusterKite.API.Client\KlusterKite.API.Client.csproj" />
