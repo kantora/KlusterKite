@@ -130,9 +130,10 @@ module  Base =
             (fun (file:FileInfo) ->
                 let setParams (defaults:MSBuildParams) = { 
                     defaults with
-                        Verbosity = Some(Minimal)
+                        Verbosity = Some(MSBuildVerbosity.Minimal)
                         Targets = ["Restore"; "Build"]
                         RestorePackagesFlag = true
+                        DisableInternalBinLog = true
                         //TODO: uncomment when https://github.com/fsprojects/FAKE/pull/2739 is resolved
                         Properties = 
                         [
