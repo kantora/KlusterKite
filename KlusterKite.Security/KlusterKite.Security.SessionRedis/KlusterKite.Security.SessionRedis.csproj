@@ -1,14 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\..\common.props" />
   <PropertyGroup>
-    <TargetFrameworks>net8.0</TargetFrameworks>
+    <TargetFrameworks>net9.0</TargetFrameworks>
     <PackageId>KlusterKite.Security.SessionRedis</PackageId>
     <Version>0.0.0.0-local</Version>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NetStandardImplicitPackageVersion Condition=" '$(TargetFramework)' == 'netstandard1.6' ">1.6.1</NetStandardImplicitPackageVersion>
-    <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netstandard1.6' ">$(PackageTargetFallback);portable-net45+win8</PackageTargetFallback>    
-    <Description>KlusterKite Redis-based authentication token storage</Description>
-    <PackageTags>$(KlusterKitePackageTags);Authentication;Redis</PackageTags>    
+    <Description>KlusterKite Security SessionRedis</Description>
+    <PackageTags>$(KlusterKitePackageTags);Security;SessionRedis</PackageTags>    
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net6.0|x64'" />
   <ItemGroup>
@@ -18,7 +16,7 @@
     <EmbeddedResource Include="Resources\akka.hocon" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="StackExchange.Redis" Version="2.8.24" />
+    <PackageReference Include="StackExchange.Redis" Version="2.8.41" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\KlusterKite.Core\KlusterKite.Core\KlusterKite.Core.csproj" />
@@ -28,7 +26,7 @@
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.6' ">
     <PackageReference Include="System.Runtime" Version="4.3.0" />    
   </ItemGroup>  
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net8.0' ">
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net9.0' ">
     <DefineConstants>$(DefineConstants);APPDOMAIN</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">

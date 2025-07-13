@@ -1,16 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\..\common.props" />
   <PropertyGroup>
-    <TargetFrameworks>net8.0</TargetFrameworks>
+    <TargetFrameworks>net9.0</TargetFrameworks>
     <PackageId>KlusterKite.Data.CRUD</PackageId>
     <Version>0.0.0.0-local</Version>    
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netstandard1.6' ">$(PackageTargetFallback);portable-net45+win8</PackageTargetFallback>
-    <NetStandardImplicitPackageVersion Condition=" '$(TargetFramework)' == 'netstandard1.6' ">1.6.1</NetStandardImplicitPackageVersion>
-    <Description>KlusterKite messages to handle basic data work (mainly CRUD)</Description>
+    <Description>KlusterKite Data CRUD</Description>
     <PackageTags>$(KlusterKitePackageTags);Data;CRUD</PackageTags>    
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net6.0|x64'" />
   <ItemGroup>
     <ProjectReference Include="..\..\KlusterKite.API\KlusterKite.API.Client\KlusterKite.API.Client.csproj" />
     <ProjectReference Include="..\..\KlusterKite.Core\KlusterKite.Core\KlusterKite.Core.csproj" />
@@ -18,11 +15,8 @@
     <ProjectReference Include="..\..\KlusterKite.Security\KlusterKite.Security.Attributes\KlusterKite.Security.Attributes.csproj" />
   </ItemGroup>
   
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net8.0' ">
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net9.0' ">
     <DefineConstants>$(DefineConstants);APPDOMAIN</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">
-    <DefineConstants>$(DefineConstants);CORECLR</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <DefineConstants>$(DefineConstants);RELEASE</DefineConstants>

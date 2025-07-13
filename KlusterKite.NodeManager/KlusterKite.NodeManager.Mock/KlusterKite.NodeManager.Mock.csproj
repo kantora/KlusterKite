@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\..\common.props" />
   <PropertyGroup>
-    <TargetFrameworks>net8.0</TargetFrameworks>
+    <TargetFrameworks>net9.0</TargetFrameworks>
     <PackageId>KlusterKite.NodeManager.Mock</PackageId>
     <Version>0.0.0.0-local</Version>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -11,14 +11,14 @@
     <PackageTags>$(KlusterKitePackageTags);configuration;migration;TestKit</PackageTags>    
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Akka" Version="1.5.34" />
-    <PackageReference Include="StackExchange.Redis" Version="2.8.24" />
+    <PackageReference Include="Akka" Version="1.5.45" />
+    <PackageReference Include="StackExchange.Redis" Version="2.8.41" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.6' ">
     <PackageReference Include="System.Runtime" Version="4.3.0" />    
   </ItemGroup>  
   
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net8.0' ">
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net9.0' ">
     <DefineConstants>$(DefineConstants);APPDOMAIN</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\..\common.props" />
   <PropertyGroup>
-    <TargetFrameworks>net8.0</TargetFrameworks>
+    <TargetFrameworks>net9.0</TargetFrameworks>
     <PackageId>KlusterKite.NodeManager.Launcher</PackageId>
     <Version>0.0.0.0-local</Version>
     <OutputTypeEx>exe</OutputTypeEx>
@@ -23,7 +23,7 @@
     <EmbeddedResource Include="Resources\packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Akka" Version="1.5.34" />
+    <PackageReference Include="Akka" Version="1.5.45" />
     <PackageReference Include="RestSharp" Version="112.1.0" />
   </ItemGroup>
   <ItemGroup>
@@ -50,7 +50,7 @@
     </None>
   </ItemGroup>    
   
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net8.0' ">
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net9.0' ">
     <DefineConstants>$(DefineConstants);APPDOMAIN</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.1' ">

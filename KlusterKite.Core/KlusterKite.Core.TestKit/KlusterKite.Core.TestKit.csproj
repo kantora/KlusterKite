@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\..\common.props" />
   <PropertyGroup>
-    <TargetFrameworks>net8.0</TargetFrameworks>
+    <TargetFrameworks>net9.0</TargetFrameworks>
     <PackageId>KlusterKite.Core.TestKit</PackageId>
     <Version>0.0.0.0-local</Version>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -20,15 +20,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Akka.TestKit" Version="1.5.34" />
-    <PackageReference Include="Akka.TestKit.Xunit2" Version="1.5.34" />
+    <PackageReference Include="Akka.TestKit" Version="1.5.45" />
+    <PackageReference Include="Akka.TestKit.Xunit2" Version="1.5.45" />
     <PackageReference Include="Serilog.Sinks.TextWriter" Version="3.0.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\KlusterKite.Core\KlusterKite.Core.csproj" />
   </ItemGroup>
 
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net8.0' ">
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net9.0' ">
     <DefineConstants>$(DefineConstants);APPDOMAIN</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">

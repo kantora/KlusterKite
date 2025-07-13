@@ -1,14 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\..\common.props" />
   <PropertyGroup>
-    <TargetFrameworks>net8.0</TargetFrameworks>
+    <TargetFrameworks>net9.0</TargetFrameworks>
     <PackageId>KlusterKite.NodeManager.ConfigurationSource</PackageId>
     <Version>0.0.0.0-local</Version>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netstandard1.6' ">$(PackageTargetFallback);portable-net45+win8</PackageTargetFallback>
-    <NetStandardImplicitPackageVersion Condition=" '$(TargetFramework)' == 'netstandard1.6' ">1.6.1</NetStandardImplicitPackageVersion>
-    <Description>KlusterKite cluster management: configuration database description</Description>
-    <PackageTags>$(KlusterKitePackageTags);configuration;migration</PackageTags>    
+    <Description>KlusterKite NodeManager configuration source</Description>
+    <PackageTags>$(KlusterKitePackageTags);NodeManager;ConfigurationSource</PackageTags>    
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net6.0|x64'" />
   <ItemGroup>
@@ -16,8 +14,8 @@
     <Compile Remove="Migrations\20170703061628_Empty.Designer.cs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.0" />
-    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.7" />
+    <PackageReference Include="System.ValueTuple" Version="4.6.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\KlusterKite.Data\KlusterKite.Data.CRUD\KlusterKite.Data.CRUD.csproj" />
@@ -26,6 +24,7 @@
     <ProjectReference Include="..\KlusterKite.NodeManager.Client\KlusterKite.NodeManager.Client.csproj" />
     <ProjectReference Include="..\KlusterKite.NodeManager.Launcher.Utils\KlusterKite.NodeManager.Launcher.Utils.csproj" />
     <ProjectReference Include="..\KlusterKite.NodeManager.Migrator.EF\KlusterKite.NodeManager.Migrator.EF.csproj" />
+    <ProjectReference Include="..\..\KlusterKite.Core\KlusterKite.Core\KlusterKite.Core.csproj" />
   </ItemGroup>
   
   <ItemGroup>
@@ -34,11 +33,8 @@
     </Compile>
   </ItemGroup>
   
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net8.0' ">
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net9.0' ">
     <DefineConstants>$(DefineConstants);APPDOMAIN</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">
-    <DefineConstants>$(DefineConstants);CORECLR</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <DefineConstants>$(DefineConstants);RELEASE</DefineConstants>

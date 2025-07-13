@@ -1,30 +1,33 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\..\common.props" />
   <PropertyGroup>
-    <TargetFrameworks>net8.0</TargetFrameworks>
+    <TargetFrameworks>net9.0</TargetFrameworks>
     <PackageId>KlusterKite.Monitoring.Tests</PackageId>
     <Version>0.0.0.0-local</Version>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NetStandardImplicitPackageVersion Condition=" '$(TargetFramework)' == 'netcoreapp1.1' ">1.6.1</NetStandardImplicitPackageVersion>
     <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netcoreapp1.1' ">$(PackageTargetFallback);portable-net45+win8</PackageTargetFallback>
     <IsTest>true</IsTest>
+    <Description>KlusterKite Monitoring Tests</Description>
+    <PackageTags>$(KlusterKitePackageTags);Monitoring;Tests</PackageTags>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net6.0|x64'" />
   <ItemGroup>
     <ProjectReference Include="..\..\KlusterKite.Web\KlusterKite.Web.GraphQL.Publisher\KlusterKite.Web.GraphQL.Publisher.csproj" />
     <ProjectReference Include="..\KlusterKite.Monitoring\KlusterKite.Monitoring.csproj" />
+    <ProjectReference Include="..\..\KlusterKite.Core\KlusterKite.Core\KlusterKite.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <DotNetCliToolReference Include="dotnet-xunit" Version="$(XunitVersion)" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="3.0.1">
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
   </ItemGroup>  
   
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net8.0' ">
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net9.0' ">
     <DefineConstants>$(DefineConstants);APPDOMAIN</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.1' ">

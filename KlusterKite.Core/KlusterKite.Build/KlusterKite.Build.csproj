@@ -20,11 +20,11 @@
     <PackageReference Include="Fake.DotNet.MsBuild" Version="6.1.3" />
     <PackageReference Include="Fake.DotNet.NuGet" Version="6.1.3" />
     <PackageReference Include="Fake.IO.FileSystem" Version="6.1.3" />
-    <PackageReference Include="FSharp.Core" Version="8.0.403" />
-    <PackageReference Include="Microsoft.Build" Version="15.1.548" />
-    <PackageReference Include="Microsoft.Build.Framework" Version="17.12.6" />
-    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.12.6" />
-    <PackageReference Include="MSBuild.StructuredLogger" Version="2.2.386" />
-    <PackageReference Include="System.ComponentModel.Composition" Version="6.0.0" />
+    <PackageReference Include="FSharp.Core" Version="9.0.300" />
+    <PackageReference Include="Microsoft.Build" Version="17.14.8" />
+    <PackageReference Include="Microsoft.Build.Framework" Version="17.14.8" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.14.8" />
+    <PackageReference Include="MSBuild.StructuredLogger" Version="2.3.17" />
+    <PackageReference Include="System.ComponentModel.Composition" Version="9.0.7" />
   </ItemGroup>
 </Project>

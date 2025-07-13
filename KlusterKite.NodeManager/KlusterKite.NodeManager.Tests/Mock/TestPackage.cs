@@ -98,6 +98,9 @@ namespace KlusterKite.NodeManager.Tests.Mock
 
         public IEnumerable<PackageVulnerabilityMetadata> Vulnerabilities { get; }
 
+        /// <inheritdoc />
+        public string ReadmeFileUrl => throw new NotImplementedException();
+
         public Task<PackageDeprecationMetadata> GetDeprecationMetadataAsync()
         {
             throw new NotImplementedException();
