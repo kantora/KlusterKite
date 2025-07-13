@@ -15,6 +15,8 @@ open Fake.Core
 open Fake.Core.TargetOperators
 open Fake.DotNet
 open Fake.IO
+open Fake.DotNet.NuGet
+
 
 open NuGet.Configuration
 open NuGet.Protocol
@@ -22,11 +24,9 @@ open NuGet.Common
 open NuGet.Versioning
 
 
-
 open Config
 
 module  Base =
-
     let CleanDir (directoryName: string) = 
         Directory.delete directoryName
         Directory.ensure directoryName
@@ -389,6 +389,10 @@ module  Base =
 
         
         filesInDirMatchingRecursive "*.csproj" (new DirectoryInfo(sourcesDir))
+            |> Seq.map(fun (file:FileInfo) -> 
+                printfn "!!! Building %s" file.FullName
+                file
+                )
             |> Seq.map(fun (file:FileInfo) -> new Microsoft.Build.Evaluation.Project(file.FullName, null, null, Microsoft.Build.Evaluation.ProjectCollection.GlobalProjectCollection, Microsoft.Build.Evaluation.ProjectLoadSettings.IgnoreMissingImports))
             |> Seq.collect (fun proj -> proj.ItemsIgnoringCondition |> Seq.map (fun item -> (proj, item)))
             |> Seq.filter (fun (_, item) -> item.ItemType = "DotNetCliToolReference" && item.EvaluatedInclude = "dotnet-xunit")

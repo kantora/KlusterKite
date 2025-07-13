@@ -1,6 +1,39 @@
+//-----------------
+let RedirectAssembly (shortName: string) (targetVersion: System.Version) (publicKeyToken: string) =
+    let mutable handler: System.ResolveEventHandler = null
+
+    handler <- System.ResolveEventHandler(fun sender args ->
+        // Use latest strong name & version when trying to load SDK assemblies
+        let requestedAssembly = System.Reflection.AssemblyName(args.Name)
+        if requestedAssembly.Name <> shortName then
+            null
+        else
+            //Debug.WriteLine(sprintf "Redirecting assembly load of %s,\tloaded by %s" args.Name (if args.RequestingAssembly = null then "(unknown)" else args.RequestingAssembly.FullName))
+            printfn "Redirecting assembly load of %s,\tloaded by %s" args.Name (if args.RequestingAssembly = null then "(unknown)" else args.RequestingAssembly.FullName)
+            requestedAssembly.Version <- targetVersion
+            requestedAssembly.SetPublicKeyToken((System.Reflection.AssemblyName(sprintf "x, PublicKeyToken=%s" publicKeyToken)).GetPublicKeyToken())
+            requestedAssembly.CultureInfo <- System.Globalization.CultureInfo.InvariantCulture
+
+            System.AppDomain.CurrentDomain.remove_AssemblyResolve(handler);
+
+            System.Reflection.Assembly.Load(requestedAssembly)
+    )
+    System.AppDomain.CurrentDomain.add_AssemblyResolve(handler);
+
+//-----------------
+RedirectAssembly "Microsoft.Build.Framework", System.Version(17, 12, 6, 0), "b03f5f7f11d50a3a";
+RedirectAssembly "Microsoft.Build", System.Version(17, 12, 6, 0), "b03f5f7f11d50a3a";
+printfn "###################### Redirect configured ######################"
+
 #if FAKE
 #r "paket: groupref netcorebuild //"
 #endif
+
+printfn "###################### Loaded ######################"
+//System.Reflection.Assembly.GetExecutingAssembly().GetReferencedAssemblies() |> Array.iter(fun a -> printfn "Assembly %s v %s" a.Name (a.Version.ToString()))
+let a = System.Reflection.Assembly.GetAssembly(typeof<Microsoft.Build.Evaluation.Project>)
+printfn "Assembly %s v %s located at %s" a.FullName (a.GetName().Version.ToString()) a.Location
+printfn "###################### END OF LIST ######################"
 
 #load "./.fake/build.fsx/intellisense.fsx"
 #load "./build.base.fsx"

@@ -1,1 +1,1 @@
-fake -vv run build.fsx -t %1
+fake -vv run build.fsx -t %1 

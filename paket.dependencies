@@ -1,8 +1,9 @@
 version 8.1.0
 group NetcoreBuild
     source https://api.nuget.org/v3/index.json   
-    nuget Microsoft.Build 17.3.2
-	nuget Microsoft.Build.Framework 17.3.2
+    nuget System.ComponentModel.Composition 9.0.1
+	nuget Microsoft.Build 15.1.0.0 redirects:on
+	nuget Microsoft.Build.Framework 15.1.0.0 redirects:on
 	nuget MSBuild.StructuredLogger 2.1.815
 	
 	nuget FSharp.Core 8.0.403
