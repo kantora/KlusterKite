@@ -9,6 +9,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_Solution Items", "_Solutio
 		base.dependecies = base.dependecies
 		build.base.fsx = build.base.fsx
 		build.bat = build.bat
+		build.cake = build.cake
 		build.config.fsx = build.config.fsx
 		build.fsx = build.fsx
 		build.sh = build.sh

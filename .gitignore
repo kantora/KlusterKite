@@ -222,3 +222,4 @@ paket.lock
 packagesOut
 .paket
 build.fsx.lock
+tools/
