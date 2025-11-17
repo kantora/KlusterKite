@@ -96,160 +96,84 @@ Task("PrepareSources")
 
     try
     {
-        Information("Fetching directories...");
-        DirectoryPathCollection directories = null;
+        Information("Fetching all .csproj files...");
+        var csprojFiles = GetFiles(System.IO.Path.Combine(rootDir, "**/*.csproj"));
 
-        try
+        if (csprojFiles == null || !csprojFiles.Any())
         {
-            directories = GetDirectories(rootDir);
-        }
-        catch (Exception ex)
-        {
-            Error($"Exception thrown by GetDirectories: {ex.Message}");
+            Information("No .csproj files found.");
             return;
         }
 
-        if (directories == null)
+        foreach (var file in csprojFiles)
         {
-            Error("GetDirectories returned null.");
-            return;
-        }
-
-        if (!directories.Any())
-        {
-            Information("GetDirectories returned an empty collection.");
-            return;
-        }
-
-        Information($"Found {directories.Count()} directories:");
-        foreach (var dir in directories)
-        {
-            Information($"Directory: {dir.FullPath}");
-        }
-
-        directories = new DirectoryPathCollection(directories.Where(dir =>
-        {
-            var files = GetFiles(System.IO.Path.Combine(dir.FullPath, "**/*.csproj"));
-            Information($"Checking directory: {dir.FullPath}, Found .csproj files: {files?.Count() ?? 0}");
-            return files?.Any() == true;
-        }));
-
-        if (!directories.Any())
-        {
-            Information("No directories found with .csproj files.");
-            return;
-        }
-
-        foreach (var dir in directories)
-        {
-            Information($"Processing directory: {dir.FullPath}");
-            var csprojFiles = GetFiles(System.IO.Path.Combine(dir.FullPath, "**/*.csproj"));
-            if (csprojFiles == null || !csprojFiles.Any())
+            var projectDir = System.IO.Path.GetDirectoryName(file.FullPath);
+            if (string.IsNullOrEmpty(projectDir))
             {
-                Information($"No .csproj files found in directory: {dir.FullPath}");
                 continue;
             }
 
-            foreach (var file in csprojFiles)
-            {
-                Information($"Processing .csproj file: {file.FullPath}");
-                var projectDir = System.IO.Path.GetDirectoryName(file.FullPath);
-                if (string.IsNullOrEmpty(projectDir))
-                {
-                    Information($"Project directory is null or empty for file: {file.FullPath}");
-                    continue;
-                }
+            Information($"Processing project directory: {projectDir} due to {file.FullPath}");
 
-                Information($"Cleaning bin directory: {System.IO.Path.Combine(projectDir, "bin")}");
-                CleanDirectory(System.IO.Path.Combine(projectDir, "bin"));
-            }
+            CleanDirectory(System.IO.Path.Combine(projectDir, "bin"));
 
-            var destinationDir = System.IO.Path.Combine(sourcesDir, System.IO.Path.GetFileName(dir.FullPath));
+            var relativePath = System.IO.Path.GetRelativePath(rootDir, projectDir);
+            var destinationDir = System.IO.Path.Combine(sourcesDir, relativePath);
             if (string.IsNullOrEmpty(destinationDir))
             {
-                Information($"Destination directory is null or empty for source: {dir.FullPath}");
                 continue;
             }
 
-            Information($"Copying directory {dir.FullPath} to {destinationDir}");
             try
             {
-                CopyDirectory(dir.FullPath, destinationDir);
+                CopyDirectory(projectDir, destinationDir);
             }
             catch (Exception ex)
             {
-                Error($"Error copying directory {dir.FullPath}: {ex.Message}");
+                Error($"Error copying directory {projectDir}: {ex.Message}");
             }
         }
 
-        Information("Fetching solution files...");
-        var slnFiles = GetFiles("./*.sln");
-        if (slnFiles == null || !slnFiles.Any())
-        {
-            Information("No solution files found.");
-        }
-        else
+        var slnFiles = GetFiles(System.IO.Path.Combine(rootDir, "*.sln"));
+        if (slnFiles != null && slnFiles.Any())
         {
             foreach (var file in slnFiles)
             {
-                Information($"Copying solution file: {file.FullPath}");
                 CopyFile(file.FullPath, System.IO.Path.Combine(sourcesDir, System.IO.Path.GetFileName(file.FullPath)));
             }
         }
 
-        Information("Fetching script files...");
-        var fsxFiles = GetFiles("./*.fsx");
-        if (fsxFiles == null || !fsxFiles.Any())
-        {
-            Information("No script files found.");
-        }
-        else
+        var fsxFiles = GetFiles(System.IO.Path.Combine(rootDir, "*.fsx"));
+        if (fsxFiles != null && fsxFiles.Any())
         {
             foreach (var file in fsxFiles)
             {
-                Information($"Copying script file: {file.FullPath}");
                 CopyFile(file.FullPath, System.IO.Path.Combine(sourcesDir, System.IO.Path.GetFileName(file.FullPath)));
             }
         }
 
-        Information("Fetching props files...");
-        var propsFiles = GetFiles("./*.props");
-        if (propsFiles == null || !propsFiles.Any())
-        {
-            Information("No props files found.");
-        }
-        else
+        var propsFiles = GetFiles(System.IO.Path.Combine(rootDir, "*.props"));
+        if (propsFiles != null && propsFiles.Any())
         {
             foreach (var file in propsFiles)
             {
-                Information($"Copying props file: {file.FullPath}");
                 CopyFile(file.FullPath, System.IO.Path.Combine(sourcesDir, System.IO.Path.GetFileName(file.FullPath)));
             }
         }
 
-        Information("Fetching project files...");
         var projects = GetFiles(System.IO.Path.Combine(sourcesDir, "**/*.csproj"));
-        if (projects == null || !projects.Any())
-        {
-            Information("No project files found in the sources directory.");
-        }
-        else
+        if (projects != null && projects.Any())
         {
             foreach (var file in projects)
             {
-                Information($"Processing project file: {file.FullPath}");
                 var projectDir = System.IO.Path.GetDirectoryName(file.FullPath);
                 if (string.IsNullOrEmpty(projectDir))
                 {
-                    Information($"Project directory is null or empty for file: {file.FullPath}");
                     continue;
                 }
 
-                Information($"Cleaning obj directory: {System.IO.Path.Combine(projectDir, "obj")}");
                 CleanDirectory(System.IO.Path.Combine(projectDir, "obj"));
 
-                // Replace <Version> tag in .csproj files
-                Information($"Replacing <Version> tag in file: {file.FullPath}");
                 try
                 {
                     var content = System.IO.File.ReadAllText(file.FullPath);
