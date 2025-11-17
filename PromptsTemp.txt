@@ -1,0 +1,22 @@
+1.	Clean Target:
+•	"Update the Clean target in build.cake to clean the buildDir directory instead of tempDir, as defined in build.base.fsx."
+2.	SetVersion Target:
+•	"Replace the placeholder implementation of GetLatestNuGetVersion in build.cake with the logic from build.base.fsx that uses NuGet.Version.getLastNuGetVersion to fetch the latest NuGet version."
+3.	PrepareSources Target:
+•	"Ensure the PrepareSources target in build.cake matches the logic in build.base.fsx, including using buildDir/src instead of tempDir and ensuring all file operations are consistent."
+4.	Build Target:
+•	"Update the Build target in build.cake to include configurable MSBuild properties as defined in build.base.fsx."
+5.	Nuget Target:
+•	"Implement the detailed logic for the Nuget target in build.cake, including cleaning the packageDir, filtering .nupkg files, and packing NuGet packages as defined in build.base.fsx."
+6.	CleanDockerImages Target:
+•	"Implement the logic for the CleanDockerImages target in build.cake to clean unnamed Docker images, as defined in build.fsx."
+7.	Tests Target:
+•	"Update the Tests target in build.cake to use dotnet xunit and generate XML reports, as defined in build.base.fsx."
+8.	PushLocalPackages Target:
+•	"Implement the logic for the PushLocalPackages target in build.cake to push .nupkg files to a NuGet server, as defined in build.base.fsx."
+9.	RestoreThirdPartyPackages Target:
+•	"Implement the detailed logic for the RestoreThirdPartyPackages target in build.cake to resolve dependencies and copy .nupkg files, as defined in build.base.fsx."
+10.	PushThirdPartyPackages Target:
+•	"Implement the logic for the PushThirdPartyPackages target in build.cake to push third-party .nupkg files to a NuGet server, as defined in build.base.fsx."
+11.	FinalPushAllPackages Target:
+•	"Implement the detailed logic for the FinalPushAllPackages target in build.cake to combine FinalPushLocalPackages and FinalPushThirdPartyPackages, as defined in build.base.fsx."

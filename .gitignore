@@ -223,3 +223,4 @@ packagesOut
 .paket
 build.fsx.lock
 tools/
+Prompts.txt
