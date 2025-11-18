@@ -341,11 +341,16 @@ Task("Tests")
     {
         Information($"Running tests for project: {project.FullPath}");
 
-        StartProcess("dotnet", new ProcessSettings
+        var result = StartProcess("dotnet", new ProcessSettings
         {
             Arguments = $"test {project.FullPath} --no-build --logger:trx;LogFileName={System.IO.Path.Combine(outputTests, System.IO.Path.GetFileNameWithoutExtension(project.FullPath) + ".trx")}",
             WorkingDirectory = System.IO.Path.GetDirectoryName(project.FullPath)
         });
+
+        if (result != 0)
+        {
+            throw new Exception($"Tests failed for project: {project.FullPath}");
+        }
     }
 });
 
