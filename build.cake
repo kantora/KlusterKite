@@ -217,6 +217,30 @@ Task("Build")
     }
 });
 
+// Task: Build
+Task("BuildDebug")
+    .IsDependentOn("PrepareSources")
+    .Does(() =>
+{
+    Information("Building projects...");
+    var sourcesDir = System.IO.Path.Combine(buildDir, "src");
+    var slnFiles = GetFiles(System.IO.Path.Combine(sourcesDir, "*.sln"));
+
+    foreach (var sln in slnFiles)
+    {
+        Information($"Building solution: {sln.FullPath}");
+        MSBuild(sln.FullPath, settings =>
+        {
+            settings.SetVerbosity(Verbosity.Minimal);
+            settings.WithTarget("Restore");
+            settings.WithTarget("Build");
+            settings.WithProperty("Configuration", "Debug");
+            settings.WithProperty("Optimize", "False");
+            settings.WithProperty("DebugSymbols", "True");
+        });
+    }
+});
+
 // Task: Nuget
 Task("Nuget")
     .IsDependentOn("Build")
@@ -297,7 +321,7 @@ Task("CleanDockerImages")
 
 // Task: Tests
 Task("Tests")
-    .IsDependentOn("Build")
+    .IsDependentOn("BuildDebug")
     .Does(() =>
 {
     Information("Running tests...");
@@ -319,12 +343,7 @@ Task("Tests")
 
         StartProcess("dotnet", new ProcessSettings
         {
-            Arguments = $"restore {project.FullPath}"
-        });
-
-        StartProcess("dotnet", new ProcessSettings
-        {
-            Arguments = $"xunit -parallel none -xml {System.IO.Path.Combine(outputTests, System.IO.Path.GetFileNameWithoutExtension(project.FullPath) + "_xunit.xml")}",
+            Arguments = $"test {project.FullPath} --no-build --logger:trx;LogFileName={System.IO.Path.Combine(outputTests, System.IO.Path.GetFileNameWithoutExtension(project.FullPath) + ".trx")}",
             WorkingDirectory = System.IO.Path.GetDirectoryName(project.FullPath)
         });
     }
