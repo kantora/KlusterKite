@@ -337,6 +337,8 @@ Task("Tests")
             return System.Text.RegularExpressions.Regex.IsMatch(content, "<IsTest>true</IsTest>", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
         });
 
+    var failedProjects = new List<string>();
+
     foreach (var project in testProjects)
     {
         Information($"Running tests for project: {project.FullPath}");
@@ -349,8 +351,13 @@ Task("Tests")
 
         if (result != 0)
         {
-            throw new Exception($"Tests failed for project: {project.FullPath}");
+            failedProjects.Add(project.FullPath);
         }
+    }
+
+    if (failedProjects.Any())
+    {
+        throw new Exception($"Tests failed for the following projects: {string.Join(", ", failedProjects)}");
     }
 });
 
