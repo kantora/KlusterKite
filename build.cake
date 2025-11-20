@@ -193,6 +193,92 @@ Task("PrepareSources")
     }
 });
 
+// Task: RestoreThirdPartyPackages
+Task("RestoreThirdPartyPackages")
+    .IsDependentOn("PrepareSources")
+    .Does(() =>
+{
+    Information("Restoring third-party packages...");
+
+    var sourcesDir = System.IO.Path.Combine(buildDir, "src");
+    var thirdPartyPackagesDir = packageThirdPartyDir;
+    EnsureDirectoryExists(thirdPartyPackagesDir);
+    CleanDirectory(thirdPartyPackagesDir);
+
+    var thirdPartyPackages = GetFiles(System.IO.Path.Combine(sourcesDir, "**/*.csproj"))
+        .SelectMany(file =>
+        {
+            var content = System.IO.File.ReadAllText(file.FullPath);
+            return System.Text.RegularExpressions.Regex.Matches(content, "<PackageReference Include=\"(.*?)\" Version=\"(.*?)\" />")
+                .Cast<System.Text.RegularExpressions.Match>()
+                .Select(match => new { Id = match.Groups[1].Value, Version = match.Groups[2].Value });
+        })
+        .Distinct()
+        .ToList();
+
+    foreach (var package in thirdPartyPackages)
+    {
+        Information($"Restoring package: {package.Id}, Version: {package.Version}");
+
+        var result = StartProcess("dotnet", new ProcessSettings
+        {
+            Arguments = $"nuget install {package.Id} -Version {package.Version} -OutputDirectory {thirdPartyPackagesDir}",
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        });
+
+        if (result != 0)
+        {
+            throw new Exception($"Failed to restore package: {package.Id}, Version: {package.Version}");
+        }
+    }
+
+    Information("All third-party packages restored successfully.");
+});
+
+// Task: PushThirdPartyPackages
+Task("PushThirdPartyPackages")
+    .IsDependentOn("RestoreThirdPartyPackages")
+    .Does(() =>
+{
+    Information("Pushing third-party NuGet packages...");
+
+    var nugetServerUrl = "http://docker:81"; // Replace with your NuGet server URL
+    var apiKey = EnvironmentVariable("NUGET_API_KEY") ?? ""; // Replace with your API key or set it as an environment variable
+
+    if (string.IsNullOrEmpty(apiKey))
+    {
+        throw new Exception("NuGet API key is not set. Please set the NUGET_API_KEY environment variable.");
+    }
+
+    var nupkgFiles = GetFiles(System.IO.Path.Combine(packageThirdPartyDir, "*.nupkg"));
+
+    if (nupkgFiles == null || !nupkgFiles.Any())
+    {
+        Information("No third-party NuGet packages found to push.");
+        return;
+    }
+
+    foreach (var file in nupkgFiles)
+    {
+        Information($"Pushing third-party package: {file.FullPath}");
+
+        var result = StartProcess("dotnet", new ProcessSettings
+        {
+            Arguments = $"nuget push {file.FullPath} --source {nugetServerUrl} --api-key {apiKey}",
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        });
+
+        if (result != 0)
+        {
+            throw new Exception($"Failed to push third-party package: {file.FullPath}");
+        }
+    }
+
+    Information("All third-party packages pushed successfully.");
+});
+
 // Task: Build
 Task("Build")
     .IsDependentOn("PrepareSources")
@@ -367,25 +453,41 @@ Task("PushLocalPackages")
     .Does(() =>
 {
     Information("Pushing local NuGet packages...");
-    // Logic to push local NuGet packages
-});
 
-// Task: RestoreThirdPartyPackages
-Task("RestoreThirdPartyPackages")
-    .IsDependentOn("PrepareSources")
-    .Does(() =>
-{
-    Information("Restoring third-party packages...");
-    // Logic to restore third-party packages
-});
+    var nugetServerUrl = "http://docker:81"; // Replace with your NuGet server URL
+    var apiKey = EnvironmentVariable("NUGET_API_KEY");
 
-// Task: PushThirdPartyPackages
-Task("PushThirdPartyPackages")
-    .IsDependentOn("RestoreThirdPartyPackages")
-    .Does(() =>
-{
-    Information("Pushing third-party NuGet packages...");
-    // Logic to push third-party NuGet packages
+    if (string.IsNullOrEmpty(apiKey))
+    {
+        throw new Exception("NuGet API key is not set. Please set the NUGET_API_KEY environment variable.");
+    }
+
+    var nupkgFiles = GetFiles(System.IO.Path.Combine(packageDir, "*.nupkg"));
+
+    if (nupkgFiles == null || !nupkgFiles.Any())
+    {
+        Information("No local NuGet packages found to push.");
+        return;
+    }
+
+    foreach (var file in nupkgFiles)
+    {
+        Information($"Pushing local package: {file.FullPath}");
+
+        var result = StartProcess("dotnet", new ProcessSettings
+        {
+            Arguments = $"nuget push {file.FullPath} --source {nugetServerUrl} --api-key {apiKey}",
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        });
+
+        if (result != 0)
+        {
+            throw new Exception($"Failed to push local package: {file.FullPath}");
+        }
+    }
+
+    Information("All local packages pushed successfully.");
 });
 
 // Task: FinalPushAllPackages
@@ -395,13 +497,6 @@ Task("FinalPushAllPackages")
     .Does(() =>
 {
     Information("Finalizing push of all packages...");
-    // Logic to finalize pushing all packages
+
+    Information("All local and third-party packages have been pushed successfully.");
 });
-
-// Default task
-Task("Default");
-    //.IsDependentOn("Build")
-    //.IsDependentOn("Tests");
-
-var target = Argument("target", "Build");
-RunTarget(target);
