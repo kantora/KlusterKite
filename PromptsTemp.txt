@@ -20,3 +20,15 @@
 •	"Implement the logic for the PushThirdPartyPackages target in build.cake to push third-party .nupkg files to a NuGet server, as defined in build.base.fsx."
 11.	FinalPushAllPackages Target:
 •	"Implement the detailed logic for the FinalPushAllPackages target in build.cake to combine FinalPushLocalPackages and FinalPushThirdPartyPackages, as defined in build.base.fsx."
+
+
+
+1.	SetVersion Target:
+•	"Replace the placeholder implementation of GetLatestNuGetVersion in build.cake with the logic from build.base.fsx that uses NuGet.Version.getLastNuGetVersion to fetch the latest NuGet version."
+2.	DockerBase Target:
+•	"Implement the DockerBase target in build.cake to build base Docker images using the docker build command, as defined in build.fsx."
+3.	DockerContainers Target:
+•	"Implement the DockerContainers target in build.cake to build standard Docker images, including building specific projects and copying data for Docker images, as defined in build.fsx."
+4.	FinalBuildDocker Target:
+•	"Implement the FinalBuildDocker target in build.cake to combine DockerBase, DockerContainers, and CleanDockerImages targets, as defined in build.fsx."
+--

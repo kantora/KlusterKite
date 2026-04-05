@@ -50,26 +50,36 @@ string GetLatestNuGetVersion(string serverUrl, string packageName)
 {
     Information($"Fetching latest NuGet version for package {packageName} from {serverUrl}...");
 
-    // Placeholder implementation replaced with a valid NuGet query
-    var processSettings = new ProcessSettings
+    try
     {
-        Arguments = $"list {packageName} -Source {serverUrl}",
-        RedirectStandardOutput = true
-    };
+        var processSettings = new ProcessSettings
+        {
+            Arguments = $"list {packageName} -Source {serverUrl}",
+            RedirectStandardOutput = true
+        };
 
-    IEnumerable<string> output;
-    StartProcess("nuget", processSettings, out output);
+        IEnumerable<string> output;
+        StartProcess("nuget", processSettings, out output);
 
-    var latestVersion = output.FirstOrDefault(line => line.StartsWith(packageName))?.Split(' ').LastOrDefault();
+        var latestVersion = output
+            .Where(line => line.StartsWith(packageName))
+            .Select(line => line.Split(' ').LastOrDefault())
+            .FirstOrDefault();
 
-    if (string.IsNullOrEmpty(latestVersion))
+        if (string.IsNullOrEmpty(latestVersion))
+        {
+            Information("No version found on the NuGet server.");
+            return null;
+        }
+
+        Information($"Latest version found: {latestVersion}");
+        return latestVersion;
+    }
+    catch (Exception ex)
     {
-        Information("No version found on the NuGet server.");
+        Error($"Error fetching latest NuGet version: {ex.Message}");
         return null;
     }
-
-    Information($"Latest version found: {latestVersion}");
-    return latestVersion;
 }
 
 string IncrementPatchVersion(string version)
@@ -500,3 +510,139 @@ Task("FinalPushAllPackages")
 
     Information("All local and third-party packages have been pushed successfully.");
 });
+
+// Task: DockerBase
+Task("DockerBase")
+    .Does(() =>
+{
+    Information("Building base Docker images...");
+
+    var dockerImages = new[]
+    {
+        new { Name = "klusterkite/baseworker", Path = "Docker/KlusterKiteBaseWorkerNode" },
+        new { Name = "klusterkite/baseweb", Path = "Docker/KlusterKiteBaseWebNode" },
+        new { Name = "klusterkite/nuget", Path = "Docker/KlusterKiteNuget" },
+        new { Name = "klusterkite/postgres", Path = "Docker/KlusterKitePostgres" },
+        new { Name = "klusterkite/entry", Path = "Docker/KlusterKiteEntry" },
+        new { Name = "klusterkite/vpn", Path = "Docker/KlusterKiteVpn" },
+        new { Name = "klusterkite/elk", Path = "Docker/KlusterKiteELK" },
+        new { Name = "klusterkite/redis", Path = "Docker/KlusterKite.Redis" }
+    };
+
+    foreach (var image in dockerImages)
+    {
+        Information($"Building Docker image: {image.Name} from path: {image.Path}");
+
+        var result = StartProcess("docker", new ProcessSettings
+        {
+            Arguments = $"build -t {image.Name}:latest {image.Path}",
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        });
+
+        if (result != 0)
+        {
+            throw new Exception($"Failed to build Docker image: {image.Name}");
+        }
+    }
+
+    Information("All base Docker images built successfully.");
+});
+
+// Task: DockerContainers
+Task("DockerContainers")
+    .IsDependentOn("PrepareSources")
+    .Does(() =>
+{
+    Information("Building standard Docker images...");
+
+    // Define projects and their output paths
+    var projects = new[]
+    {
+        new { OutputPath = "./build/launcher", ProjectPath = "./build/src/KlusterKite.NodeManager/KlusterKite.NodeManager.Launcher/KlusterKite.NodeManager.Launcher.csproj" },
+        new { OutputPath = "./build/seed", ProjectPath = "./KlusterKite.Core/KlusterKite.Core.Service/KlusterKite.Core.Service.csproj" },
+        new { OutputPath = "./build/seeder", ProjectPath = "./KlusterKite.NodeManager/KlusterKite.NodeManager.Seeder.Launcher/KlusterKite.NodeManager.Seeder.Launcher.csproj" }
+    };
+
+    // Clean and build projects
+    foreach (var project in projects)
+    {
+        Information($"Building project: {project.ProjectPath}");
+
+        CleanDirectory(project.OutputPath);
+
+        MSBuild(project.ProjectPath, settings =>
+        {
+            settings.SetVerbosity(Verbosity.Minimal);
+            settings.WithTarget("Restore");
+            settings.WithTarget("Publish");
+            settings.WithProperty("Optimize", "True");
+            settings.WithProperty("DebugSymbols", "True");
+            settings.WithProperty("Configuration", "Release");
+            settings.WithProperty("OutputPath", project.OutputPath);
+        });
+    }
+
+    // Copy data for Docker images
+    void CopyLauncherData(string path)
+    {
+        var fullPath = MakeAbsolute(Directory(path)).FullPath;
+        var buildDir = System.IO.Path.Combine(fullPath, "build");
+        var packageCacheDir = System.IO.Path.Combine(fullPath, "packageCache");
+
+        CleanDirectory(buildDir);
+        CleanDirectory(packageCacheDir);
+        CopyDirectory("./build/launcherpublish", buildDir);
+        CopyFile("./Docker/utils/launcher/start.sh", buildDir);
+        CopyFile("./nuget.exe", buildDir);
+    }
+
+    CopyLauncherData("./Docker/KlusterKiteWorker");
+    CopyLauncherData("./Docker/KlusterKitePublisher");
+
+    // Build Docker images
+    var dockerImages = new[]
+    {
+        new { Name = "klusterkite/seed", Path = "Docker/KlusterKiteSeed" },
+        new { Name = "klusterkite/seeder", Path = "Docker/KlusterKiteSeeder" },
+        new { Name = "klusterkite/worker", Path = "Docker/KlusterKiteWorker" },
+        new { Name = "klusterkite/manager", Path = "Docker/KlusterKiteManager" },
+        new { Name = "klusterkite/publisher", Path = "Docker/KlusterKitePublisher" }
+    };
+
+    foreach (var image in dockerImages)
+    {
+        Information($"Building Docker image: {image.Name} from path: {image.Path}");
+
+        var result = StartProcess("docker", new ProcessSettings
+        {
+            Arguments = $"build -t {image.Name}:latest {image.Path}",
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        });
+
+        if (result != 0)
+        {
+            throw new Exception($"Failed to build Docker image: {image.Name}");
+        }
+    }
+
+    Information("All standard Docker images built successfully.");
+});
+
+// Task: FinalBuildDocker
+Task("FinalBuildDocker")
+    .IsDependentOn("DockerBase")
+    .IsDependentOn("DockerContainers")
+    .IsDependentOn("CleanDockerImages")
+    .Does(() =>
+{
+    Information("Finalizing the build of all Docker images...");
+
+    Information("All Docker images have been built and cleaned successfully.");
+});
+
+// Entry point
+Task("Default").IsDependentOn("FinalBuild");
+var target = Argument("target", "Default");
+RunTarget(target);
