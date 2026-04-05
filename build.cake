@@ -757,6 +757,82 @@ Task("DockerContainers")
         }
     }
 
+    // Build monitoring UI (React app) and its Docker image
+    var webDir = MakeAbsolute(Directory("./Docker/KlusterKiteMonitoring/klusterkite-web")).FullPath;
+    var envLocal = System.IO.Path.Combine(webDir, ".env-local");
+    var envFile  = System.IO.Path.Combine(webDir, ".env");
+    var envBuild = System.IO.Path.Combine(webDir, ".env-build");
+
+    // Detect npm executable
+    string npmExe;
+    if (IsRunningOnWindows())
+    {
+        var nodePath = System.Environment.GetEnvironmentVariable("PATH")
+            .Split(';')
+            .FirstOrDefault(p => p.IndexOf("nodejs", StringComparison.OrdinalIgnoreCase) >= 0);
+        npmExe = nodePath != null && System.IO.File.Exists(System.IO.Path.Combine(nodePath, "npm.cmd"))
+            ? System.IO.Path.Combine(nodePath, "npm.cmd")
+            : "npm.cmd";
+    }
+    else
+    {
+        var whichResult = StartProcess("which", new ProcessSettings
+        {
+            Arguments = "npm",
+            RedirectStandardOutput = true
+        });
+        npmExe = whichResult == 0 ? "npm" : "/usr/bin/npm";
+    }
+
+    // Clear babel loader cache
+    var babelCache = System.IO.Path.Combine(webDir, "node_modules", ".cache", "babel-loader");
+    if (System.IO.Directory.Exists(babelCache))
+        CleanDirectory(babelCache);
+
+    // Swap env files so the build sees .env (from .env-local)
+    if (System.IO.File.Exists(envLocal))
+        System.IO.File.Move(envLocal, envFile);
+    if (System.IO.File.Exists(envFile))
+        System.IO.File.Move(envFile, envBuild);
+
+    try
+    {
+        Information($"Running: {npmExe} install");
+        var npmInstall = StartProcess(npmExe, new ProcessSettings
+        {
+            Arguments = "install",
+            WorkingDirectory = webDir
+        });
+        if (npmInstall != 0)
+            throw new Exception("npm install failed for klusterkite-web");
+
+        Information($"Running: {npmExe} run build");
+        var npmBuild = StartProcess(npmExe, new ProcessSettings
+        {
+            Arguments = "run build",
+            WorkingDirectory = webDir
+        });
+        if (npmBuild != 0)
+            throw new Exception("npm run build failed for klusterkite-web");
+
+        var monitoringResult = StartProcess("docker", new ProcessSettings
+        {
+            Arguments = "build -t klusterkite/monitoring-ui:latest Docker/KlusterKiteMonitoring",
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        });
+        if (monitoringResult != 0)
+            throw new Exception("Failed to build Docker image: klusterkite/monitoring-ui");
+    }
+    finally
+    {
+        // Always restore env files
+        if (System.IO.File.Exists(envBuild))
+            System.IO.File.Move(envBuild, envFile);
+        if (System.IO.File.Exists(envFile))
+            System.IO.File.Move(envFile, envLocal);
+    }
+
     Information("All standard Docker images built successfully.");
 });
 
