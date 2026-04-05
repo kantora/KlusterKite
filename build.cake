@@ -500,6 +500,110 @@ Task("PushLocalPackages")
     Information("All local packages pushed successfully.");
 });
 
+// Task: RePushLocalPackages
+Task("RePushLocalPackages")
+    .Does(() =>
+{
+    Information("Re-pushing local NuGet packages one by one...");
+
+    var nugetServerUrl = "http://docker:81";
+    var apiKey = EnvironmentVariable("NUGET_API_KEY");
+
+    if (string.IsNullOrEmpty(apiKey))
+    {
+        throw new Exception("NuGet API key is not set. Please set the NUGET_API_KEY environment variable.");
+    }
+
+    var nupkgFiles = GetFiles(System.IO.Path.Combine(packagePushDir, "*.nupkg"));
+
+    if (nupkgFiles == null || !nupkgFiles.Any())
+    {
+        Information("No local NuGet packages found to re-push.");
+        return;
+    }
+
+    var failedFiles = new System.Collections.Generic.List<string>();
+
+    foreach (var file in nupkgFiles)
+    {
+        Information($"Pushing local package: {file.FullPath}");
+
+        var result = StartProcess("dotnet", new ProcessSettings
+        {
+            Arguments = $"nuget push {file.FullPath} --source {nugetServerUrl} --api-key {apiKey}",
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        });
+
+        if (result != 0)
+        {
+            Warning($"Failed to push package: {file.FullPath}. Continuing...");
+            failedFiles.Add(file.FullPath);
+        }
+    }
+
+    if (failedFiles.Any())
+    {
+        Warning($"The following packages failed to push: {string.Join(", ", failedFiles)}");
+    }
+    else
+    {
+        Information("All local packages pushed successfully.");
+    }
+});
+
+// Task: RePushThirdPartyPackages
+Task("RePushThirdPartyPackages")
+    .Does(() =>
+{
+    Information("Re-pushing third-party NuGet packages one by one...");
+
+    var nugetServerUrl = "http://docker:81";
+    var apiKey = EnvironmentVariable("NUGET_API_KEY");
+
+    if (string.IsNullOrEmpty(apiKey))
+    {
+        throw new Exception("NuGet API key is not set. Please set the NUGET_API_KEY environment variable.");
+    }
+
+    var nupkgFiles = GetFiles(System.IO.Path.Combine(packageThirdPartyDir, "*.nupkg"));
+
+    if (nupkgFiles == null || !nupkgFiles.Any())
+    {
+        Information("No third-party NuGet packages found to re-push.");
+        return;
+    }
+
+    var failedFiles = new System.Collections.Generic.List<string>();
+
+    foreach (var file in nupkgFiles)
+    {
+        Information($"Pushing third-party package: {file.FullPath}");
+
+        var result = StartProcess("dotnet", new ProcessSettings
+        {
+            Arguments = $"nuget push {file.FullPath} --source {nugetServerUrl} --api-key {apiKey}",
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        });
+
+        if (result != 0)
+        {
+            Warning($"Failed to push package: {file.FullPath}. Continuing...");
+            failedFiles.Add(file.FullPath);
+        }
+    }
+
+    if (failedFiles.Any())
+    {
+        Warning($"The following packages failed to push: {string.Join(", ", failedFiles)}");
+    }
+    else
+    {
+        Information("All third-party packages pushed successfully.");
+    }
+});
+
 // Task: FinalPushAllPackages
 Task("FinalPushAllPackages")
     .IsDependentOn("PushLocalPackages")
