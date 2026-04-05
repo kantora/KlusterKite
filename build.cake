@@ -204,46 +204,100 @@ Task("PrepareSources")
 });
 
 // Task: RestoreThirdPartyPackages
+// Resolves the full transitive dependency graph by reading project.assets.json files
+// produced during Build (which MSBuild populates after restore). This matches FAKE's
+// NuGet.Protocol graph-walk and requires Build to have run first.
 Task("RestoreThirdPartyPackages")
     .IsDependentOn("PrepareSources")
+    .IsDependentOn("Build")
     .Does(() =>
 {
-    Information("Restoring third-party packages...");
+    Information("Restoring third-party packages with full transitive dependency resolution...");
 
     var sourcesDir = System.IO.Path.Combine(buildDir, "src");
-    var thirdPartyPackagesDir = packageThirdPartyDir;
-    EnsureDirectoryExists(thirdPartyPackagesDir);
-    CleanDirectory(thirdPartyPackagesDir);
+    EnsureDirectoryExists(packageThirdPartyDir);
+    CleanDirectory(packageThirdPartyDir);
 
-    var thirdPartyPackages = GetFiles(System.IO.Path.Combine(sourcesDir, "**/*.csproj"))
-        .SelectMany(file =>
-        {
-            var content = System.IO.File.ReadAllText(file.FullPath);
-            return System.Text.RegularExpressions.Regex.Matches(content, "<PackageReference Include=\"(.*?)\" Version=\"(.*?)\" />")
-                .Cast<System.Text.RegularExpressions.Match>()
-                .Select(match => new { Id = match.Groups[1].Value, Version = match.Groups[2].Value });
-        })
-        .Distinct()
-        .ToList();
-
-    foreach (var package in thirdPartyPackages)
+    // Locate the global NuGet packages cache
+    IEnumerable<string> nugetLocalsOutput;
+    StartProcess("dotnet", new ProcessSettings
     {
-        Information($"Restoring package: {package.Id}, Version: {package.Version}");
+        Arguments = "nuget locals global-packages --list",
+        RedirectStandardOutput = true
+    }, out nugetLocalsOutput);
 
-        var result = StartProcess("dotnet", new ProcessSettings
-        {
-            Arguments = $"nuget install {package.Id} -Version {package.Version} -OutputDirectory {thirdPartyPackagesDir}",
-            RedirectStandardOutput = true,
-            RedirectStandardError = true
-        });
+    var globalPackagesLine = nugetLocalsOutput
+        .FirstOrDefault(l => l.StartsWith("global-packages:", StringComparison.OrdinalIgnoreCase));
+    if (globalPackagesLine == null)
+        throw new Exception("Could not determine global NuGet packages folder from 'dotnet nuget locals'.");
 
-        if (result != 0)
+    var globalPackagesPath = globalPackagesLine.Substring("global-packages:".Length).Trim();
+    Information($"Global NuGet cache: {globalPackagesPath}");
+
+    // Collect all packages (direct + transitive) from project.assets.json files.
+    // MSBuild writes these during Restore/Build; the 'libraries' section contains
+    // every resolved package in the full dependency graph.
+    // Key = "PackageId/version" (as written by MSBuild), Value = relative path in cache.
+    var resolvedPackages = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    var assetFiles = GetFiles(System.IO.Path.Combine(sourcesDir, "**/obj/project.assets.json"));
+    Information($"Found {assetFiles.Count()} project.assets.json files");
+
+    foreach (var assetFile in assetFiles)
+    {
+        using var doc = System.Text.Json.JsonDocument.Parse(
+            System.IO.File.ReadAllText(assetFile.FullPath));
+
+        if (!doc.RootElement.TryGetProperty("libraries", out var libraries))
+            continue;
+
+        foreach (var lib in libraries.EnumerateObject())
         {
-            throw new Exception($"Failed to restore package: {package.Id}, Version: {package.Version}");
+            if (!lib.Value.TryGetProperty("type", out var typeEl) || typeEl.GetString() != "package")
+                continue;
+
+            if (!lib.Value.TryGetProperty("path", out var pathEl))
+                continue;
+
+            if (!resolvedPackages.ContainsKey(lib.Name))
+                resolvedPackages[lib.Name] = pathEl.GetString();
         }
     }
 
-    Information("All third-party packages restored successfully.");
+    Information($"{resolvedPackages.Count} unique packages in resolved dependency graph");
+
+    var copiedCount = 0;
+    var missingCount = 0;
+
+    foreach (var kvp in resolvedPackages.OrderBy(k => k.Key))
+    {
+        // lib.Name format: "PackageId/1.2.3"
+        var slash = kvp.Key.IndexOf('/');
+        if (slash < 0) continue;
+
+        var packageId      = kvp.Key.Substring(0, slash);
+        var packageVersion = kvp.Key.Substring(slash + 1);
+        // The relative path in the cache is lowercase (e.g. "akka/1.5.45")
+        var nupkgFileName = $"{packageId}.{packageVersion}.nupkg".ToLower();
+        var nupkgPath     = System.IO.Path.Combine(globalPackagesPath, kvp.Value, nupkgFileName);
+
+        if (System.IO.File.Exists(nupkgPath))
+        {
+            System.IO.File.Copy(nupkgPath,
+                System.IO.Path.Combine(packageThirdPartyDir, System.IO.Path.GetFileName(nupkgPath)),
+                overwrite: true);
+            copiedCount++;
+        }
+        else
+        {
+            Warning($"Package file not found in cache: {nupkgPath}");
+            missingCount++;
+        }
+    }
+
+    Information($"Copied {copiedCount} packages to {packageThirdPartyDir}.");
+    if (missingCount > 0)
+        Warning($"{missingCount} package(s) were not found in the global cache and were skipped.");
 });
 
 // Task: PushThirdPartyPackages
