@@ -604,14 +604,40 @@ Task("RePushThirdPartyPackages")
     }
 });
 
-// Task: FinalPushAllPackages
-Task("FinalPushAllPackages")
+// Task: FinalBuild
+Task("FinalBuild")
+    .IsDependentOn("Build")
+    .Does(() =>
+{
+    Information("FinalBuild complete.");
+});
+
+// Task: FinalPushLocalPackages
+// Full pipeline: Clean -> SetVersion -> PrepareSources -> Build -> Nuget -> PushLocalPackages
+// SetVersion runs before PrepareSources because it is declared first and both depend on Clean.
+Task("FinalPushLocalPackages")
+    .IsDependentOn("SetVersion")
     .IsDependentOn("PushLocalPackages")
+    .Does(() =>
+{
+    Information("FinalPushLocalPackages complete.");
+});
+
+// Task: FinalPushThirdPartyPackages
+Task("FinalPushThirdPartyPackages")
+    .IsDependentOn("RestoreThirdPartyPackages")
     .IsDependentOn("PushThirdPartyPackages")
     .Does(() =>
 {
-    Information("Finalizing push of all packages...");
+    Information("FinalPushThirdPartyPackages complete.");
+});
 
+// Task: FinalPushAllPackages
+Task("FinalPushAllPackages")
+    .IsDependentOn("FinalPushLocalPackages")
+    .IsDependentOn("FinalPushThirdPartyPackages")
+    .Does(() =>
+{
     Information("All local and third-party packages have been pushed successfully.");
 });
 
