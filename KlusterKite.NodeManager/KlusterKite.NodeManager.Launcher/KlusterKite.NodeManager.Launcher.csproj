@@ -51,7 +51,7 @@
   </ItemGroup>    
   
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net9.0' ">
-    <DefineConstants>$(DefineConstants);APPDOMAIN</DefineConstants>
+    <DefineConstants>$(DefineConstants);CORECLR</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.1' ">
     <DefineConstants>$(DefineConstants);CORECLR</DefineConstants>

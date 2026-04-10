@@ -5,7 +5,7 @@ stopMode = "CleanRestart"
 stopAction = "echo stopped"
 
 containerType = "publisher"
-runtime = "ubuntu.14.04-x64"
+runtime = "linux-x64"
 
 apiClientId = "KlusterKite.NodeManager.Launcher"
 apiClientSecret = "{49F20BD7-DA51-4A7B-B13F-44881D71D395}"

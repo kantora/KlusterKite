@@ -215,7 +215,10 @@ namespace KlusterKite.NodeManager.Seeder.Launcher
                         packageToInstall = await repository.GetAsync(dependency.Id);
                         if (packageToInstall == null)
                         {
-                            throw new PackageNotFoundException(dependency.Id);
+                            // Framework packages (System.*, Microsoft.NETCore.*) are provided by the
+                            // .NET runtime and won't be on the local NuGet server — skip them.
+                            Console.WriteLine($"Skipping framework/unavailable dependency: {dependency.Id}");
+                            continue;
                         }
 
                         packagesToInstall.Add(dependency.Id, packageToInstall);

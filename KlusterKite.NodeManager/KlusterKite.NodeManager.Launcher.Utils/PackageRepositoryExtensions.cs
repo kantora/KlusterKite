@@ -31,6 +31,11 @@ namespace KlusterKite.NodeManager.Launcher.Utils
         /// </summary>
         public const string NetCore = ".NETCoreApp,Version=v1.1";
 
+        /// <summary>
+        /// The .NET 9.0 name
+        /// </summary>
+        public const string Net9 = ".NETCoreApp,Version=v9.0";
+
 #if APPDOMAIN
         /// <summary>
         /// Gets the current runtime
@@ -40,7 +45,7 @@ namespace KlusterKite.NodeManager.Launcher.Utils
         /// <summary>
         /// Gets the current runtime
         /// </summary>
-        public static string CurrentRuntime => NetCore;
+        public static string CurrentRuntime => Net9;
 #endif
 
         /// <summary>

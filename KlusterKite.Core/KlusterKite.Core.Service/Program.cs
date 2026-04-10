@@ -16,8 +16,6 @@ namespace KlusterKite.Core.Service
 
     using Autofac;
 
-    using DocoptNet;
-
     using JetBrains.Annotations;
 
     using Serilog;
@@ -28,14 +26,6 @@ namespace KlusterKite.Core.Service
     [UsedImplicitly]
     public class Program
     {
-        /// <summary>
-        /// Help description for command run
-        /// </summary>
-        private const string CommandUsage =
-@"Usage: KlusterKite.Core.Service.exe [--config=<file>]
---config=<file> file to load as top-level config
-";
-
         /// <summary>
         /// Gets or sets the dependency injection container
         /// </summary>
@@ -54,14 +44,15 @@ namespace KlusterKite.Core.Service
             var logger = loggerConfig.CreateLogger();
             Log.Logger = logger;
 
-            var arguments = new Docopt().Apply(CommandUsage, args, exit: true);
             var configurations = new List<string>();
-
-            ValueObject config;
-            if (arguments.TryGetValue("--config", out config) && config != null)
+            foreach (var arg in args)
             {
-                configurations.Add(config.ToString());
-                Console.WriteLine($@"Will use config from {config}");
+                if (arg.StartsWith("--config="))
+                {
+                    var configFile = arg.Substring("--config=".Length);
+                    configurations.Add(configFile);
+                    Console.WriteLine($@"Will use config from {configFile}");
+                }
             }
 
             Container = new ContainerBuilder();

@@ -14,6 +14,8 @@ namespace KlusterKite.NodeManager.ConfigurationSource
     using KlusterKite.NodeManager.Client.ORM;
 
     using Microsoft.EntityFrameworkCore;
+    using Microsoft.EntityFrameworkCore.Diagnostics;
+    using Microsoft.EntityFrameworkCore.Infrastructure;
 
     /// <summary>
     /// Configuration database context
@@ -73,6 +75,12 @@ namespace KlusterKite.NodeManager.ConfigurationSource
         /// </summary>
         [UsedImplicitly]
         public DbSet<MigrationLogRecord> MigrationLogs { get; set; }
+
+        /// <inheritdoc />
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            optionsBuilder.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
+        }
 
         /// <inheritdoc />
         protected override void OnModelCreating(ModelBuilder modelBuilder)

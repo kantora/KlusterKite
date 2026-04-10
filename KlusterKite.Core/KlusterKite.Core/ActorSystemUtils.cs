@@ -64,32 +64,20 @@ namespace KlusterKite.Core
 
             Console.WriteLine(@"Assemblies loaded");
 
-            try
+            foreach (var type in GetLoadedAssemblies().Where(a => !a.IsDynamic).SelectMany(GetAssemblyTypes)
+                .Where(t => t.GetTypeInfo().IsSubclassOf(typeof(BaseInstaller))).Where(
+                    t => !t.GetTypeInfo().IsAbstract && !t.GetTypeInfo().IsGenericTypeDefinition
+                         && t.GetConstructor(new Type[0]) != null))
             {
-                foreach (var type in GetLoadedAssemblies().Where(a => !a.IsDynamic).SelectMany(a => a.GetTypes())
-                    .Where(t => t.GetTypeInfo().IsSubclassOf(typeof(BaseInstaller))).Where(
-                        t => !t.GetTypeInfo().IsAbstract && !t.GetTypeInfo().IsGenericTypeDefinition
-                             && t.GetConstructor(new Type[0]) != null))
+                try
                 {
-                    try
-                    {
-                        var installer = (BaseInstaller)Activator.CreateInstance(type);
-                        installer.Install(container);
-                    }
-                    catch (Exception)
-                    {
-                        // ignore
-                    }
+                    var installer = (BaseInstaller)Activator.CreateInstance(type);
+                    installer.Install(container);
                 }
-            }
-            catch (ReflectionTypeLoadException loadException)
-            {
-                foreach (var loaderException in loadException.LoaderExceptions)
+                catch (Exception)
                 {
-                    Console.WriteLine(loaderException.Message);
+                    // ignore
                 }
-
-                throw;
             }
 
             Console.WriteLine(@"Assemblies installed");
@@ -156,6 +144,18 @@ namespace KlusterKite.Core
 #warning Method not implemented
             throw new NotImplementedException();
 #endif
+        }
+
+        private static IEnumerable<Type> GetAssemblyTypes(Assembly assembly)
+        {
+            try
+            {
+                return assembly.GetTypes();
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                return ex.Types.Where(t => t != null);
+            }
         }
     }
 }

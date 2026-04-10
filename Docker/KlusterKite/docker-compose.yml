@@ -34,6 +34,8 @@ services:
 
   configDb:
     image: klusterkite/postgres
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
     networks:
       default:
         ipv4_address: 172.18.0.3
@@ -46,6 +48,9 @@ services:
      
   entry:
     image: klusterkite/entry
+    depends_on:
+      - publisher1
+      - publisher2
     links:
      - "seed"
      - "publisher1"
@@ -54,7 +59,7 @@ services:
      - "80:80"
     networks:
       default:
-        ipv4_address: 172.18.0.5     
+        ipv4_address: 172.18.0.5
 
   #Cluster servers
   seed: #seeds should be limited and with fixed addresses preknown to other cluster nodes
@@ -118,8 +123,8 @@ services:
 
   manager:
     image: klusterkite/manager
-#    environment:
-#     - MONO_LOG_LEVEL=info
+    environment:
+     - NETWORK_NAME=manager
     links:
      - "seed"
      - "configDb"
@@ -132,6 +137,8 @@ services:
 
   worker:
     image: klusterkite/worker
+    environment:
+     - NETWORK_NAME=worker
     links:
      - "seed"
      - "manager"

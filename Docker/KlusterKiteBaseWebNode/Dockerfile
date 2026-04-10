@@ -1,5 +1,4 @@
 FROM klusterkite/baseworker:latest
-MAINTAINER Mikhail Kantarovskiy <kantoramob@gmail.com>
-RUN apt-get install -y nginx
+LABEL maintainer="Mikhail Kantarovskiy <kantoramob@gmail.com>"
+RUN apt-get update && apt-get install -y nginx && rm -rf /var/lib/apt/lists/*
 EXPOSE 80
-

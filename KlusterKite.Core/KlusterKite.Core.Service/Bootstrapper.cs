@@ -56,8 +56,9 @@ namespace KlusterKite.Core.Service
             Log.Debug($"Cluster configuration: min-nr-of-members { config.GetInt("akka.cluster.min-nr-of-members")}");
             var roles = string.Join(", ", config.GetStringList("akka.cluster.roles") ?? new List<string>());
             Log.Debug($"Cluster configuration: roles { roles}");
-            Log.Debug($"Cluster node hostname: { config.GetString("akka.remote.helios.tcp.hostname") }");
-            var publicHostName = config.GetString("akka.remote.helios.tcp.public-hostname");
+            Log.Debug($"Cluster node hostname: { config.GetString("akka.remote.helios.tcp.hostname") ?? config.GetString("akka.remote.dot-netty.tcp.hostname") }");
+            var publicHostName = config.GetString("akka.remote.helios.tcp.public-hostname")
+                ?? config.GetString("akka.remote.dot-netty.tcp.public-hostname");
             if (!string.IsNullOrWhiteSpace(publicHostName))
             {
                 Log.Debug($"Cluster node public hostname: { publicHostName }");
@@ -140,9 +141,27 @@ namespace KlusterKite.Core.Service
 
             Console.WriteLine(@"loading config from environment");
             var networkName = Environment.GetEnvironmentVariable("NETWORK_NAME");
+            if (string.IsNullOrEmpty(networkName))
+            {
+                try
+                {
+                    var hostname = System.Net.Dns.GetHostName();
+                    var hostEntry = System.Net.Dns.GetHostEntry(hostname);
+                    var ip = hostEntry.AddressList.FirstOrDefault(a => a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
+                    networkName = ip?.ToString() ?? hostname;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($@"Failed to resolve hostname: {ex.Message}");
+                }
+                Console.WriteLine($@"NETWORK_NAME not set, resolved to: {networkName}");
+            }
             if (!string.IsNullOrEmpty(networkName))
             {
-                config = config.WithFallback(ConfigurationFactory.ParseString($"{{ akka.remote.helios.tcp.public-hostname = \"{networkName.Replace("\"", "\\\"")}\" }}"));
+                Console.WriteLine($@"Setting public hostname to: {networkName}");
+                var escapedName = networkName.Replace("\"", "\\\"");
+                config = config.WithFallback(ConfigurationFactory.ParseString($"{{ akka.remote.helios.tcp.public-hostname = \"{escapedName}\" }}"));
+                config = config.WithFallback(ConfigurationFactory.ParseString($"{{ akka.remote.dot-netty.tcp.public-hostname = \"{escapedName}\" }}"));
             }
 
             // ReSharper disable once AssignNullToNotNullAttribute

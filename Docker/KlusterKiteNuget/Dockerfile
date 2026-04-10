@@ -1,6 +1,5 @@
 FROM sunside/simple-nuget-server:latest
-MAINTAINER Mikhail Kantarovskiy <kantoramob@gmail.com>
-RUN apt-get update && apt-get -y upgrade
+LABEL maintainer="Mikhail Kantarovskiy <kantoramob@gmail.com>"
 COPY feedwriter.php /var/www/inc/feedwriter.php
 EXPOSE 80
 

@@ -83,8 +83,8 @@ namespace KlusterKite.NodeManager.Launcher.Utils
             var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(tempDir);
 
-            var source = new PackageSource(nugetUrl);
-            var sourceRepository = Repository.Factory.GetCoreV3(source.Source);
+            var source = new PackageSource(nugetUrl) { AllowInsecureConnections = true };
+            var sourceRepository = Repository.Factory.GetCoreV3(source);
             var sourceCacheContext = new SourceCacheContext();
             
             var downloadResource = await sourceRepository.GetResourceAsync<DownloadResource>().ConfigureAwait(false);
@@ -165,8 +165,8 @@ namespace KlusterKite.NodeManager.Launcher.Utils
         /// </returns>
         public static async Task<IPackageSearchMetadata> Search(string nugetUrl, string id, NuGetVersion version)
         {
-            var source = new PackageSource(nugetUrl);
-            var sourceRepository = Repository.Factory.GetCoreV3(source.Source);
+            var source = new PackageSource(nugetUrl) { AllowInsecureConnections = true };
+            var sourceRepository = Repository.Factory.GetCoreV3(source);
             var resource = await sourceRepository.GetResourceAsync<PackageSearchResource>().ConfigureAwait(false);
             var result = new List<IPackageSearchMetadata>();
 

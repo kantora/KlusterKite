@@ -1,7 +1,3 @@
 FROM nginx:latest
-MAINTAINER Mikhail Kantarovskiy <kantoramob@gmail.com>
-RUN apt-get update && \
-	apt-get -y upgrade
+LABEL maintainer="Mikhail Kantarovskiy <kantoramob@gmail.com>"
 COPY default.conf /etc/nginx/conf.d/
-
-

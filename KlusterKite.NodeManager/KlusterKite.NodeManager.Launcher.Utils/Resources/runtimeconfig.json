@@ -1,8 +1,15 @@
 {
   "runtimeOptions": {
-    "framework": {
-      "name": "Microsoft.NETCore.App",
-      "version": "1.1.2"
-    }
+    "tfm": "net9.0",
+    "frameworks": [
+      {
+        "name": "Microsoft.NETCore.App",
+        "version": "9.0.0"
+      },
+      {
+        "name": "Microsoft.AspNetCore.App",
+        "version": "9.0.0"
+      }
+    ]
   }
 }

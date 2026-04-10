@@ -10,6 +10,7 @@ var packageDir = System.IO.Path.Combine(tempDir, "packageOut");
 var packagePushDir = System.IO.Path.Combine(tempDir, "packagePush");
 var packageThirdPartyDir = System.IO.Path.Combine(tempDir, "packageThirdPartyDir");
 var version = EnvironmentVariable("version") ?? "0.0.0-local";
+var nugetServerUrl = EnvironmentVariable("NUGET_SERVER_URL") ?? "http://docker:81";
 
 // Task: Clean
 Task("Clean")
@@ -27,7 +28,6 @@ Task("SetVersion")
     Information("Setting version...");
 
     // Retrieve the latest NuGet version of the package
-    var nugetServerUrl = "http://docker:81";
     var latestVersion = GetLatestNuGetVersion(nugetServerUrl, testPackageName);
 
     if (string.IsNullOrEmpty(latestVersion))
@@ -204,100 +204,259 @@ Task("PrepareSources")
 });
 
 // Task: RestoreThirdPartyPackages
-// Resolves the full transitive dependency graph by reading project.assets.json files
-// produced during Build (which MSBuild populates after restore). This matches FAKE's
-// NuGet.Protocol graph-walk and requires Build to have run first.
+// Ports the FAKE implementation directly:
+//   1. Index all .nupkg files in the global NuGet cache.
+//   2. Seed the set from PackageReference items in every .csproj under temp/build/src/.
+//   3. BFS-expand via nuspec dependency groups (ALL groups, not just current TFM/RID).
+//   4. Download missing packages with nuget.exe install (same as FAKE).
+//   5. Deduplicate keeping the highest version per package ID (same as FAKE).
+//   6. Copy .nupkg files to packageThirdPartyDir.
 Task("RestoreThirdPartyPackages")
     .IsDependentOn("PrepareSources")
     .IsDependentOn("Build")
     .Does(() =>
 {
-    Information("Restoring third-party packages with full transitive dependency resolution...");
+    Information("Restoring third-party packages...");
 
     var sourcesDir = System.IO.Path.Combine(buildDir, "src");
     EnsureDirectoryExists(packageThirdPartyDir);
     CleanDirectory(packageThirdPartyDir);
 
-    // Locate the global NuGet packages cache
-    IEnumerable<string> nugetLocalsOutput;
-    StartProcess("dotnet", new ProcessSettings
+    // --- Version helpers (replaces NuGet.Versioning) ---
+    // Parse "1.2.3", "1.2.3.4", "1.2.3-beta" into a comparable tuple.
+    (int, int, int, int, string) ParseVer(string v)
     {
-        Arguments = "nuget locals global-packages --list",
-        RedirectStandardOutput = true
-    }, out nugetLocalsOutput);
+        var pre = "";
+        var dash = v.IndexOf('-');
+        if (dash >= 0) { pre = v.Substring(dash + 1); v = v.Substring(0, dash); }
+        var p = v.Split('.');
+        int n(int i) => p.Length > i && int.TryParse(p[i], out var x) ? x : 0;
+        return (n(0), n(1), n(2), n(3), pre);
+    }
 
-    var globalPackagesLine = nugetLocalsOutput
-        .FirstOrDefault(l => l.StartsWith("global-packages:", StringComparison.OrdinalIgnoreCase));
-    if (globalPackagesLine == null)
-        throw new Exception("Could not determine global NuGet packages folder from 'dotnet nuget locals'.");
+    int CmpVer(string a, string b)
+    {
+        var va = ParseVer(a); var vb = ParseVer(b);
+        for (int i = 0; i < 4; i++)
+        {
+            var ai = i == 0 ? va.Item1 : i == 1 ? va.Item2 : i == 2 ? va.Item3 : va.Item4;
+            var bi = i == 0 ? vb.Item1 : i == 1 ? vb.Item2 : i == 2 ? vb.Item3 : vb.Item4;
+            if (ai != bi) return ai.CompareTo(bi);
+        }
+        // pre-release: empty string (release) sorts AFTER any pre-release label
+        var pa = va.Item5; var pb = vb.Item5;
+        if (pa == pb) return 0;
+        if (pa == "") return 1;
+        if (pb == "") return -1;
+        return string.Compare(pa, pb, StringComparison.OrdinalIgnoreCase);
+    }
 
-    var globalPackagesPath = globalPackagesLine.Substring("global-packages:".Length).Trim();
+    // Returns true if `version` satisfies NuGet version range `spec`.
+    // Handles: "1.2.3" (>=), "[1.2.3]" (==), "[1,2)", "(1,2]", "[,2)" etc.
+    bool Satisfies(string version, string spec)
+    {
+        if (string.IsNullOrWhiteSpace(spec)) return true;
+        spec = spec.Trim();
+        if (!spec.StartsWith("[") && !spec.StartsWith("("))
+            return CmpVer(version, spec) >= 0;  // bare version = minimum
+
+        bool minInc = spec[0] == '[';
+        bool maxInc = spec[spec.Length - 1] == ']';
+        var inner = spec.Substring(1, spec.Length - 2);
+        var parts = inner.Split(',');
+        if (parts.Length == 1)
+            return CmpVer(version, parts[0].Trim()) == 0;
+
+        var lo = parts[0].Trim(); var hi = parts[1].Trim();
+        bool loOk = lo == "" || (minInc ? CmpVer(version, lo) >= 0 : CmpVer(version, lo) > 0);
+        bool hiOk = hi == "" || (maxInc ? CmpVer(version, hi) <= 0 : CmpVer(version, hi) < 0);
+        return loOk && hiOk;
+    }
+
+    // Extracts the minimum version string from a range spec (used for nuget.exe install).
+    string MinVersion(string spec)
+    {
+        if (string.IsNullOrWhiteSpace(spec)) return "0.0.0";
+        spec = spec.Trim();
+        if (!spec.StartsWith("[") && !spec.StartsWith("(")) return spec;
+        var inner = spec.Substring(1, spec.Length - 2).Split(',')[0].Trim();
+        return inner == "" ? "0.0.0" : inner;
+    }
+
+    // --- 1. Get global NuGet cache path ---
+    IEnumerable<string> localsOut;
+    StartProcess("dotnet", new ProcessSettings
+        { Arguments = "nuget locals global-packages --list", RedirectStandardOutput = true }, out localsOut);
+    var globalPackagesPath = localsOut
+        .FirstOrDefault(l => l.StartsWith("global-packages:", StringComparison.OrdinalIgnoreCase))
+        ?.Substring("global-packages:".Length).Trim()
+        ?? throw new Exception("Could not determine global NuGet packages folder.");
     Information($"Global NuGet cache: {globalPackagesPath}");
 
-    // Collect all packages (direct + transitive) from project.assets.json files.
-    // MSBuild writes these during Restore/Build; the 'libraries' section contains
-    // every resolved package in the full dependency graph.
-    // Key = "PackageId/version" (as written by MSBuild), Value = relative path in cache.
-    var resolvedPackages = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    // --- 2. Index all .nupkg files in the cache ---
+    // Cache layout: {cache}/{id-lower}/{version}/{id-lower}.{version}.nupkg
+    // packageGroups: id-lower -> list of (versionString, filePath)
+    var packageGroups = new Dictionary<string, List<(string Version, string Path)>>(
+        StringComparer.OrdinalIgnoreCase);
 
-    var assetFiles = GetFiles(System.IO.Path.Combine(sourcesDir, "**/obj/project.assets.json"));
-    Information($"Found {assetFiles.Count()} project.assets.json files");
-
-    foreach (var assetFile in assetFiles)
+    foreach (var idDir in System.IO.Directory.GetDirectories(globalPackagesPath))
     {
-        using var doc = System.Text.Json.JsonDocument.Parse(
-            System.IO.File.ReadAllText(assetFile.FullPath));
-
-        if (!doc.RootElement.TryGetProperty("libraries", out var libraries))
-            continue;
-
-        foreach (var lib in libraries.EnumerateObject())
+        var pkgId = System.IO.Path.GetFileName(idDir);
+        foreach (var verDir in System.IO.Directory.GetDirectories(idDir))
         {
-            if (!lib.Value.TryGetProperty("type", out var typeEl) || typeEl.GetString() != "package")
-                continue;
+            var verStr = System.IO.Path.GetFileName(verDir);
+            var nupkg = System.IO.Path.Combine(verDir, $"{pkgId}.{verStr}.nupkg");
+            if (!System.IO.File.Exists(nupkg)) continue;
+            if (!packageGroups.TryGetValue(pkgId, out var lst))
+                { lst = new List<(string, string)>(); packageGroups[pkgId] = lst; }
+            lst.Add((verStr, nupkg));
+        }
+    }
+    Information($"Indexed {packageGroups.Sum(kv => kv.Value.Count)} nupkg files in global cache");
 
-            if (!lib.Value.TryGetProperty("path", out var pathEl))
-                continue;
-
-            if (!resolvedPackages.ContainsKey(lib.Name))
-                resolvedPackages[lib.Name] = pathEl.GetString();
+    // --- Helper: re-index a single package directory after nuget.exe install ---
+    void ReindexPackage(string id)
+    {
+        var idDir = System.IO.Path.Combine(globalPackagesPath, id.ToLower());
+        if (!System.IO.Directory.Exists(idDir)) return;
+        if (!packageGroups.ContainsKey(id))
+            packageGroups[id] = new List<(string, string)>();
+        foreach (var verDir in System.IO.Directory.GetDirectories(idDir))
+        {
+            var verStr = System.IO.Path.GetFileName(verDir);
+            var nupkg = System.IO.Path.Combine(verDir, $"{id.ToLower()}.{verStr}.nupkg");
+            if (!System.IO.File.Exists(nupkg)) continue;
+            if (!packageGroups[id].Any(p => p.Version == verStr))
+                packageGroups[id].Add((verStr, nupkg));
         }
     }
 
-    Information($"{resolvedPackages.Count} unique packages in resolved dependency graph");
-
-    var copiedCount = 0;
-    var missingCount = 0;
-
-    foreach (var kvp in resolvedPackages.OrderBy(k => k.Key))
+    // --- Helper: find lowest satisfying version in cache; download if absent (same as FAKE) ---
+    (string Version, string Path)? ResolvePackage(string id, string versionSpec)
     {
-        // lib.Name format: "PackageId/1.2.3"
-        var slash = kvp.Key.IndexOf('/');
-        if (slash < 0) continue;
-
-        var packageId      = kvp.Key.Substring(0, slash);
-        var packageVersion = kvp.Key.Substring(slash + 1);
-        // The relative path in the cache is lowercase (e.g. "akka/1.5.45")
-        var nupkgFileName = $"{packageId}.{packageVersion}.nupkg".ToLower();
-        var nupkgPath     = System.IO.Path.Combine(globalPackagesPath, kvp.Value, nupkgFileName);
-
-        if (System.IO.File.Exists(nupkgPath))
+        if (packageGroups.TryGetValue(id, out var lst))
         {
-            System.IO.File.Copy(nupkgPath,
-                System.IO.Path.Combine(packageThirdPartyDir, System.IO.Path.GetFileName(nupkgPath)),
-                overwrite: true);
-            copiedCount++;
+            var match = lst
+                .Where(p => Satisfies(p.Version, versionSpec))
+                .OrderBy(p => p.Version, Comparer<string>.Create((a, b) => CmpVer(a, b)))
+                .Cast<(string Version, string Path)?>()
+                .FirstOrDefault();
+            if (match != null) return match;
         }
-        else
+
+        // Not in cache – install it (mirrors FAKE's nuget.exe install branch)
+        var minVer = MinVersion(versionSpec);
+        Information($"Package {id} {versionSpec} not in cache, installing...");
+        StartProcess(System.IO.Path.Combine(rootDir, "nuget.exe"), new ProcessSettings
         {
-            Warning($"Package file not found in cache: {nupkgPath}");
-            missingCount++;
+            Arguments = $"install {id} -Version {minVer} -Prerelease -NonInteractive"
+        });
+        ReindexPackage(id);
+
+        if (packageGroups.TryGetValue(id, out var lst2))
+        {
+            var match2 = lst2
+                .Where(p => Satisfies(p.Version, versionSpec))
+                .OrderBy(p => p.Version, Comparer<string>.Create((a, b) => CmpVer(a, b)))
+                .Cast<(string Version, string Path)?>()
+                .FirstOrDefault();
+            if (match2 != null) return match2;
         }
+
+        Warning($"Package {id} {versionSpec} could not be resolved, skipping");
+        return null;
     }
 
-    Information($"Copied {copiedCount} packages to {packageThirdPartyDir}.");
-    if (missingCount > 0)
-        Warning($"{missingCount} package(s) were not found in the global cache and were skipped.");
+    // --- Helper: read ALL nuspec dependency entries from a nupkg (all TFM/RID groups) ---
+    IEnumerable<(string Id, string VersionSpec)> NuspecDeps(string nupkgPath)
+    {
+        try
+        {
+            using var zip = System.IO.Compression.ZipFile.OpenRead(nupkgPath);
+            var entry = zip.Entries.FirstOrDefault(e =>
+                e.FullName.EndsWith(".nuspec", StringComparison.OrdinalIgnoreCase) &&
+                !e.FullName.Contains('/'));
+            if (entry == null) return Enumerable.Empty<(string, string)>();
+            using var stream = entry.Open();
+            var doc = System.Xml.Linq.XDocument.Load(stream);
+            var ns = doc.Root.GetDefaultNamespace();
+            return doc.Descendants(ns + "dependency")
+                .Select(d => (
+                    Id:          d.Attribute("id")?.Value,
+                    VersionSpec: d.Attribute("version")?.Value ?? ""))
+                .Where(d => d.Id != null)
+                .ToList();
+        }
+        catch { return Enumerable.Empty<(string, string)>(); }
+    }
+
+    // --- 3. Seed from PackageReference items in all .csproj files ---
+    // Key = "id/version" (PackageIdentity equivalent); allows multiple versions per id.
+    var allPackages = new Dictionary<string, (string Id, string Version, string Path)>(
+        StringComparer.OrdinalIgnoreCase);
+
+    var csprojFiles = System.IO.Directory.GetFiles(sourcesDir, "*.csproj",
+        System.IO.SearchOption.AllDirectories);
+    Information($"Found {csprojFiles.Length} .csproj files");
+
+    foreach (var csproj in csprojFiles)
+    {
+        var doc = System.Xml.Linq.XDocument.Load(csproj);
+        foreach (var pr in doc.Descendants("PackageReference"))
+        {
+            var id  = pr.Attribute("Include")?.Value;
+            var ver = pr.Attribute("Version")?.Value ?? pr.Element("Version")?.Value;
+            if (id == null || ver == null) continue;
+
+            var resolved = ResolvePackage(id, ver);
+            if (resolved == null) continue;
+
+            var key = $"{id}/{resolved.Value.Version}";
+            if (!allPackages.ContainsKey(key))
+                allPackages[key] = (id, resolved.Value.Version, resolved.Value.Path);
+        }
+    }
+    Information($"{allPackages.Count} seed packages from .csproj files");
+
+    // --- 4. BFS transitive expansion via nuspec deps (all groups) ---
+    var bfsQueue = new Queue<string>(allPackages.Keys.ToList());
+    while (bfsQueue.Count > 0)
+    {
+        var key = bfsQueue.Dequeue();
+        var pkg  = allPackages[key];
+
+        foreach (var (depId, depVer) in NuspecDeps(pkg.Path))
+        {
+            var resolved = ResolvePackage(depId, depVer);
+            if (resolved == null) continue;
+
+            var depKey = $"{depId}/{resolved.Value.Version}";
+            if (!allPackages.ContainsKey(depKey))
+            {
+                allPackages[depKey] = (depId, resolved.Value.Version, resolved.Value.Path);
+                bfsQueue.Enqueue(depKey);
+            }
+        }
+    }
+    Information($"{allPackages.Count} packages after transitive expansion");
+
+    // --- 5. Deduplicate: keep highest version per package ID (same as FAKE's filteredDependencies) ---
+    var filtered = allPackages.Values
+        .GroupBy(p => p.Id, StringComparer.OrdinalIgnoreCase)
+        .Select(g => g.OrderByDescending(p => p.Version, Comparer<string>.Create((a, b) => CmpVer(a, b))).First())
+        .ToList();
+    Information($"{filtered.Count} packages after deduplication");
+
+    // --- 6. Copy .nupkg files ---
+    var copied = 0;
+    foreach (var pkg in filtered.OrderBy(p => p.Id))
+    {
+        var dest = System.IO.Path.Combine(packageThirdPartyDir,
+            System.IO.Path.GetFileName(pkg.Path));
+        System.IO.File.Copy(pkg.Path, dest, overwrite: true);
+        copied++;
+    }
+    Information($"Copied {copied} third-party packages to {packageThirdPartyDir}");
 });
 
 // Task: PushThirdPartyPackages
@@ -307,8 +466,7 @@ Task("PushThirdPartyPackages")
 {
     Information("Pushing third-party NuGet packages...");
 
-    var nugetServerUrl = "http://docker:81"; // Replace with your NuGet server URL
-    var apiKey = EnvironmentVariable("NUGET_API_KEY") ?? ""; // Replace with your API key or set it as an environment variable
+    var apiKey = EnvironmentVariable("NUGET_API_KEY") ?? "";
 
     if (string.IsNullOrEmpty(apiKey))
     {
@@ -329,7 +487,7 @@ Task("PushThirdPartyPackages")
 
         var result = StartProcess("dotnet", new ProcessSettings
         {
-            Arguments = $"nuget push {file.FullPath} --source {nugetServerUrl} --api-key {apiKey}",
+            Arguments = $"nuget push {file.FullPath} --source {nugetServerUrl} --api-key {apiKey} --skip-duplicate",
             RedirectStandardOutput = true,
             RedirectStandardError = true
         });
@@ -400,17 +558,21 @@ Task("Nuget")
     var sourcesDir = System.IO.Path.Combine(buildDir, "src");
 
     // Pack NuGet packages
-    var slnFiles = GetFiles(System.IO.Path.Combine(sourcesDir, "*.sln"));
-    foreach (var sln in slnFiles)
-    {
-        Information($"Packing solution: {sln.FullPath}");
-        MSBuild(sln.FullPath, settings =>
+    var projFiles = GetFiles(System.IO.Path.Combine(sourcesDir, "**/*.csproj"))
+        .Where(file =>
         {
-            settings.SetVerbosity(Verbosity.Minimal);
-            settings.WithTarget("Pack");
-            settings.WithProperty("Configuration", "Release");
-            settings.WithProperty("Optimize", "True");
-            settings.WithProperty("DebugSymbols", "True");
+            var content = System.IO.File.ReadAllText(file.FullPath);
+            return !System.Text.RegularExpressions.Regex.IsMatch(content, "<IsTest>true</IsTest>", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        });
+    foreach (var proj in projFiles)
+    {
+        DotNetPack(proj.FullPath, new DotNetPackSettings
+        {
+            Configuration = "Release",
+            NoBuild = true,
+            NoRestore = true,
+            IncludeSymbols = true,
+            Verbosity = DotNetVerbosity.Minimal
         });
     }
 
@@ -429,7 +591,7 @@ Task("Nuget")
         .Select(file => System.IO.Path.GetFileNameWithoutExtension(file.FullPath))
         .ToList();
 
-    var nupkgFiles = GetFiles(System.IO.Path.Combine(sourcesDir, "**/*.nupkg"))
+    var nupkgFiles = GetFiles(System.IO.Path.Combine(sourcesDir, "**/bin/Release/*.nupkg"))
         .Where(file => !testProjects.Contains(System.IO.Path.GetFileNameWithoutExtension(file.FullPath)));
 
     foreach (var file in nupkgFiles)
@@ -518,7 +680,6 @@ Task("PushLocalPackages")
 {
     Information("Pushing local NuGet packages...");
 
-    var nugetServerUrl = "http://docker:81"; // Replace with your NuGet server URL
     var apiKey = EnvironmentVariable("NUGET_API_KEY");
 
     if (string.IsNullOrEmpty(apiKey))
@@ -534,22 +695,32 @@ Task("PushLocalPackages")
         return;
     }
 
+    var failedLocalFiles = new System.Collections.Generic.List<string>();
+
     foreach (var file in nupkgFiles)
     {
         Information($"Pushing local package: {file.FullPath}");
 
+        IEnumerable<string> stdout, stderr;
         var result = StartProcess("dotnet", new ProcessSettings
         {
-            Arguments = $"nuget push {file.FullPath} --source {nugetServerUrl} --api-key {apiKey}",
+            Arguments = $"nuget push {file.FullPath} --source {nugetServerUrl} --api-key {apiKey} --skip-duplicate",
             RedirectStandardOutput = true,
             RedirectStandardError = true
-        });
+        }, out stdout, out stderr);
+
+        foreach (var line in stdout) Information(line);
+        foreach (var line in stderr) Warning(line);
 
         if (result != 0)
         {
-            throw new Exception($"Failed to push local package: {file.FullPath}");
+            Warning($"Failed to push local package: {file.FullPath} (exit {result}). Continuing...");
+            failedLocalFiles.Add(file.FullPath);
         }
     }
+
+    if (failedLocalFiles.Any())
+        throw new Exception($"The following local packages failed to push:\n{string.Join("\n", failedLocalFiles)}");
 
     Information("All local packages pushed successfully.");
 });
@@ -560,7 +731,6 @@ Task("RePushLocalPackages")
 {
     Information("Re-pushing local NuGet packages one by one...");
 
-    var nugetServerUrl = "http://docker:81";
     var apiKey = EnvironmentVariable("NUGET_API_KEY");
 
     if (string.IsNullOrEmpty(apiKey))
@@ -584,7 +754,7 @@ Task("RePushLocalPackages")
 
         var result = StartProcess("dotnet", new ProcessSettings
         {
-            Arguments = $"nuget push {file.FullPath} --source {nugetServerUrl} --api-key {apiKey}",
+            Arguments = $"nuget push {file.FullPath} --source {nugetServerUrl} --api-key {apiKey} --skip-duplicate",
             RedirectStandardOutput = true,
             RedirectStandardError = true
         });
@@ -612,7 +782,6 @@ Task("RePushThirdPartyPackages")
 {
     Information("Re-pushing third-party NuGet packages one by one...");
 
-    var nugetServerUrl = "http://docker:81";
     var apiKey = EnvironmentVariable("NUGET_API_KEY");
 
     if (string.IsNullOrEmpty(apiKey))
@@ -636,7 +805,7 @@ Task("RePushThirdPartyPackages")
 
         var result = StartProcess("dotnet", new ProcessSettings
         {
-            Arguments = $"nuget push {file.FullPath} --source {nugetServerUrl} --api-key {apiKey}",
+            Arguments = $"nuget push {file.FullPath} --source {nugetServerUrl} --api-key {apiKey} --skip-duplicate",
             RedirectStandardOutput = true,
             RedirectStandardError = true
         });
@@ -719,9 +888,7 @@ Task("DockerBase")
 
         var result = StartProcess("docker", new ProcessSettings
         {
-            Arguments = $"build -t {image.Name}:latest {image.Path}",
-            RedirectStandardOutput = true,
-            RedirectStandardError = true
+            Arguments = $"buildx build --load -t {image.Name}:latest {image.Path}"
         });
 
         if (result != 0)
@@ -740,12 +907,12 @@ Task("DockerContainers")
 {
     Information("Building standard Docker images...");
 
-    // Define projects and their output paths
+    // Define projects and their output paths (absolute so MSBuild resolves correctly)
     var projects = new[]
     {
-        new { OutputPath = "./build/launcher", ProjectPath = "./build/src/KlusterKite.NodeManager/KlusterKite.NodeManager.Launcher/KlusterKite.NodeManager.Launcher.csproj" },
-        new { OutputPath = "./build/seed", ProjectPath = "./KlusterKite.Core/KlusterKite.Core.Service/KlusterKite.Core.Service.csproj" },
-        new { OutputPath = "./build/seeder", ProjectPath = "./KlusterKite.NodeManager/KlusterKite.NodeManager.Seeder.Launcher/KlusterKite.NodeManager.Seeder.Launcher.csproj" }
+        new { OutputPath = System.IO.Path.Combine(rootDir, "build", "launcher"), ProjectPath = System.IO.Path.Combine(buildDir, "src", "KlusterKite.NodeManager", "KlusterKite.NodeManager.Launcher", "KlusterKite.NodeManager.Launcher.csproj") },
+        new { OutputPath = System.IO.Path.Combine(rootDir, "build", "seed"),    ProjectPath = System.IO.Path.Combine(buildDir, "src", "KlusterKite.Core", "KlusterKite.Core.Service", "KlusterKite.Core.Service.csproj") },
+        new { OutputPath = System.IO.Path.Combine(rootDir, "build", "seeder"),  ProjectPath = System.IO.Path.Combine(buildDir, "src", "KlusterKite.NodeManager", "KlusterKite.NodeManager.Seeder.Launcher", "KlusterKite.NodeManager.Seeder.Launcher.csproj") }
     };
 
     // Clean and build projects
@@ -763,6 +930,7 @@ Task("DockerContainers")
             settings.WithProperty("Optimize", "True");
             settings.WithProperty("DebugSymbols", "True");
             settings.WithProperty("Configuration", "Release");
+            settings.WithProperty("TargetFramework", "net9.0");
             settings.WithProperty("OutputPath", project.OutputPath);
         });
     }
@@ -776,10 +944,20 @@ Task("DockerContainers")
 
         CleanDirectory(buildDir);
         CleanDirectory(packageCacheDir);
-        CopyDirectory("./build/launcherpublish", buildDir);
-        CopyFile("./Docker/utils/launcher/start.sh", buildDir);
-        CopyFile("./nuget.exe", buildDir);
+        CopyDirectory(System.IO.Path.Combine(rootDir, "build", "launcher"), buildDir);
+        CopyFileToDirectory(System.IO.Path.Combine(rootDir, "Docker", "utils", "launcher", "start.sh"), buildDir);
+        CopyFileToDirectory(System.IO.Path.Combine(rootDir, "nuget.exe"), buildDir);
     }
+
+    // Copy seed and seeder build outputs to their Docker contexts
+    var seedBuildOut   = System.IO.Path.Combine(rootDir, "build", "seed");
+    var seederBuildOut = System.IO.Path.Combine(rootDir, "build", "seeder");
+
+    CleanDirectory("./Docker/KlusterKiteSeed/build");
+    CopyDirectory(seedBuildOut, "./Docker/KlusterKiteSeed/build");
+
+    CleanDirectory("./Docker/KlusterKiteSeeder/build");
+    CopyDirectory(seederBuildOut, "./Docker/KlusterKiteSeeder/build");
 
     CopyLauncherData("./Docker/KlusterKiteWorker");
     CopyLauncherData("./Docker/KlusterKitePublisher");
@@ -800,9 +978,7 @@ Task("DockerContainers")
 
         var result = StartProcess("docker", new ProcessSettings
         {
-            Arguments = $"build -t {image.Name}:latest {image.Path}",
-            RedirectStandardOutput = true,
-            RedirectStandardError = true
+            Arguments = $"buildx build --load -t {image.Name}:latest {image.Path}"
         });
 
         if (result != 0)
@@ -844,10 +1020,18 @@ Task("DockerContainers")
         CleanDirectory(babelCache);
 
     // Swap env files so the build sees .env (from .env-local)
-    if (System.IO.File.Exists(envLocal))
-        System.IO.File.Move(envLocal, envFile);
+    // 1. Save current .env as .env-build
     if (System.IO.File.Exists(envFile))
+    {
+        if (System.IO.File.Exists(envBuild)) System.IO.File.Delete(envBuild);
         System.IO.File.Move(envFile, envBuild);
+    }
+    // 2. Activate .env-local as .env
+    if (System.IO.File.Exists(envLocal))
+    {
+        if (System.IO.File.Exists(envFile)) System.IO.File.Delete(envFile);
+        System.IO.File.Move(envLocal, envFile);
+    }
 
     try
     {
@@ -871,9 +1055,7 @@ Task("DockerContainers")
 
         var monitoringResult = StartProcess("docker", new ProcessSettings
         {
-            Arguments = "build -t klusterkite/monitoring-ui:latest Docker/KlusterKiteMonitoring",
-            RedirectStandardOutput = true,
-            RedirectStandardError = true
+            Arguments = "buildx build --load -t klusterkite/monitoring-ui:latest Docker/KlusterKiteMonitoring"
         });
         if (monitoringResult != 0)
             throw new Exception("Failed to build Docker image: klusterkite/monitoring-ui");
@@ -881,10 +1063,18 @@ Task("DockerContainers")
     finally
     {
         // Always restore env files
-        if (System.IO.File.Exists(envBuild))
-            System.IO.File.Move(envBuild, envFile);
+        // 1. Restore .env to .env-local
         if (System.IO.File.Exists(envFile))
+        {
+            if (System.IO.File.Exists(envLocal)) System.IO.File.Delete(envLocal);
             System.IO.File.Move(envFile, envLocal);
+        }
+        // 2. Restore .env-build to .env
+        if (System.IO.File.Exists(envBuild))
+        {
+            if (System.IO.File.Exists(envFile)) System.IO.File.Delete(envFile);
+            System.IO.File.Move(envBuild, envFile);
+        }
     }
 
     Information("All standard Docker images built successfully.");
