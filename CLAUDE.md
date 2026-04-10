@@ -8,28 +8,30 @@ KlusterKite is a C#/.NET 9.0 framework for building scalable and redundant distr
 
 ## Build System
 
-The build uses [FAKE](https://fake.build/) with a Cake script (`build.cake`). FAKE must be installed separately.
+The build uses [Cake](https://cakebuild.net/) (`build.cake`). The .NET SDK is the only prerequisite.
 
 ```bash
 # Run a build target
-fake run -t <Target> build.fsx
+dotnet cake build.cake --target=<Target>
 ```
+
+Push targets require `NUGET_API_KEY` and optionally `NUGET_SERVER_URL` (default: `http://docker:81`).
 
 ### Key build targets
 
 | Target | Description |
 |--------|-------------|
-| `FinalBuild` | Clean → Build (Release) |
+| `FinalBuild` | Clean → PrepareSources → Build (Release) |
 | `Build` | Compile all projects in Release mode (requires PrepareSources) |
 | `BuildDebug` | Compile all projects in Debug mode (requires PrepareSources) |
 | `Tests` | BuildDebug → run all xUnit test projects |
 | `Nuget` | Build → pack NuGet packages to `temp/packageOut/` |
-| `FinalBuildDocker` | Build all Docker images |
-| `FinalPushAllPackages` | Full pipeline including version bump and push to local NuGet server |
+| `FinalBuildDocker` | DockerBase → DockerContainers → CleanDockerImages |
+| `FinalPushAllPackages` | Full pipeline: version bump, build, pack, push local + third-party packages |
 
 **Important:** Build targets copy sources to `temp/build/src/` and replace `<Version>` tags before compiling. Do not edit files in `temp/` directly.
 
-### Running tests directly (without FAKE)
+### Running tests directly (without Cake)
 
 Test projects are identified by `<IsTest>true</IsTest>` in their `.csproj`. To run a single test project without the full build pipeline:
 

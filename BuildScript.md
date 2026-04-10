@@ -1,87 +1,90 @@
-# Instructions to build solution
+# Build instructions
 
-There is global build script that does all build related tasks - `build.fsx`.
-At first, you need build utility - FAKE (it is not contained in this solution). Please check the [FAKE](https://fake.build/) documentation for installation instructions.
+The build uses [Cake](https://cakebuild.net/) (`build.cake`). [.NET SDK](https://dotnet.microsoft.com/download) is the only prerequisite — Cake runs as a local tool.
 
+```bash
+# Run a build target
+dotnet cake build.cake --target=<Target>
+```
 
-Now you can call build scripts like:
-`fake run -t [target] build.fsx`
+Environment variables used by push targets:
+
+| Variable | Default | Description |
+|---|---|---|
+| `NUGET_API_KEY` | _(required for push)_ | API key for the local NuGet server |
+| `NUGET_SERVER_URL` | `http://docker:81` | URL of the local cluster NuGet server |
 
 ## Targets
 
-All targets are divided into two groups:
-* single task targets, that do only one task and usually it is required that some other task should be done previously
-* Complex task targets - that do all tasks in right order to achieve final task
+Targets fall into two groups: **single-step** targets that do exactly one thing (and require prerequisites to have run first), and **composite** targets that run the full pipeline in the correct order.
 
-Normally one shall run *Complex task targets*
-Default target (if omitted) is *FinalRefreshLocalDependencies*
+Normally you want a composite target.
 
-
-### Single task targets
+### Single-step targets
 
 #### Clean
-Remove contents of all temp directories used during the build
+Removes the contents of all `temp/` directories used during the build.
 
 #### PrepareSources
-Copies all sources to the `./build/src` directory and adjusts the assembly version. All assemblies are marked with default version `0.0.0-local`, if `SetVersion` target was not called in this session. In that case, they are marked as newest possible version according to the local cluster NuGet server.
-
-#### Build
-Compiles all projects from `./build/src` directory.
-
-#### Nuget
-Creates NuGet packages from previously built projects.
-All packages are placed into the `packageOut` directory if there were no `SetVersion`, otherwise, it places packages to the `packagePush` folder
-
-#### Tests
-Runs all specified xunit tests from previously built projects
-
-#### DockerBase
-Performs the build of base docker images. Base docker images do not contain modified project files and are not intended for future change (or frequent changes).
-
-#### DockerContainers
-Preforms the build of the rest docker images. They can contain service launcher and a cache of currently used packages for a faster start (that are all packages from `packages` folder, excluding ones, that are also contained in `packageOut` directory).
-
-#### CleanDockerImages
-Removes unnamed images from local docker. This type of images usually appears during subsequent builds of images, when one image replaces the other.
-
-### RestoreThirdPartyPackages
-Checks the solution for used third party packages and copies the .nipckg files to the `./packageThirdPartyDir` folder.
-
-#### PushThirdPartyPackages
-Pushes all third-party NuGet packages from the `packageThirdPartyDir` folder to local cluster NuGet server. The push is made with a single command for all packages in the folder. This is the fastest way, but it will fail in case any package push failed.
-
-#### RePushThirdPartyPackages
-Pushes all third-party NuGet packages from the `packageThirdPartyDir` folder to local cluster NuGet server. The push is made with a separate command for every package in the folder. This is slower then `PushThirdPartyPackages`, but it will continue pushing even if it encounters a push error.
-
-#### PushLocalPackages
-Pushes all created NuGet packages from `packagePush` folder to local cluster NuGet server.  The push is made with single command for all packages in the folder. This is the fastest way, but it will fail in case any package push failed.
-
-#### RePushLocalPackages
-Pushes all created NuGet packages from `packagePush` folder to local cluster NuGet server.  The push is made with a separate command for every package in the folder. This is slower then `PushThirdPartyPackages`, but it will continue pushing even if it encounters a push error.
+Copies all project sources into `temp/build/src/` and rewrites `<Version>` tags. Depends on **Clean**.  
+All assemblies default to version `0.0.0-local` unless `SetVersion` ran first in the same session.
 
 #### SetVersion
-Asks current cluster NuGet server for the latest version of `KlusterKite.Core` library and assigns next version for subsequent build or package creation task.
+Queries the local NuGet server for the latest version of `KlusterKite.Core` and sets the next patch version for subsequent build or pack tasks. Depends on **Clean**.
 
-#### CleanPackageCache
-The same as `RefreshLocalDependencies`. TODO: remove duplicate
+#### Build
+Compiles all non-test projects in Release mode from `temp/build/src/`. Depends on **PrepareSources**.
 
+#### BuildDebug
+Compiles all projects (including tests) in Debug mode from `temp/build/src/`. Depends on **PrepareSources**.
 
-### Complex task targets
+#### Nuget
+Packs NuGet packages from previously built projects (Release). Non-test packages are collected into `temp/packageOut/` (or `temp/packagePush/` if `SetVersion` ran). Depends on **Build**.
+
+#### Tests
+Runs all xUnit test projects (identified by `<IsTest>true</IsTest>` in their `.csproj`). Results written as `.trx` files to `temp/build/tests/`. Depends on **BuildDebug**.
+
+#### DockerBase
+Builds the base Docker images (`klusterkite/baseworker`, `klusterkite/baseweb`, `klusterkite/nuget`, `klusterkite/postgres`, `klusterkite/entry`, `klusterkite/vpn`, `klusterkite/elk`, `klusterkite/redis`). No dependencies.
+
+#### DockerContainers
+Builds service Docker images (`seed`, `seeder`, `worker`, `manager`, `publisher`, `monitoring-ui`). Depends on **PrepareSources**.
+
+#### CleanDockerImages
+Removes dangling (unnamed) Docker images left over from successive builds.
+
+#### RestoreThirdPartyPackages
+Resolves all third-party NuGet packages used by the solution (with full transitive closure) and copies their `.nupkg` files to `temp/packageThirdPartyDir/`.
+
+#### PushThirdPartyPackages
+Pushes all packages in `temp/packageThirdPartyDir/` to the local NuGet server. Fails on first error. Depends on **RestoreThirdPartyPackages**.
+
+#### RePushThirdPartyPackages
+Same as `PushThirdPartyPackages` but pushes one package at a time and continues on error. Standalone (no dependency on RestoreThirdPartyPackages).
+
+#### PushLocalPackages
+Pushes all packages from `temp/packagePush/` to the local NuGet server one by one, continuing on error. Depends on **Nuget**.
+
+#### RePushLocalPackages
+Re-pushes packages from `temp/packagePush/` to the local NuGet server without rebuilding. Standalone.
+
+### Composite targets
 
 #### FinalBuild
-Builds all projects
-Performs *Clean* -> *Build*
-
-#### FinalBuildDocker
-Builds all docker images
-Performs *CleanPackageCache* -> *DockerBase* -> *DockerContainers* -> *CleanDockerImages*
+Full clean build in Release mode.  
+Pipeline: `Clean` → `PrepareSources` → `Build`
 
 #### FinalPushLocalPackages
-Builds NuGet packages and sends them to local cluster NuGet server.
-This is usually done to update current cluster.
-Performs *Clean* -> *SetVersion* -> *Build* -> *Nuget* -> *PushLocalPackages*
+Builds, versions, packs, and pushes local packages to the NuGet server.  
+Pipeline: `Clean` → `SetVersion` → `PrepareSources` → `Build` → `Nuget` → `PushLocalPackages`
+
+#### FinalPushThirdPartyPackages
+Resolves and pushes all third-party packages to the NuGet server.  
+Pipeline: `RestoreThirdPartyPackages` → `PushThirdPartyPackages`
 
 #### FinalPushAllPackages
-Builds local packages and sends them to local cluster NuGet server along with the cache packages.
-This should be done on an empty cluster or after third party packages update / install.
-Performs *Clean* -> *SetVersion* -> *Build* -> *Nuget* -> *PushLocalPackages* -> *PushThirdPartyPackages*
+Runs both `FinalPushLocalPackages` and `FinalPushThirdPartyPackages`. Use this on a fresh cluster or after updating third-party dependencies.
+
+#### FinalBuildDocker
+Builds all Docker images and removes dangling images.  
+Pipeline: `DockerBase` → `DockerContainers` → `CleanDockerImages`
