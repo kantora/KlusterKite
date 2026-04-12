@@ -42,6 +42,11 @@ namespace KlusterKite.NodeManager.Tests
         public const string NetCore = ".NETCoreApp,Version=v1.1";
 
         /// <summary>
+        /// The .NET 9.0 name
+        /// </summary>
+        public const string Net9 = ".NETCoreApp,Version=v9.0";
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="ConfigurationCheckTestsBase"/> class.
         /// </summary>
         /// <param name="output">

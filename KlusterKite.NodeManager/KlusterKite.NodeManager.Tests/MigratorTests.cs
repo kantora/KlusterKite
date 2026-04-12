@@ -736,7 +736,7 @@ namespace KlusterKite.NodeManager.Tests
                 var errors = activeConfiguration.CheckAll(
                         context,
                         repo,
-                        new[] { ConfigurationCheckTestsBase.Net46, ConfigurationCheckTestsBase.NetCore }.ToList())
+                        new[] { ConfigurationCheckTestsBase.Net46, ConfigurationCheckTestsBase.NetCore, ConfigurationCheckTestsBase.Net9 }.ToList())
                     .GetAwaiter().GetResult().ToList();
                 foreach (var error in errors)
                 {
@@ -753,7 +753,7 @@ namespace KlusterKite.NodeManager.Tests
                 errors = nextConfiguration.CheckAll(
                         context,
                         repo,
-                        new[] { ConfigurationCheckTestsBase.Net46, ConfigurationCheckTestsBase.NetCore }.ToList())
+                        new[] { ConfigurationCheckTestsBase.Net46, ConfigurationCheckTestsBase.NetCore, ConfigurationCheckTestsBase.Net9 }.ToList())
                     .GetAwaiter().GetResult().ToList();
                 foreach (var error in errors)
                 {

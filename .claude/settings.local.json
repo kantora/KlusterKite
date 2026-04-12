@@ -76,7 +76,8 @@
       "Bash(NUGET_API_KEY=KlusterKite NUGET_SERVER_URL=http://localhost:81 dotnet cake build.cake --target=SetVersion)",
       "Bash(docker-compose stop:*)",
       "Bash(docker-compose rm:*)",
-      "Bash(grep -r \"http://entry\" C:/Git/KlusterKite/Docker/KlusterKiteMonitoring/klusterkite-web/build/static/js/*.js)"
+      "Bash(grep -r \"http://entry\" C:/Git/KlusterKite/Docker/KlusterKiteMonitoring/klusterkite-web/build/static/js/*.js)",
+      "Bash(dotnet test:*)"
     ]
   }
 }

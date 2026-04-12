@@ -153,6 +153,11 @@ namespace KlusterKite.NodeManager.Tests.Mock
                     ConfigurationCheckTestsBase.Net46,
                     DefaultFrameworkNameProvider.Instance),
                 dependencies);
+            var net9Dependencies = new PackageDependencyGroup(
+                NuGetFramework.ParseFrameworkName(
+                    ConfigurationCheckTestsBase.Net9,
+                    DefaultFrameworkNameProvider.Instance),
+                dependencies);
 
             Func<string, string, string, IEnumerable<string>> extaction = (framework, destination, temp) =>
                 {
@@ -182,7 +187,8 @@ namespace KlusterKite.NodeManager.Tests.Mock
                                new[]
                                    {
                                        standardDependencies,
-                                       net46Dependencies
+                                       net46Dependencies,
+                                       net9Dependencies
                                    },
                 Extract =
                                extaction
