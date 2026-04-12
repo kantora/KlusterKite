@@ -53,8 +53,8 @@ class NodeTemplatesList extends React.Component {
               <td>{item.node.name}</td>
               <td>
                 {item.node.packageRequirements.edges.map((pack) =>
-                  <span key={`${item.Id}/${pack.node.__id}`}>
-                    <span className="label label-default">{pack.node.__id}</span>{' '}
+                  <span key={`${item.Id}/${pack.node._id}`}>
+                    <span className="label label-default">{pack.node._id}</span>{' '}
                   </span>
                 )
                 }
@@ -91,7 +91,7 @@ export default Relay.createContainer(
               packageRequirements {
                 edges {
                   node {
-                    __id
+                    _id
                     specificVersion
                   }
                 }

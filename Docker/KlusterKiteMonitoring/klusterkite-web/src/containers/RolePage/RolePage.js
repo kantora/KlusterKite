@@ -122,9 +122,9 @@ class RolePage extends React.Component {
   }
 
   onDelete = () => {
-    console.log('delete', this.props.api.__node.__id);
+    console.log('delete', this.props.api.node._id);
     // Relay.Store.commitUpdate(
-    //   new DeleteFeedMutation({deletedId: this.props.api.__node.__id}),
+    //   new DeleteFeedMutation({deletedId: this.props.api.node._id}),
     //   {
     //     onSuccess: () => this.context.router.replace('/klusterkite/NugetFeeds'),
     //     onFailure: (transaction) => console.log(transaction),
@@ -165,7 +165,7 @@ export default Relay.createContainer(
       api: () => Relay.QL`
         fragment on IKlusterKiteNodeApi {
           id
-          role: __node(id: $id) @include( if: $nodeExists ) {
+          role: node(id: $id) @include( if: $nodeExists ) {
             ...on IKlusterKiteNodeApi_Role {
               id
               uid

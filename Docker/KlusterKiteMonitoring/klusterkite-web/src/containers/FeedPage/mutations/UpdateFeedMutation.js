@@ -17,7 +17,7 @@ export default class UpdateFeedMutation extends Relay.Mutation {
               packageRequirements {
                 edges {
                   node {
-                    __id
+                    _id
                     specificVersion
                   }
                 }
@@ -37,7 +37,7 @@ export default class UpdateFeedMutation extends Relay.Mutation {
               packageRequirements {
                 edges {
                   node {
-                    __id
+                    _id
                     specificVersion
                   }
                 }
@@ -52,7 +52,7 @@ export default class UpdateFeedMutation extends Relay.Mutation {
             node {
               version
               id
-              __id
+              _id
             }
           }
         }
@@ -120,13 +120,13 @@ export default class UpdateFeedMutation extends Relay.Mutation {
     const typeSingular = type.substring(0, type.length - 1);
 
     // We iterate over old edge and search for updates of every record in this.props[typeSingular]
-    // Also we change id's (from __id to id) because ID types are different in input and output
+    // Also we change id's (from _id to id) because ID types are different in input and output
     let nodes = [];
     oldNodes.forEach(node => {
       const keys = Object.keys(node);
       let newNode = {};
       keys.forEach(key => {
-        if (key !== '__id' && key !== '__dataID__' && key !== 'id' && key !== 'packagesToInstall'){
+        if (key !== '_id' && key !== '__dataID__' && key !== 'id' && key !== 'packagesToInstall'){
           if (typeof(node[key]) === 'object' && node[key] && node[key].edges) {
             newNode[key] = this.convertEdgesToArray(node[key].edges, key);
           } else {
@@ -134,11 +134,11 @@ export default class UpdateFeedMutation extends Relay.Mutation {
           }
         }
 
-        if (type === 'packages' && key === '__id') {
+        if (type === 'packages' && key === '_id') {
           newNode['id'] = node[key];
         }
 
-        if (type === 'packageRequirements' && key === '__id') {
+        if (type === 'packageRequirements' && key === '_id') {
           newNode['id'] = node[key];
         }
       });

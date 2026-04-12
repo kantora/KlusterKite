@@ -97,20 +97,40 @@ services:
   monitoringUI:
     image: klusterkite/monitoring-ui
     ports:
-     - "82:8080"
+     - "82:80"
     logging:
         driver: json-file
     networks:
       default:
         ipv4_address: 172.18.0.9 
   
-  elk:
-    image: klusterkite/elk
+  elasticsearch:
+    image: klusterkite/elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
     logging:
         driver: json-file
     networks:
       default:
         ipv4_address: 172.18.0.12
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.17.28
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    logging:
+        driver: json-file
+    networks:
+      default:
+        ipv4_address: 172.18.0.14
   
   seeder:
     image: klusterkite/seeder

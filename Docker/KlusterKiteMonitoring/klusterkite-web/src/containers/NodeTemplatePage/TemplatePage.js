@@ -44,7 +44,7 @@ class TemplatePage extends React.Component {
       new UpdateFeedMutation(
         {
           nodeId: this.props.params.configurationId,
-          configurationId: this.props.api.configuration.__id,
+          configurationId: this.props.api.configuration._id,
           settings: this.props.api.configuration.settings,
           nodeTemplateId: editId,
           nodeTemplate: model
@@ -85,7 +85,7 @@ class TemplatePage extends React.Component {
       new UpdateFeedMutation(
         {
           nodeId: this.props.params.configurationId,
-          configurationId: this.props.api.configuration.__id,
+          configurationId: this.props.api.configuration._id,
           settings: this.props.api.configuration.settings,
           nodeTemplateId: this.props.api.configuration.id,
           nodeTemplate: {},
@@ -165,15 +165,15 @@ export default Relay.createContainer(
               }
             }
           }
-          configuration:__node(id: $configurationId) {
+          configuration:node(id: $configurationId) {
             ...on IKlusterKiteNodeApi_Configuration {
-              __id
+              _id
               settings {
                 ${UpdateFeedMutation.getFragment('settings')},
               }
             }
           }
-          template:__node(id: $id) @include( if: $nodeExists ) {
+          template:node(id: $id) @include( if: $nodeExists ) {
             ...on IKlusterKiteNodeApi_NodeTemplate {
               id
               code
@@ -185,7 +185,7 @@ export default Relay.createContainer(
               packageRequirements {
                 edges {
                   node {
-                    __id
+                    _id
                     specificVersion
                   }
                 }

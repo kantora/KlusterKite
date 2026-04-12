@@ -24,9 +24,9 @@ class ConfigurationConfigCopyPage extends React.Component {
   }
 
   convertNameToId = (nugetPackages) => {
-    // Temporary hack while nugetPackages __id is incorrect
+    // Temporary hack while nugetPackages _id is incorrect
     nugetPackages.edges.forEach((item => {
-      item.node.__id = item.node.name;
+      item.node._id = item.node.name;
       delete item.node.name;
     }));
 
@@ -61,7 +61,7 @@ class ConfigurationConfigCopyPage extends React.Component {
       new CloneConfigMutation(
         {
           nodeId: this.props.params.configurationId,
-          configurationId: this.props.api.configuration.__id,
+          configurationId: this.props.api.configuration._id,
           settings: setting,
         }),
       {
@@ -132,7 +132,7 @@ const settingsFragment = Relay.QL`
           packageRequirements {
             edges {
               node {
-                __id
+                _id
                 specificVersion
               }
             }
@@ -152,7 +152,7 @@ const settingsFragment = Relay.QL`
           packageRequirements {
             edges {
               node {
-                __id
+                _id
                 specificVersion
               }
             }
@@ -164,7 +164,7 @@ const settingsFragment = Relay.QL`
                 value {
                   edges {
                     node {
-                      __id
+                      _id
                       version
                     }
                   }
@@ -181,7 +181,7 @@ const settingsFragment = Relay.QL`
         node {
           version
           id
-          __id
+          _id
         }
       }
     }
@@ -217,16 +217,16 @@ export default Relay.createContainer(
             nugetPackages {
               edges {
                 node {
-                  __id
+                  _id
                   name
                   version
                 }
               }
             }
           }
-          configuration: __node(id: $configurationId) @include( if: $nodeExists ) {
+          configuration: node(id: $configurationId) @include( if: $nodeExists ) {
             ...on IKlusterKiteNodeApi_Configuration {
-              __id
+              _id
               name
               notes
               minorVersion

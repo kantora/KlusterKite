@@ -3612,7 +3612,7 @@
               "deprecationReason": null
             },
             {
-              "name": "__node",
+              "name": "node",
               "description": "The node global searcher according to Relay specification",
               "args": [
                 {
@@ -4408,7 +4408,7 @@
               "deprecationReason": null
             },
             {
-              "name": "__id",
+              "name": "_id",
               "description": "The configuration id",
               "args": [],
               "type": {
@@ -5161,7 +5161,7 @@
               "deprecationReason": null
             },
             {
-              "name": "__id",
+              "name": "_id",
               "description": "the package Id",
               "args": [],
               "type": {
@@ -6127,7 +6127,7 @@
               "deprecationReason": null
             },
             {
-              "name": "__id",
+              "name": "_id",
               "description": "the Nuget package id",
               "args": [],
               "type": {
@@ -9589,7 +9589,7 @@
               "deprecationReason": null
             },
             {
-              "name": "__id",
+              "name": "_id",
               "description": "the relation id",
               "args": [],
               "type": {
@@ -10246,7 +10246,7 @@
               "deprecationReason": null
             },
             {
-              "name": "__id",
+              "name": "_id",
               "description": "the log record id",
               "args": [],
               "type": {
@@ -20347,7 +20347,7 @@
               "deprecationReason": null
             },
             {
-              "name": "__id",
+              "name": "_id",
               "description": "The migration id",
               "args": [],
               "type": {
@@ -20678,7 +20678,7 @@
               "deprecationReason": null
             },
             {
-              "name": "__id",
+              "name": "_id",
               "description": "The package id (name and version)",
               "args": [],
               "type": {
@@ -25501,7 +25501,7 @@
               "deprecationReason": null
             },
             {
-              "name": "__id",
+              "name": "_id",
               "description": "The link id",
               "args": [],
               "type": {
@@ -27893,7 +27893,7 @@
               "deprecationReason": null
             },
             {
-              "name": "__node",
+              "name": "node",
               "description": "The node global searcher according to Relay specification",
               "args": [
                 {
@@ -28045,7 +28045,7 @@
               "deprecationReason": null
             },
             {
-              "name": "__node",
+              "name": "node",
               "description": "The node global searcher according to Relay specification",
               "args": [
                 {
@@ -29314,7 +29314,7 @@
           "description": "The cluster configuration with all program modules versions, node templates and configurations",
           "fields": [
             {
-              "name": "__id",
+              "name": "_id",
               "description": "The configuration id",
               "args": [],
               "type": {
@@ -30030,7 +30030,7 @@
           "description": "Short description of NuGet package",
           "fields": [
             {
-              "name": "__id",
+              "name": "_id",
               "description": "the package Id",
               "args": [],
               "type": {
@@ -30540,7 +30540,7 @@
           "description": "The package requirement for the template",
           "fields": [
             {
-              "name": "__id",
+              "name": "_id",
               "description": "the Nuget package id",
               "args": [],
               "type": {
@@ -31197,7 +31197,7 @@
           "description": "The compatible node template",
           "fields": [
             {
-              "name": "__id",
+              "name": "_id",
               "description": "the relation id",
               "args": [],
               "type": {
@@ -31389,7 +31389,7 @@
           "description": "",
           "fields": [
             {
-              "name": "__id",
+              "name": "_id",
               "description": "the log record id",
               "args": [],
               "type": {
@@ -33557,7 +33557,7 @@
           "description": "The history record describing cluster migration",
           "fields": [
             {
-              "name": "__id",
+              "name": "_id",
               "description": "The migration id",
               "args": [],
               "type": {
@@ -33852,7 +33852,7 @@
           "description": "Short description of NuGet package family",
           "fields": [
             {
-              "name": "__id",
+              "name": "_id",
               "description": "The package id (name and version)",
               "args": [],
               "type": {
@@ -35165,7 +35165,7 @@
           "description": "",
           "fields": [
             {
-              "name": "__id",
+              "name": "_id",
               "description": "The link id",
               "args": [],
               "type": {

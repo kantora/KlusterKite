@@ -45,7 +45,7 @@ const getTemplate = () => {
           "packageRequirements": {
             "edges": [{
               "node": {
-                "__id": "KlusterKite.NodeManager.ConfigurationSource.Migrator",
+                "_id": "KlusterKite.NodeManager.ConfigurationSource.Migrator",
                 "specificVersion": null,
                 "id": "W3siZiI6ImNsdXN0ZXJLaXROb2Rlc0FwaSJ9LHsiZiI6InJlbGVhc2VzIiwiaWQiOjJ9LHsiZiI6ImNvbmZpZ3VyYXRpb24ifSx7ImYiOiJtaWdyYXRvclRlbXBsYXRlcyIsImlkIjoiQ2x1c3RlcktpdCJ9LHsiZiI6InBhY2thZ2VSZXF1aXJlbWVudHMiLCJpZCI6IkNsdXN0ZXJLaXQuTm9kZU1hbmFnZXIuQ29uZmlndXJhdGlvblNvdXJjZS5NaWdyYXRvciJ9XQ==",
                 "__typename": "KlusterKiteNodeApi_PackageRequirement"
@@ -54,14 +54,14 @@ const getTemplate = () => {
               "__typename": "KlusterKiteNodeApi_PackageRequirement_Edge"
             }, {
               "node": {
-                "__id": "KlusterKite.NodeManager",
+                "_id": "KlusterKite.NodeManager",
                 "specificVersion": null,
                 "id": "W3siZiI6ImNsdXN0ZXJLaXROb2Rlc0FwaSJ9LHsiZiI6InJlbGVhc2VzIiwiaWQiOjJ9LHsiZiI6ImNvbmZpZ3VyYXRpb24ifSx7ImYiOiJtaWdyYXRvclRlbXBsYXRlcyIsImlkIjoiQ2x1c3RlcktpdCJ9LHsiZiI6InBhY2thZ2VSZXF1aXJlbWVudHMiLCJpZCI6IkNsdXN0ZXJLaXQuTm9kZU1hbmFnZXIifV0=",
                 "__typename": "KlusterKiteNodeApi_PackageRequirement"
               }, "cursor": "KlusterKite.NodeManager", "__typename": "KlusterKiteNodeApi_PackageRequirement_Edge"
             }, {
               "node": {
-                "__id": "KlusterKite.Data.EF.Npgsql",
+                "_id": "KlusterKite.Data.EF.Npgsql",
                 "specificVersion": null,
                 "id": "W3siZiI6ImNsdXN0ZXJLaXROb2Rlc0FwaSJ9LHsiZiI6InJlbGVhc2VzIiwiaWQiOjJ9LHsiZiI6ImNvbmZpZ3VyYXRpb24ifSx7ImYiOiJtaWdyYXRvclRlbXBsYXRlcyIsImlkIjoiQ2x1c3RlcktpdCJ9LHsiZiI6InBhY2thZ2VSZXF1aXJlbWVudHMiLCJpZCI6IkNsdXN0ZXJLaXQuRGF0YS5FRi5OcGdzcWwifV0=",
                 "__typename": "KlusterKiteNodeApi_PackageRequirement"

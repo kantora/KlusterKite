@@ -53,9 +53,9 @@ export default class UpdateConfigurationMutation extends Relay.Mutation {
 
   getVariables () {
     return {
-      id: this.props.__id,
+      id: this.props._id,
       newNode: {
-        id: this.props.__id,
+        id: this.props._id,
         majorVersion: this.props.majorVersion,
         minorVersion: this.props.minorVersion,
         name: this.props.name,

@@ -96,7 +96,7 @@ class ConfigurationPage extends React.Component {
       new UpdateConfigurationMutation(
         {
           nodeId: this.props.params.id,
-          __id: model.__id,
+          _id: model._id,
           majorVersion: model.majorVersion,
           minorVersion: model.minorVersion,
           name: model.name,
@@ -135,9 +135,9 @@ class ConfigurationPage extends React.Component {
   }
 
   onDelete = () => {
-    console.log('delete', this.props.api.__node.__id);
+    console.log('delete', this.props.api.node._id);
     // Relay.Store.commitUpdate(
-    //   new DeleteFeedMutation({deletedId: this.props.api.__node.__id}),
+    //   new DeleteFeedMutation({deletedId: this.props.api.node._id}),
     //   {
     //     onSuccess: () => this.context.router.replace('/klusterkite/NugetFeeds'),
     //     onFailure: (transaction) => console.log(transaction),
@@ -177,7 +177,7 @@ class ConfigurationPage extends React.Component {
             nodeManagement={nodeManagement}
             klusterKiteNodesApi={klusterKiteNodesApi}
             configurationId={this.props.params.id}
-            configurationInnerId={model.__id}
+            configurationInnerId={model._id}
             currentState={model.state}
             onForceFetch={this.props.relay.forceFetch}
             isStable={model.isStable}
@@ -234,9 +234,9 @@ export default Relay.createContainer(
       api: () => Relay.QL`
         fragment on IKlusterKiteNodeApi {
           id
-          configuration: __node(id: $id) @include( if: $nodeExists ) {
+          configuration: node(id: $id) @include( if: $nodeExists ) {
             ...on IKlusterKiteNodeApi_Configuration {
-              __id
+              _id
               name
               notes
               minorVersion
@@ -264,7 +264,7 @@ export default Relay.createContainer(
                     packages {
                       edges {
                         node {
-                          __id
+                          _id
                           version
                         }
                       }

@@ -82,7 +82,7 @@ namespace KlusterKite.Web
             var host = new WebHostBuilder()
                 .CaptureStartupErrors(true)
                 .UseUrls(bindUrl)
-                .UseKestrel();
+                .UseKestrel(options => { options.AllowSynchronousIO = true; });
 
             if (config.GetBoolean("KlusterKite.Web.Debug.Trace"))
             {

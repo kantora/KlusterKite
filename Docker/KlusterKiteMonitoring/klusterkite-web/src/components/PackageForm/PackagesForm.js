@@ -38,7 +38,7 @@ export default class PackagesForm extends React.Component { // eslint-disable-li
     if (nextProps.initialValues && (!isEqual(nextProps.initialValues, this.props.initialValues) || skipCheck)) {
       const packages = nextProps.initialValues.packages.edges.map(x => x.node).map(x => {
         return {
-          id: x.__id,
+          id: x._id,
           specificVersion: x.version
         }
       });

@@ -62,7 +62,7 @@ export default class CloneConfigMutation extends Relay.Mutation {
       const keys = Object.keys(node);
       let newNode = {};
       keys.forEach(key => {
-        if (key !== '__id' && key !== '__dataID__' && key !== 'id' && key !== 'packagesToInstall'){
+        if (key !== '_id' && key !== '__dataID__' && key !== 'id' && key !== 'packagesToInstall'){
           if (typeof(node[key]) === 'object' && node[key] && node[key].edges) {
             newNode[key] = this.convertEdgesToArray(node[key].edges, key);
           } else {
@@ -70,11 +70,11 @@ export default class CloneConfigMutation extends Relay.Mutation {
           }
         }
 
-        if (type === 'packages' && key === '__id') {
+        if (type === 'packages' && key === '_id') {
           newNode['id'] = node[key];
         }
 
-        if (type === 'packageRequirements' && key === '__id') {
+        if (type === 'packageRequirements' && key === '_id') {
           newNode['id'] = node[key];
         }
       });

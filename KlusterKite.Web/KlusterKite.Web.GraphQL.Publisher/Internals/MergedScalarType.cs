@@ -66,6 +66,8 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
                     return new DecimalGraphType();
                 case EnScalarType.Integer:
                     return new IntGraphType();
+                case EnScalarType.Long:
+                    return new LongGraphType();
                 case EnScalarType.String:
                     return new StringGraphType();
                 case EnScalarType.Guid:

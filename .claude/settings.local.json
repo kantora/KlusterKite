@@ -64,7 +64,19 @@
       "Bash(NUGET_API_KEY=KlusterKite NUGET_SERVER_URL=http://localhost:81 dotnet cake build.cake --target=Nuget)",
       "Bash(dotnet build:*)",
       "Bash(grep -v \"^$\")",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(docker volume ls:*)",
+      "Bash(NUGET_API_KEY=KlusterKite NUGET_SERVER_URL=http://localhost:81 dotnet cake build.cake --target=FinalPushAllPackages)",
+      "Bash(npm run:*)",
+      "Bash(find:*)",
+      "Bash(NUGET_API_KEY=KlusterKite NUGET_SERVER_URL=http://localhost:81 dotnet cake build.cake --target=FinalBuildDocker)",
+      "Bash(NUGET_API_KEY=KlusterKite NUGET_SERVER_URL=http://localhost:81 dotnet cake build.cake --target=DockerContainers)",
+      "Bash(docker-compose restart:*)",
+      "Bash(docker tag:*)",
+      "Bash(NUGET_API_KEY=KlusterKite NUGET_SERVER_URL=http://localhost:81 dotnet cake build.cake --target=SetVersion)",
+      "Bash(docker-compose stop:*)",
+      "Bash(docker-compose rm:*)",
+      "Bash(grep -r \"http://entry\" C:/Git/KlusterKite/Docker/KlusterKiteMonitoring/klusterkite-web/build/static/js/*.js)"
     ]
   }
 }

@@ -42,7 +42,7 @@ class SeedPage extends React.Component {
       new UpdateFeedMutation(
         {
           nodeId: this.props.params.configurationId,
-          configurationId: this.props.api.configuration.__id,
+          configurationId: this.props.api.configuration._id,
           settings: this.props.api.configuration.settings,
           seedAddresses: model.seedAddresses
         }),
@@ -111,9 +111,9 @@ export default Relay.createContainer(
         fragment on IKlusterKiteNodeApi {
           __typename
           id
-          configuration:__node(id: $configurationId) {
+          configuration:node(id: $configurationId) {
             ...on IKlusterKiteNodeApi_Configuration {
-              __id
+              _id
               settings {
                 ${UpdateFeedMutation.getFragment('settings')},
                 seedAddresses

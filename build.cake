@@ -43,6 +43,25 @@ Task("SetVersion")
 
     packageDir = packagePushDir;
     Information($"New version is {version}");
+
+    // Update fallback configurations to reference the new version
+    var fallbackConfigs = new[] {
+        System.IO.Path.Combine(rootDir, "Docker/KlusterKiteManager/fallBackConfiguration.json"),
+        System.IO.Path.Combine(rootDir, "Docker/KlusterKiteWorker/fallBackConfiguration.json"),
+        System.IO.Path.Combine(rootDir, "Docker/KlusterKitePublisher/fallBackConfiguration.json"),
+    };
+    var prevVersion = latestVersion ?? "0.0.0-local";
+    foreach (var configPath in fallbackConfigs)
+    {
+        if (!System.IO.File.Exists(configPath)) continue;
+        var content = System.IO.File.ReadAllText(configPath);
+        var updated = content.Replace($"\"Version\":\"{prevVersion}\"", $"\"Version\":\"{version}\"");
+        if (updated != content)
+        {
+            System.IO.File.WriteAllText(configPath, updated);
+            Information($"Updated {System.IO.Path.GetFileName(System.IO.Path.GetDirectoryName(configPath))}/fallBackConfiguration.json: {prevVersion} → {version}");
+        }
+    }
 });
 
 // Helper methods
@@ -52,19 +71,19 @@ string GetLatestNuGetVersion(string serverUrl, string packageName)
 
     try
     {
-        var processSettings = new ProcessSettings
+        using var client = new System.Net.Http.HttpClient();
+        var url = $"{serverUrl.TrimEnd('/')}/FindPackagesById()?id={packageName}&$orderby=Version+desc&$top=1";
+        var response = client.GetAsync(url).GetAwaiter().GetResult();
+        if (!response.IsSuccessStatusCode)
         {
-            Arguments = $"list {packageName} -Source {serverUrl}",
-            RedirectStandardOutput = true
-        };
+            Information($"NuGet server returned {response.StatusCode}");
+            return null;
+        }
 
-        IEnumerable<string> output;
-        StartProcess("nuget", processSettings, out output);
-
-        var latestVersion = output
-            .Where(line => line.StartsWith(packageName))
-            .Select(line => line.Split(' ').LastOrDefault())
-            .FirstOrDefault();
+        var content = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+        var doc = System.Xml.Linq.XDocument.Parse(content);
+        var ns = System.Xml.Linq.XNamespace.Get("http://schemas.microsoft.com/ado/2007/08/dataservices");
+        var latestVersion = doc.Descendants(ns + "Version").FirstOrDefault()?.Value;
 
         if (string.IsNullOrEmpty(latestVersion))
         {
@@ -84,7 +103,9 @@ string GetLatestNuGetVersion(string serverUrl, string packageName)
 
 string IncrementPatchVersion(string version)
 {
-    var versionParts = version.Split('.');
+    // Strip pre-release suffix (e.g. "0.0.5-local" → "0.0.5") before parsing
+    var baseVersion = version.Split('-')[0];
+    var versionParts = baseVersion.Split('.');
     if (versionParts.Length < 3)
     {
         throw new Exception("Invalid version format");
@@ -878,7 +899,7 @@ Task("DockerBase")
         new { Name = "klusterkite/postgres", Path = "Docker/KlusterKitePostgres" },
         new { Name = "klusterkite/entry", Path = "Docker/KlusterKiteEntry" },
         new { Name = "klusterkite/vpn", Path = "Docker/KlusterKiteVpn" },
-        new { Name = "klusterkite/elk", Path = "Docker/KlusterKiteELK" },
+        new { Name = "klusterkite/elasticsearch", Path = "Docker/KlusterKiteELK" },
         new { Name = "klusterkite/redis", Path = "Docker/KlusterKite.Redis" }
     };
 

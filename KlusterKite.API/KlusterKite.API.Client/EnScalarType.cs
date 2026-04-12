@@ -35,9 +35,14 @@ namespace KlusterKite.API.Client
         Decimal,
 
         /// <summary>
-        /// Integer values
+        /// Integer values (32-bit)
         /// </summary>
         Integer,
+
+        /// <summary>
+        /// Long integer values (64-bit)
+        /// </summary>
+        Long,
 
         /// <summary>
         /// String values

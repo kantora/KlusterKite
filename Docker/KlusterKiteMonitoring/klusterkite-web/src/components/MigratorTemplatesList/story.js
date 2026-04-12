@@ -40,7 +40,7 @@ const getTemplatesListRelay = () => {
             "packageRequirements": {
               "edges": [{
                 "node": {
-                  "__id": "KlusterKite.NodeManager.ConfigurationSource.Migrator",
+                  "_id": "KlusterKite.NodeManager.ConfigurationSource.Migrator",
                   "specificVersion": null,
                   "id": "W3siZiI6ImNsdXN0ZXJLaXROb2Rlc0FwaSJ9LHsiZiI6InJlbGVhc2VzIiwiaWQiOjF9LHsiZiI6ImNvbmZpZ3VyYXRpb24ifSx7ImYiOiJtaWdyYXRvclRlbXBsYXRlcyIsImlkIjoiQ2x1c3RlcktpdCJ9LHsiZiI6InBhY2thZ2VSZXF1aXJlbWVudHMiLCJpZCI6IkNsdXN0ZXJLaXQuTm9kZU1hbmFnZXIuQ29uZmlndXJhdGlvblNvdXJjZS5NaWdyYXRvciJ9XQ==",
                   "__typename": "KlusterKiteNodeApi_PackageRequirement"
@@ -49,14 +49,14 @@ const getTemplatesListRelay = () => {
                 "__typename": "KlusterKiteNodeApi_PackageRequirement_Edge"
               }, {
                 "node": {
-                  "__id": "KlusterKite.NodeManager",
+                  "_id": "KlusterKite.NodeManager",
                   "specificVersion": null,
                   "id": "W3siZiI6ImNsdXN0ZXJLaXROb2Rlc0FwaSJ9LHsiZiI6InJlbGVhc2VzIiwiaWQiOjF9LHsiZiI6ImNvbmZpZ3VyYXRpb24ifSx7ImYiOiJtaWdyYXRvclRlbXBsYXRlcyIsImlkIjoiQ2x1c3RlcktpdCJ9LHsiZiI6InBhY2thZ2VSZXF1aXJlbWVudHMiLCJpZCI6IkNsdXN0ZXJLaXQuTm9kZU1hbmFnZXIifV0=",
                   "__typename": "KlusterKiteNodeApi_PackageRequirement"
                 }, "cursor": "KlusterKite.NodeManager", "__typename": "KlusterKiteNodeApi_PackageRequirement_Edge"
               }, {
                 "node": {
-                  "__id": "KlusterKite.Data.EF.Npgsql",
+                  "_id": "KlusterKite.Data.EF.Npgsql",
                   "specificVersion": null,
                   "id": "W3siZiI6ImNsdXN0ZXJLaXROb2Rlc0FwaSJ9LHsiZiI6InJlbGVhc2VzIiwiaWQiOjF9LHsiZiI6ImNvbmZpZ3VyYXRpb24ifSx7ImYiOiJtaWdyYXRvclRlbXBsYXRlcyIsImlkIjoiQ2x1c3RlcktpdCJ9LHsiZiI6InBhY2thZ2VSZXF1aXJlbWVudHMiLCJpZCI6IkNsdXN0ZXJLaXQuRGF0YS5FRi5OcGdzcWwifV0=",
                   "__typename": "KlusterKiteNodeApi_PackageRequirement"
@@ -83,14 +83,14 @@ const getTemplatesListRelay = () => {
             "packageRequirements": {
               "edges": [{
                 "node": {
-                  "__id": "KlusterKite.Core.Service",
+                  "_id": "KlusterKite.Core.Service",
                   "specificVersion": null,
                   "id": "W3siZiI6ImNsdXN0ZXJLaXROb2Rlc0FwaSJ9LHsiZiI6InJlbGVhc2VzIiwiaWQiOjF9LHsiZiI6ImNvbmZpZ3VyYXRpb24ifSx7ImYiOiJub2RlVGVtcGxhdGVzIiwiaWQiOiJwdWJsaXNoZXIifSx7ImYiOiJwYWNrYWdlUmVxdWlyZW1lbnRzIiwiaWQiOiJDbHVzdGVyS2l0LkNvcmUuU2VydmljZSJ9XQ==",
                   "__typename": "KlusterKiteNodeApi_PackageRequirement"
                 }, "cursor": "KlusterKite.Core.Service", "__typename": "KlusterKiteNodeApi_PackageRequirement_Edge"
               }, {
                 "node": {
-                  "__id": "KlusterKite.Web.NginxConfigurator",
+                  "_id": "KlusterKite.Web.NginxConfigurator",
                   "specificVersion": null,
                   "id": "W3siZiI6ImNsdXN0ZXJLaXROb2Rlc0FwaSJ9LHsiZiI6InJlbGVhc2VzIiwiaWQiOjF9LHsiZiI6ImNvbmZpZ3VyYXRpb24ifSx7ImYiOiJub2RlVGVtcGxhdGVzIiwiaWQiOiJwdWJsaXNoZXIifSx7ImYiOiJwYWNrYWdlUmVxdWlyZW1lbnRzIiwiaWQiOiJDbHVzdGVyS2l0LldlYi5OZ2lueENvbmZpZ3VyYXRvciJ9XQ==",
                   "__typename": "KlusterKiteNodeApi_PackageRequirement"
@@ -99,7 +99,7 @@ const getTemplatesListRelay = () => {
                 "__typename": "KlusterKiteNodeApi_PackageRequirement_Edge"
               }, {
                 "node": {
-                  "__id": "KlusterKite.NodeManager.Client",
+                  "_id": "KlusterKite.NodeManager.Client",
                   "specificVersion": null,
                   "id": "W3siZiI6ImNsdXN0ZXJLaXROb2Rlc0FwaSJ9LHsiZiI6InJlbGVhc2VzIiwiaWQiOjF9LHsiZiI6ImNvbmZpZ3VyYXRpb24ifSx7ImYiOiJub2RlVGVtcGxhdGVzIiwiaWQiOiJwdWJsaXNoZXIifSx7ImYiOiJwYWNrYWdlUmVxdWlyZW1lbnRzIiwiaWQiOiJDbHVzdGVyS2l0Lk5vZGVNYW5hZ2VyLkNsaWVudCJ9XQ==",
                   "__typename": "KlusterKiteNodeApi_PackageRequirement"
@@ -108,14 +108,14 @@ const getTemplatesListRelay = () => {
                 "__typename": "KlusterKiteNodeApi_PackageRequirement_Edge"
               }, {
                 "node": {
-                  "__id": "KlusterKite.Log.Console",
+                  "_id": "KlusterKite.Log.Console",
                   "specificVersion": null,
                   "id": "W3siZiI6ImNsdXN0ZXJLaXROb2Rlc0FwaSJ9LHsiZiI6InJlbGVhc2VzIiwiaWQiOjF9LHsiZiI6ImNvbmZpZ3VyYXRpb24ifSx7ImYiOiJub2RlVGVtcGxhdGVzIiwiaWQiOiJwdWJsaXNoZXIifSx7ImYiOiJwYWNrYWdlUmVxdWlyZW1lbnRzIiwiaWQiOiJDbHVzdGVyS2l0LkxvZy5Db25zb2xlIn1d",
                   "__typename": "KlusterKiteNodeApi_PackageRequirement"
                 }, "cursor": "KlusterKite.Log.Console", "__typename": "KlusterKiteNodeApi_PackageRequirement_Edge"
               }, {
                 "node": {
-                  "__id": "KlusterKite.Log.ElasticSearch",
+                  "_id": "KlusterKite.Log.ElasticSearch",
                   "specificVersion": null,
                   "id": "W3siZiI6ImNsdXN0ZXJLaXROb2Rlc0FwaSJ9LHsiZiI6InJlbGVhc2VzIiwiaWQiOjF9LHsiZiI6ImNvbmZpZ3VyYXRpb24ifSx7ImYiOiJub2RlVGVtcGxhdGVzIiwiaWQiOiJwdWJsaXNoZXIifSx7ImYiOiJwYWNrYWdlUmVxdWlyZW1lbnRzIiwiaWQiOiJDbHVzdGVyS2l0LkxvZy5FbGFzdGljU2VhcmNoIn1d",
                   "__typename": "KlusterKiteNodeApi_PackageRequirement"
@@ -124,7 +124,7 @@ const getTemplatesListRelay = () => {
                 "__typename": "KlusterKiteNodeApi_PackageRequirement_Edge"
               }, {
                 "node": {
-                  "__id": "KlusterKite.Monitoring.Client",
+                  "_id": "KlusterKite.Monitoring.Client",
                   "specificVersion": null,
                   "id": "W3siZiI6ImNsdXN0ZXJLaXROb2Rlc0FwaSJ9LHsiZiI6InJlbGVhc2VzIiwiaWQiOjF9LHsiZiI6ImNvbmZpZ3VyYXRpb24ifSx7ImYiOiJub2RlVGVtcGxhdGVzIiwiaWQiOiJwdWJsaXNoZXIifSx7ImYiOiJwYWNrYWdlUmVxdWlyZW1lbnRzIiwiaWQiOiJDbHVzdGVyS2l0Lk1vbml0b3JpbmcuQ2xpZW50In1d",
                   "__typename": "KlusterKiteNodeApi_PackageRequirement"
@@ -148,14 +148,14 @@ const getTemplatesListRelay = () => {
             "packageRequirements": {
               "edges": [{
                 "node": {
-                  "__id": "KlusterKite.Core.Service",
+                  "_id": "KlusterKite.Core.Service",
                   "specificVersion": null,
                   "id": "W3siZiI6ImNsdXN0ZXJLaXROb2Rlc0FwaSJ9LHsiZiI6InJlbGVhc2VzIiwiaWQiOjF9LHsiZiI6ImNvbmZpZ3VyYXRpb24ifSx7ImYiOiJub2RlVGVtcGxhdGVzIiwiaWQiOiJjbHVzdGVyTWFuYWdlciJ9LHsiZiI6InBhY2thZ2VSZXF1aXJlbWVudHMiLCJpZCI6IkNsdXN0ZXJLaXQuQ29yZS5TZXJ2aWNlIn1d",
                   "__typename": "KlusterKiteNodeApi_PackageRequirement"
                 }, "cursor": "KlusterKite.Core.Service", "__typename": "KlusterKiteNodeApi_PackageRequirement_Edge"
               }, {
                 "node": {
-                  "__id": "KlusterKite.NodeManager.Client",
+                  "_id": "KlusterKite.NodeManager.Client",
                   "specificVersion": null,
                   "id": "W3siZiI6ImNsdXN0ZXJLaXROb2Rlc0FwaSJ9LHsiZiI6InJlbGVhc2VzIiwiaWQiOjF9LHsiZiI6ImNvbmZpZ3VyYXRpb24ifSx7ImYiOiJub2RlVGVtcGxhdGVzIiwiaWQiOiJjbHVzdGVyTWFuYWdlciJ9LHsiZiI6InBhY2thZ2VSZXF1aXJlbWVudHMiLCJpZCI6IkNsdXN0ZXJLaXQuTm9kZU1hbmFnZXIuQ2xpZW50In1d",
                   "__typename": "KlusterKiteNodeApi_PackageRequirement"
@@ -164,7 +164,7 @@ const getTemplatesListRelay = () => {
                 "__typename": "KlusterKiteNodeApi_PackageRequirement_Edge"
               }, {
                 "node": {
-                  "__id": "KlusterKite.Monitoring.Client",
+                  "_id": "KlusterKite.Monitoring.Client",
                   "specificVersion": null,
                   "id": "W3siZiI6ImNsdXN0ZXJLaXROb2Rlc0FwaSJ9LHsiZiI6InJlbGVhc2VzIiwiaWQiOjF9LHsiZiI6ImNvbmZpZ3VyYXRpb24ifSx7ImYiOiJub2RlVGVtcGxhdGVzIiwiaWQiOiJjbHVzdGVyTWFuYWdlciJ9LHsiZiI6InBhY2thZ2VSZXF1aXJlbWVudHMiLCJpZCI6IkNsdXN0ZXJLaXQuTW9uaXRvcmluZy5DbGllbnQifV0=",
                   "__typename": "KlusterKiteNodeApi_PackageRequirement"
@@ -173,21 +173,21 @@ const getTemplatesListRelay = () => {
                 "__typename": "KlusterKiteNodeApi_PackageRequirement_Edge"
               }, {
                 "node": {
-                  "__id": "KlusterKite.Monitoring",
+                  "_id": "KlusterKite.Monitoring",
                   "specificVersion": null,
                   "id": "W3siZiI6ImNsdXN0ZXJLaXROb2Rlc0FwaSJ9LHsiZiI6InJlbGVhc2VzIiwiaWQiOjF9LHsiZiI6ImNvbmZpZ3VyYXRpb24ifSx7ImYiOiJub2RlVGVtcGxhdGVzIiwiaWQiOiJjbHVzdGVyTWFuYWdlciJ9LHsiZiI6InBhY2thZ2VSZXF1aXJlbWVudHMiLCJpZCI6IkNsdXN0ZXJLaXQuTW9uaXRvcmluZyJ9XQ==",
                   "__typename": "KlusterKiteNodeApi_PackageRequirement"
                 }, "cursor": "KlusterKite.Monitoring", "__typename": "KlusterKiteNodeApi_PackageRequirement_Edge"
               }, {
                 "node": {
-                  "__id": "KlusterKite.NodeManager",
+                  "_id": "KlusterKite.NodeManager",
                   "specificVersion": null,
                   "id": "W3siZiI6ImNsdXN0ZXJLaXROb2Rlc0FwaSJ9LHsiZiI6InJlbGVhc2VzIiwiaWQiOjF9LHsiZiI6ImNvbmZpZ3VyYXRpb24ifSx7ImYiOiJub2RlVGVtcGxhdGVzIiwiaWQiOiJjbHVzdGVyTWFuYWdlciJ9LHsiZiI6InBhY2thZ2VSZXF1aXJlbWVudHMiLCJpZCI6IkNsdXN0ZXJLaXQuTm9kZU1hbmFnZXIifV0=",
                   "__typename": "KlusterKiteNodeApi_PackageRequirement"
                 }, "cursor": "KlusterKite.NodeManager", "__typename": "KlusterKiteNodeApi_PackageRequirement_Edge"
               }, {
                 "node": {
-                  "__id": "KlusterKite.Data.EF.Npgsql",
+                  "_id": "KlusterKite.Data.EF.Npgsql",
                   "specificVersion": null,
                   "id": "W3siZiI6ImNsdXN0ZXJLaXROb2Rlc0FwaSJ9LHsiZiI6InJlbGVhc2VzIiwiaWQiOjF9LHsiZiI6ImNvbmZpZ3VyYXRpb24ifSx7ImYiOiJub2RlVGVtcGxhdGVzIiwiaWQiOiJjbHVzdGVyTWFuYWdlciJ9LHsiZiI6InBhY2thZ2VSZXF1aXJlbWVudHMiLCJpZCI6IkNsdXN0ZXJLaXQuRGF0YS5FRi5OcGdzcWwifV0=",
                   "__typename": "KlusterKiteNodeApi_PackageRequirement"
@@ -196,7 +196,7 @@ const getTemplatesListRelay = () => {
                 "__typename": "KlusterKiteNodeApi_PackageRequirement_Edge"
               }, {
                 "node": {
-                  "__id": "KlusterKite.Web.Swagger.Monitor",
+                  "_id": "KlusterKite.Web.Swagger.Monitor",
                   "specificVersion": null,
                   "id": "W3siZiI6ImNsdXN0ZXJLaXROb2Rlc0FwaSJ9LHsiZiI6InJlbGVhc2VzIiwiaWQiOjF9LHsiZiI6ImNvbmZpZ3VyYXRpb24ifSx7ImYiOiJub2RlVGVtcGxhdGVzIiwiaWQiOiJjbHVzdGVyTWFuYWdlciJ9LHsiZiI6InBhY2thZ2VSZXF1aXJlbWVudHMiLCJpZCI6IkNsdXN0ZXJLaXQuV2ViLlN3YWdnZXIuTW9uaXRvciJ9XQ==",
                   "__typename": "KlusterKiteNodeApi_PackageRequirement"
@@ -205,21 +205,21 @@ const getTemplatesListRelay = () => {
                 "__typename": "KlusterKiteNodeApi_PackageRequirement_Edge"
               }, {
                 "node": {
-                  "__id": "KlusterKite.Web.Swagger",
+                  "_id": "KlusterKite.Web.Swagger",
                   "specificVersion": null,
                   "id": "W3siZiI6ImNsdXN0ZXJLaXROb2Rlc0FwaSJ9LHsiZiI6InJlbGVhc2VzIiwiaWQiOjF9LHsiZiI6ImNvbmZpZ3VyYXRpb24ifSx7ImYiOiJub2RlVGVtcGxhdGVzIiwiaWQiOiJjbHVzdGVyTWFuYWdlciJ9LHsiZiI6InBhY2thZ2VSZXF1aXJlbWVudHMiLCJpZCI6IkNsdXN0ZXJLaXQuV2ViLlN3YWdnZXIifV0=",
                   "__typename": "KlusterKiteNodeApi_PackageRequirement"
                 }, "cursor": "KlusterKite.Web.Swagger", "__typename": "KlusterKiteNodeApi_PackageRequirement_Edge"
               }, {
                 "node": {
-                  "__id": "KlusterKite.Log.Console",
+                  "_id": "KlusterKite.Log.Console",
                   "specificVersion": null,
                   "id": "W3siZiI6ImNsdXN0ZXJLaXROb2Rlc0FwaSJ9LHsiZiI6InJlbGVhc2VzIiwiaWQiOjF9LHsiZiI6ImNvbmZpZ3VyYXRpb24ifSx7ImYiOiJub2RlVGVtcGxhdGVzIiwiaWQiOiJjbHVzdGVyTWFuYWdlciJ9LHsiZiI6InBhY2thZ2VSZXF1aXJlbWVudHMiLCJpZCI6IkNsdXN0ZXJLaXQuTG9nLkNvbnNvbGUifV0=",
                   "__typename": "KlusterKiteNodeApi_PackageRequirement"
                 }, "cursor": "KlusterKite.Log.Console", "__typename": "KlusterKiteNodeApi_PackageRequirement_Edge"
               }, {
                 "node": {
-                  "__id": "KlusterKite.Log.ElasticSearch",
+                  "_id": "KlusterKite.Log.ElasticSearch",
                   "specificVersion": null,
                   "id": "W3siZiI6ImNsdXN0ZXJLaXROb2Rlc0FwaSJ9LHsiZiI6InJlbGVhc2VzIiwiaWQiOjF9LHsiZiI6ImNvbmZpZ3VyYXRpb24ifSx7ImYiOiJub2RlVGVtcGxhdGVzIiwiaWQiOiJjbHVzdGVyTWFuYWdlciJ9LHsiZiI6InBhY2thZ2VSZXF1aXJlbWVudHMiLCJpZCI6IkNsdXN0ZXJLaXQuTG9nLkVsYXN0aWNTZWFyY2gifV0=",
                   "__typename": "KlusterKiteNodeApi_PackageRequirement"
@@ -228,7 +228,7 @@ const getTemplatesListRelay = () => {
                 "__typename": "KlusterKiteNodeApi_PackageRequirement_Edge"
               }, {
                 "node": {
-                  "__id": "KlusterKite.Web.Authentication",
+                  "_id": "KlusterKite.Web.Authentication",
                   "specificVersion": null,
                   "id": "W3siZiI6ImNsdXN0ZXJLaXROb2Rlc0FwaSJ9LHsiZiI6InJlbGVhc2VzIiwiaWQiOjF9LHsiZiI6ImNvbmZpZ3VyYXRpb24ifSx7ImYiOiJub2RlVGVtcGxhdGVzIiwiaWQiOiJjbHVzdGVyTWFuYWdlciJ9LHsiZiI6InBhY2thZ2VSZXF1aXJlbWVudHMiLCJpZCI6IkNsdXN0ZXJLaXQuV2ViLkF1dGhlbnRpY2F0aW9uIn1d",
                   "__typename": "KlusterKiteNodeApi_PackageRequirement"
@@ -237,7 +237,7 @@ const getTemplatesListRelay = () => {
                 "__typename": "KlusterKiteNodeApi_PackageRequirement_Edge"
               }, {
                 "node": {
-                  "__id": "KlusterKite.Security.SessionRedis",
+                  "_id": "KlusterKite.Security.SessionRedis",
                   "specificVersion": null,
                   "id": "W3siZiI6ImNsdXN0ZXJLaXROb2Rlc0FwaSJ9LHsiZiI6InJlbGVhc2VzIiwiaWQiOjF9LHsiZiI6ImNvbmZpZ3VyYXRpb24ifSx7ImYiOiJub2RlVGVtcGxhdGVzIiwiaWQiOiJjbHVzdGVyTWFuYWdlciJ9LHsiZiI6InBhY2thZ2VSZXF1aXJlbWVudHMiLCJpZCI6IkNsdXN0ZXJLaXQuU2VjdXJpdHkuU2Vzc2lvblJlZGlzIn1d",
                   "__typename": "KlusterKiteNodeApi_PackageRequirement"
@@ -246,14 +246,14 @@ const getTemplatesListRelay = () => {
                 "__typename": "KlusterKiteNodeApi_PackageRequirement_Edge"
               }, {
                 "node": {
-                  "__id": "KlusterKite.API.Endpoint",
+                  "_id": "KlusterKite.API.Endpoint",
                   "specificVersion": null,
                   "id": "W3siZiI6ImNsdXN0ZXJLaXROb2Rlc0FwaSJ9LHsiZiI6InJlbGVhc2VzIiwiaWQiOjF9LHsiZiI6ImNvbmZpZ3VyYXRpb24ifSx7ImYiOiJub2RlVGVtcGxhdGVzIiwiaWQiOiJjbHVzdGVyTWFuYWdlciJ9LHsiZiI6InBhY2thZ2VSZXF1aXJlbWVudHMiLCJpZCI6IkNsdXN0ZXJLaXQuQVBJLkVuZHBvaW50In1d",
                   "__typename": "KlusterKiteNodeApi_PackageRequirement"
                 }, "cursor": "KlusterKite.API.Endpoint", "__typename": "KlusterKiteNodeApi_PackageRequirement_Edge"
               }, {
                 "node": {
-                  "__id": "KlusterKite.Web.GraphQL.Publisher",
+                  "_id": "KlusterKite.Web.GraphQL.Publisher",
                   "specificVersion": null,
                   "id": "W3siZiI6ImNsdXN0ZXJLaXROb2Rlc0FwaSJ9LHsiZiI6InJlbGVhc2VzIiwiaWQiOjF9LHsiZiI6ImNvbmZpZ3VyYXRpb24ifSx7ImYiOiJub2RlVGVtcGxhdGVzIiwiaWQiOiJjbHVzdGVyTWFuYWdlciJ9LHsiZiI6InBhY2thZ2VSZXF1aXJlbWVudHMiLCJpZCI6IkNsdXN0ZXJLaXQuV2ViLkdyYXBoUUwuUHVibGlzaGVyIn1d",
                   "__typename": "KlusterKiteNodeApi_PackageRequirement"
@@ -277,14 +277,14 @@ const getTemplatesListRelay = () => {
             "packageRequirements": {
               "edges": [{
                 "node": {
-                  "__id": "KlusterKite.Core.Service",
+                  "_id": "KlusterKite.Core.Service",
                   "specificVersion": null,
                   "id": "W3siZiI6ImNsdXN0ZXJLaXROb2Rlc0FwaSJ9LHsiZiI6InJlbGVhc2VzIiwiaWQiOjF9LHsiZiI6ImNvbmZpZ3VyYXRpb24ifSx7ImYiOiJub2RlVGVtcGxhdGVzIiwiaWQiOiJlbXB0eSJ9LHsiZiI6InBhY2thZ2VSZXF1aXJlbWVudHMiLCJpZCI6IkNsdXN0ZXJLaXQuQ29yZS5TZXJ2aWNlIn1d",
                   "__typename": "KlusterKiteNodeApi_PackageRequirement"
                 }, "cursor": "KlusterKite.Core.Service", "__typename": "KlusterKiteNodeApi_PackageRequirement_Edge"
               }, {
                 "node": {
-                  "__id": "KlusterKite.NodeManager.Client",
+                  "_id": "KlusterKite.NodeManager.Client",
                   "specificVersion": null,
                   "id": "W3siZiI6ImNsdXN0ZXJLaXROb2Rlc0FwaSJ9LHsiZiI6InJlbGVhc2VzIiwiaWQiOjF9LHsiZiI6ImNvbmZpZ3VyYXRpb24ifSx7ImYiOiJub2RlVGVtcGxhdGVzIiwiaWQiOiJlbXB0eSJ9LHsiZiI6InBhY2thZ2VSZXF1aXJlbWVudHMiLCJpZCI6IkNsdXN0ZXJLaXQuTm9kZU1hbmFnZXIuQ2xpZW50In1d",
                   "__typename": "KlusterKiteNodeApi_PackageRequirement"
@@ -293,7 +293,7 @@ const getTemplatesListRelay = () => {
                 "__typename": "KlusterKiteNodeApi_PackageRequirement_Edge"
               }, {
                 "node": {
-                  "__id": "KlusterKite.Monitoring.Client",
+                  "_id": "KlusterKite.Monitoring.Client",
                   "specificVersion": null,
                   "id": "W3siZiI6ImNsdXN0ZXJLaXROb2Rlc0FwaSJ9LHsiZiI6InJlbGVhc2VzIiwiaWQiOjF9LHsiZiI6ImNvbmZpZ3VyYXRpb24ifSx7ImYiOiJub2RlVGVtcGxhdGVzIiwiaWQiOiJlbXB0eSJ9LHsiZiI6InBhY2thZ2VSZXF1aXJlbWVudHMiLCJpZCI6IkNsdXN0ZXJLaXQuTW9uaXRvcmluZy5DbGllbnQifV0=",
                   "__typename": "KlusterKiteNodeApi_PackageRequirement"

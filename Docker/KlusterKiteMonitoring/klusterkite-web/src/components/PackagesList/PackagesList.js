@@ -33,11 +33,11 @@ export class PackagesList extends React.Component { // eslint-disable-line react
 
     let packagesFiltered = [];
     packages.forEach((item) => {
-      const isOld = activeConfigurationPackages.some(element => (element.node.__id === item.node.__id && element.node.version === item.node.version));
+      const isOld = activeConfigurationPackages.some(element => (element.node._id === item.node._id && element.node.version === item.node.version));
       if (!isOld || !this.state.showUpdated) {
         packagesFiltered.push({
           id: item.node.id,
-          name: item.node.__id,
+          name: item.node._id,
           version: item.node.version,
           isNew: !isOld
         });
@@ -99,7 +99,7 @@ export default Relay.createContainer(
             node {
               version
               id
-              __id
+              _id
             }
           }
         }

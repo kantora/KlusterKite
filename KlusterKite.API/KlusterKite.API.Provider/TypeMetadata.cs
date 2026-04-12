@@ -121,8 +121,13 @@ namespace KlusterKite.API.Provider
                 return EnScalarType.Guid;
             }
 
-            if (type == typeof(int) || type == typeof(long) || type == typeof(short) || type == typeof(uint)
-                || type == typeof(ulong) || type == typeof(ushort)
+            if (type == typeof(long) || type == typeof(ulong))
+            {
+                return EnScalarType.Long;
+            }
+
+            if (type == typeof(int) || type == typeof(short) || type == typeof(uint)
+                || type == typeof(ushort)
                 || (type.GetTypeInfo().IsSubclassOf(typeof(Enum)) && type.GetTypeInfo().GetCustomAttribute(typeof(FlagsAttribute)) != null))
             {
                 return EnScalarType.Integer;

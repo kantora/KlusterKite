@@ -5,7 +5,7 @@
 		minimumLevel = "Information"
 
 		#the list of connection urls for standard log
-		nodes = [ "http://elk:9200/" ]
+		nodes = [ "http://elasticsearch:9200/" ]
 
 		#the index format for standard log
 		indexFormat = "logstash-{0:yyyy.MM.dd}"
@@ -22,7 +22,7 @@
 		securityMinimumLevel = "Information"
 
 		#the list of connection urls for standard log
-		securityNodes = [ "http://elk:9200/" ]
+		securityNodes = [ "http://elasticsearch:9200/" ]
 
 		#the index format for standard log
 		securityIndexFormat = "security-{0:yyyy.MM.dd}"

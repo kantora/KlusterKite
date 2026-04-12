@@ -57,7 +57,7 @@ export default class ConfigurationForm extends React.Component {
           forbidEdit={!this.props.canEdit}
         >
           <fieldset>
-            <Input name="__id" value={(initialValues && initialValues.__id) || ""} type="hidden" />
+            <Input name="_id" value={(initialValues && initialValues._id) || ""} type="hidden" />
             <Input name="name" label="Name" value={(initialValues && initialValues.name) || (activeConfiguration && `Release ${activeConfiguration.majorVersion}.${activeConfiguration.minorVersion+1}`) || ""} required />
             <Textarea name="notes" label="Notes" value={(initialValues && initialValues.notes) || ""} rows={3} />
             <Input name="majorVersion" label="Major version" value={(initialValues && initialValues.majorVersion.toString()) || (activeConfiguration && (activeConfiguration.majorVersion).toString()) || ""}

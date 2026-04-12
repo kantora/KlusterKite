@@ -45,7 +45,7 @@ export class NodesList extends React.Component {
           const subModuleNode =  subModuleEdge.node;
           return (
             <span key={`${subModuleNode.id}`}>
-              <span className="label label-default">{subModuleNode.__id}&nbsp;{subModuleNode.version}</span>{' '}
+              <span className="label label-default">{subModuleNode._id}&nbsp;{subModuleNode.version}</span>{' '}
             </span>
           );
         })
@@ -272,7 +272,7 @@ export default Relay.createContainer(
                 edges {
                   node {
                     id,
-                    __id,
+                    _id,
                     version,
                   }
                 }

@@ -53,7 +53,7 @@ export default class NodeTemplateForm extends React.Component { // eslint-disabl
     if (nextProps.initialValues && (!isEqual(nextProps.initialValues, this.props.initialValues) || skipCheck)) {
       const packageRequirements = nextProps.initialValues.packageRequirements.edges.map(x => x.node).map(x => {
         return {
-          id: x.__id,
+          id: x._id,
           specificVersion: x.specificVersion
         }
       });

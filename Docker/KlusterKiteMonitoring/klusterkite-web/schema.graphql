@@ -24,7 +24,7 @@ interface IKlusterKiteMonitoring {
   klusterKiteMonitoringApi: IKlusterKiteMonitoring_Root
 
   # The node global searcher according to Relay specification
-  __node(
+  node(
     # The node global id
     id: ID
   ): Node
@@ -151,7 +151,7 @@ interface IKlusterKiteNodeApi {
   me: IKlusterKiteNodeApi_CurrentUserApi
 
   # The node global searcher according to Relay specification
-  __node(
+  node(
     # The node global id
     id: ID
   ): Node
@@ -196,7 +196,7 @@ interface IKlusterKiteNodeApi_CompatibleTemplate {
   id: ID
 
   # the relation id
-  __id: Int
+  _id: Int
 
   # the compatible configuration id
   compatibleConfigurationId: Int
@@ -237,7 +237,7 @@ interface IKlusterKiteNodeApi_Configuration {
   id: ID
 
   # The configuration id
-  __id: Int
+  _id: Int
 
   # the configuration major version number
   majorVersion: Int
@@ -367,7 +367,7 @@ interface IKlusterKiteNodeApi_KlusterKite_NodeManager_Client_ORM_RoleUser {
   id: ID
 
   # The link id
-  __id: Int
+  _id: Int
 
   # the role uid
   roleUid: Uid
@@ -425,7 +425,7 @@ interface IKlusterKiteNodeApi_Migration {
   id: ID
 
   # The migration id
-  __id: Int
+  _id: Int
 
   # a value indicating that current migration is in process
   isActive: Boolean
@@ -499,7 +499,7 @@ interface IKlusterKiteNodeApi_MigrationLogRecord {
   id: ID
 
   # the log record id
-  __id: Int
+  _id: Int
 
   # the log record type
   type: KlusterKiteNodeApi_EnMigrationLogRecordType
@@ -914,7 +914,7 @@ interface IKlusterKiteNodeApi_NugetPackageFamily {
   id: ID
 
   # The package id (name and version)
-  __id: String
+  _id: String
 
   # The package name
   name: String
@@ -949,7 +949,7 @@ interface IKlusterKiteNodeApi_PackageDescription {
   id: ID
 
   # the package Id
-  __id: String
+  _id: String
 
   # the package version
   version: String
@@ -978,7 +978,7 @@ interface IKlusterKiteNodeApi_PackageRequirement {
   id: ID
 
   # the Nuget package id
-  __id: String
+  _id: String
 
   # the required specific version (in case of null the default version for configuration will be used)
   specificVersion: String
@@ -1366,7 +1366,7 @@ type KlusterKiteMonitoring_KlusterKiteNodeApi implements IKlusterKiteMonitoring,
   id: ID
 
   # The node global searcher according to Relay specification
-  __node(
+  node(
     # The node global id
     id: ID
   ): Node
@@ -2079,7 +2079,7 @@ type KlusterKiteNodeApi_ClusterManagement implements IKlusterKiteNodeApi_Cluster
 # The compatible node template
 type KlusterKiteNodeApi_CompatibleTemplate implements IKlusterKiteNodeApi_CompatibleTemplate, Node {
   # the relation id
-  __id: Int
+  _id: Int
 
   # the compatible configuration id
   compatibleConfigurationId: Int
@@ -2256,7 +2256,7 @@ enum KlusterKiteNodeApi_CompatibleTemplate_Sort {
 # The cluster configuration with all program modules versions, node templates and configurations
 type KlusterKiteNodeApi_Configuration implements IKlusterKiteNodeApi_Configuration, Node {
   # The configuration id
-  __id: Int
+  _id: Int
 
   # the configuration major version number
   majorVersion: Int
@@ -3034,7 +3034,7 @@ enum KlusterKiteNodeApi_ErrorDescription_Sort {
 
 type KlusterKiteNodeApi_KlusterKite_NodeManager_Client_ORM_RoleUser implements IKlusterKiteNodeApi_KlusterKite_NodeManager_Client_ORM_RoleUser, Node {
   # The link id
-  __id: Int
+  _id: Int
 
   # the role uid
   roleUid: Uid
@@ -3282,7 +3282,7 @@ input KlusterKiteNodeApi_me_changePassword_Input {
 # The history record describing cluster migration
 type KlusterKiteNodeApi_Migration implements IKlusterKiteNodeApi_Migration, Node {
   # The migration id
-  __id: Int
+  _id: Int
 
   # a value indicating that current migration is in process
   isActive: Boolean
@@ -3482,7 +3482,7 @@ type KlusterKiteNodeApi_MigrationActorMigrationState implements IKlusterKiteNode
 
 type KlusterKiteNodeApi_MigrationLogRecord implements IKlusterKiteNodeApi_MigrationLogRecord, Node {
   # the log record id
-  __id: Int
+  _id: Int
 
   # the log record type
   type: KlusterKiteNodeApi_EnMigrationLogRecordType
@@ -6203,7 +6203,7 @@ enum KlusterKiteNodeApi_NodeTemplate_Sort {
 # Short description of NuGet package family
 type KlusterKiteNodeApi_NugetPackageFamily implements IKlusterKiteNodeApi_NugetPackageFamily, Node {
   # The package id (name and version)
-  __id: String
+  _id: String
 
   # The package name
   name: String
@@ -6436,7 +6436,7 @@ enum KlusterKiteNodeApi_NugetPackageFamily_Sort {
 # Short description of NuGet package
 type KlusterKiteNodeApi_PackageDescription implements IKlusterKiteNodeApi_PackageDescription, Node {
   # the package Id
-  __id: String
+  _id: String
 
   # the package version
   version: String
@@ -6610,7 +6610,7 @@ enum KlusterKiteNodeApi_PackageDescription_Sort {
 # The package requirement for the template
 type KlusterKiteNodeApi_PackageRequirement implements IKlusterKiteNodeApi_PackageRequirement, Node {
   # the Nuget package id
-  __id: String
+  _id: String
 
   # the required specific version (in case of null the default version for configuration will be used)
   specificVersion: String
