@@ -149,7 +149,7 @@ When no migration is active the equivalent `ResourceState.CanCreateMigration` fl
 
 ## Triggering and progressing a migration
 
-The migration progresses **only** through explicit API calls — `OnNodeUpgrade` reacts to migration state, but never advances it. All mutations live on the GraphQL `Root.clusterManagement` connection (`KlusterKite.NodeManager/WebApi/ClusterManagement.cs`) and require the `ClusterManagement.MigrateCluster` privilege.
+The migration progresses **only** through explicit API calls — `OnNodeUpgrade` reacts to migration state, but never advances it. All mutations live on the GraphQL `Root.clusterManagement` connection (`KlusterKite.NodeManager/WebApi/ClusterManagement.cs`) and require the `Privileges.MigrateCluster` privilege.
 
 | Mutation | Underlying actor message | When to use |
 |----------|--------------------------|-------------|
