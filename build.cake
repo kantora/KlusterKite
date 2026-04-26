@@ -1,5 +1,3 @@
-#addin nuget:?package=Cake.Core&version=5.0.0&loaddependencies=true
-#addin nuget:?package=Cake.Common&version=5.0.0&loaddependencies=true
 
 // Configuration
 var testPackageName = "KlusterKite.Core";
@@ -11,6 +9,9 @@ var packagePushDir = System.IO.Path.Combine(tempDir, "packagePush");
 var packageThirdPartyDir = System.IO.Path.Combine(tempDir, "packageThirdPartyDir");
 var version = EnvironmentVariable("version") ?? "0.0.0-local";
 var nugetServerUrl = EnvironmentVariable("NUGET_SERVER_URL") ?? "http://docker:81";
+// For NuGet.org, the push endpoint (V3) differs from the version-query endpoint (V2)
+var isPublicNuGet = nugetServerUrl.Contains("nuget.org");
+var nugetQueryUrl = isPublicNuGet ? "https://www.nuget.org/api/v2" : nugetServerUrl;
 
 // Task: Clean
 Task("Clean")
@@ -28,17 +29,18 @@ Task("SetVersion")
     Information("Setting version...");
 
     // Retrieve the latest NuGet version of the package
-    var latestVersion = GetLatestNuGetVersion(nugetServerUrl, testPackageName);
+    var latestVersion = GetLatestNuGetVersion(nugetQueryUrl, testPackageName);
+    var suffix = isPublicNuGet ? "" : "-local";
 
     if (string.IsNullOrEmpty(latestVersion))
     {
         Information("Repository is empty");
-        version = "0.0.0-local";
+        version = isPublicNuGet ? "0.1.0" : "0.0.0-local";
     }
     else
     {
         Information($"Current version is {latestVersion}");
-        version = IncrementPatchVersion(latestVersion) + "-local";
+        version = IncrementPatchVersion(latestVersion) + suffix;
     }
 
     packageDir = packagePushDir;

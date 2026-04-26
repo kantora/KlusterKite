@@ -10,7 +10,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Build" Version="17.14.8" />
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.14.8" />
-    <PackageReference Include="MSBuild.StructuredLogger" Version="2.3.17" />
+    <PackageReference Include="MSBuild.StructuredLogger" Version="2.3.154" />
     <PackageReference Include="System.ComponentModel.Composition" Version="9.0.7" />
   </ItemGroup>
 

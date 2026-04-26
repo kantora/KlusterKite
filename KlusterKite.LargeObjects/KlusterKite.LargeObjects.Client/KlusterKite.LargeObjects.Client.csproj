@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\..\common.props" />
   <PropertyGroup>
     <TargetFrameworks>net9.0</TargetFrameworks>
@@ -16,7 +16,7 @@
     <EmbeddedResource Include="Resources\akka.hocon" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Akka" Version="1.5.45" />
+    <PackageReference Include="Akka" Version="1.5.67" />
     <PackageReference Include="Autofac" Version="8.3.0" />
   </ItemGroup>
   <ItemGroup>

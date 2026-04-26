@@ -98,7 +98,7 @@ namespace KlusterKite.Security.SessionRedis
                 var result = db.StringSet(
                     this.GetRedisAccessKey(token),
                     data,
-                    session.Expiring.HasValue ? (TimeSpan?)(session.Expiring.Value - DateTimeOffset.Now) : null);
+                    session.Expiring.HasValue ? (Expiration)(session.Expiring.Value - DateTimeOffset.Now) : default);
 
                 if (result)
                 {
@@ -127,7 +127,7 @@ namespace KlusterKite.Security.SessionRedis
                 var result = db.StringSet(
                     this.GetRedisRefreshKey(token),
                     data,
-                    ticket.Expiring.HasValue ? (TimeSpan?)(ticket.Expiring.Value - DateTimeOffset.Now) : null);
+                    ticket.Expiring.HasValue ? (Expiration)(ticket.Expiring.Value - DateTimeOffset.Now) : default);
                 if (result)
                 {
                     return Task.FromResult(token);
