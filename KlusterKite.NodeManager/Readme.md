@@ -75,6 +75,137 @@ The migration is executed in the following steps:
 The migration step execution is controlled via API or UI.
 There is UI that provides access to the `KlusterKite.NodeManager` API. Please check the sample [`Docker`](../Docker/Readme.md) documentation.
 
+## Node management lifecycle
+
+Every cluster member is brought up, kept obsolescence-checked, and recycled by the singleton `NodeManagerActor` (`KlusterKite.NodeManager/NodeManagerActor.cs`). The lifecycle is the same for every node, regardless of role:
+
+1. **Container start.** The `KlusterKite.NodeManager.Launcher` boots, reads its `config.hocon`, and asks the cluster API for a configuration via `NewNodeTemplateRequest` (carrying `containerType` and `frameworkRuntimeType`).
+2. **Template selection.** `NodeManagerActor.OnNewNodeTemplateRequest` calls `GetPossibleTemplatesForContainer`, applies the **MinimumRequiredInstances → MaximumNeededInstances** priority rules described above, and replies with a `NodeStartUpConfiguration` that includes the resolved package list, HOCON overrides, NuGet feed, and seed addresses. If no template fits, the launcher receives a `NodeStartupWaitMessage` and retries after `KlusterKite.NodeManager.FullClusterWaitTimeout` (default 60s).
+3. **Pending registration.** The chosen request is appended to `awaitingRequestsByTemplate[templateCode]` so subsequent template selection counts the not-yet-joined node. After `KlusterKite.NodeManager.NewNodeJoinTimeout` (default 30s) the entry is dropped if the node never appears.
+4. **Cluster join.** The launcher downloads the packages, starts `KlusterKite.Core.Service`, and the new process joins the Akka cluster. The manager observes `ClusterEvent.MemberUp` and starts polling the new node with `RequestDescriptionNotification` every `NewNodeRequestDescriptionNotificationTimeout` (default 10s) up to `NewNodeRequestDescriptionNotificationMaxRequests` times (default 10).
+5. **Description received.** The new node responds with a `NodeDescription`. The manager stores it, removes it from `awaitingRequests`, and runs `CheckNodeIsObsolete` against the active configuration.
+6. **Obsolete check.** A node is marked `IsObsolete = true` when `nodeDescription.ConfigurationId != currentConfiguration.Id` *and* there is no entry in `currentConfiguration.CompatibleTemplatesBackward` whose `TemplateCode` and `CompatibleConfigurationId` match the node. Compatible templates are computed in `ConfigurationExtensions.GetCompatibleTemplates` — a template is considered compatible only if its HOCON `Configuration`, `PackageRequirements` set, and resolved package versions match the previous configuration.
+7. **Reconciliation tick.** After every node description, `MemberUp`, `MemberRemoved`, or migration step transition, the manager schedules an `UpgradeMessage` that runs `OnNodeUpgrade` (see *Automatic node upgrade* below).
+8. **Shutdown.** When the manager wants to recycle a node it sends a `ShutdownMessage` to `/user/NodeManager/Receiver` on that node. `KlusterKite.Core.Service` exits gracefully, the launcher restarts it, and the node re-enters step 1 with the latest configuration.
+
+## Automatic node upgrade
+
+`NodeManagerActor.OnNodeUpgrade` is the only place where automatic node recycling happens. It runs on every `UpgradeMessage` (received after a description update, after a migration step transition, and rescheduled while an upgrade is in flight).
+
+For each `NodeTemplate` group of currently registered nodes:
+
+* If no node in the group is `IsObsolete`, the group is skipped.
+* If the group's live count is **less than or equal to** `MinimumRequiredInstances`, **no node is recycled**. This is the primary safety guard — the manager refuses to take a template below its declared minimum, even if every node is obsolete. New replacement nodes must come up first, which only happens once they request a template (see template selection rules) and join the cluster.
+* Otherwise the manager picks `ceil(groupCount * upgradablePart / 100) - nodesAlreadyUpgrading` of the obsolete nodes (oldest by `StartTimeStamp` first), records them in `upgradingNodes`, and sends each one a `ShutdownMessage` via `OnNodeUpdateRequest`. `upgradablePart` comes from `KlusterKite.NodeManager.NewNodeRequestDescriptionNotificationMaxRequests` (yes, the field is named after a different setting in code; the default is 10, i.e. 10% of the group at a time).
+* An entry in `upgradingNodes` is considered stale and dropped after `NewNodeJoinTimeout + NewNodeRequestDescriptionNotificationTimeout`, so a lost recycle attempt does not stall progress forever.
+* After a successful pass the actor schedules another `UpgradeMessage` slightly past that timeout to advance to the next batch.
+
+Net effect: the cluster drains obsolete nodes in waves, never dropping any template below its safe quorum, and never recycling more than `upgradablePart`% of a template at once.
+
+## Migration: states and steps
+
+Two independent state machines drive a migration; both are visible via the `clusterManagement` GraphQL surface.
+
+**`Migration.State`** ([`EnMigrationState`](KlusterKite.NodeManager.Client/ORM/EnMigrationState.cs)):
+
+| State | Meaning |
+|-------|---------|
+| `Preparing` | The migration row was just created. The `MigrationActor` is collecting resource state from every `MigratorTemplate`. No resource or node action is allowed yet. |
+| `Ready` | Resource state was successfully collected; step transitions are now permitted. |
+| `Failed` | The migration was canceled; the source configuration is restored as `Active`. |
+| `Completed` | The migration was finished; the destination configuration is now `Active`, the previous one becomes `Archived`. |
+| `Rollbacked` | Reserved (TODO in code). |
+
+**Step within a `Ready` migration** ([`EnMigrationSteps`](KlusterKite.NodeManager.Client/ORM/EnMigrationSteps.cs)). The current step is computed by `NodeManagerActor.GetCurrentMigrationStep` from three independent observations: where the active node descriptions are (source/destination), where the `pre-node` migratable resources are, and where the `post-node` migratable resources are. The legal step sequence for an upgrade migration is:
+
+1. `Start` — nothing has happened. If there are pre-node resources, they must be migrated first; otherwise nodes can move directly.
+2. `PreNodesResourcesUpdating` — the `MigrationActor` is currently rewriting `CodeDependsOnResource` resources to the destination version.
+3. `PreNodeResourcesUpdated` — pre-node resources are at destination; nodes can now be flipped.
+4. `NodesUpdating` — at least one node is still `IsObsolete`. The manager is recycling them in waves (see *Automatic node upgrade*).
+5. `NodesUpdated` — every node is at destination; if there are post-node resources to migrate, they must be done now.
+6. `PostNodesResourcesUpdating` — the `MigrationActor` is rewriting `ResourceDependsOnCode` resources.
+7. `Finish` — everything is at destination, ready for `migrationFinish`.
+
+Two recovery steps can also appear:
+
+* `Recovery` — nodes and resources are inconsistent in a way that can be reconciled by sending updates in either direction.
+* `Broken` — at least one resource is `OutOfScope` (no migrator can reach the desired state) or a migrator's `Direction` is `Undefined`. Manual operator intervention is required; `migrationCancel` is the only legal next operation when conditions allow.
+
+The `ResourceState.Can*` flags returned to the API are set by `InitResourceMigrationState` strictly from the current step:
+
+| Step | `CanMigrateResources` | `CanUpdateNodesToDestination` | `CanUpdateNodesToSource` | `CanCancelMigration` | `CanFinishMigration` |
+|------|----------------------|-------------------------------|--------------------------|----------------------|----------------------|
+| `Start` | only if pre-node resources exist | only if no pre-node resources | – | yes | – |
+| `PreNodesResourcesUpdating` | yes | – | – | – | – |
+| `PreNodeResourcesUpdated` | yes | yes | – | – | – |
+| `NodesUpdating` | – | nodes still at source | nodes already at destination | – | – |
+| `NodesUpdated` | yes | – | yes | – | – |
+| `PostNodesResourcesUpdating` | yes | – | – | – | – |
+| `Finish` | only if post-node resources exist | – | only if no post-node resources | – | yes |
+| `Recovery` | yes | only if nodes not yet at destination | only if nodes not yet at source | – | – |
+| `Broken` | – | – | – | only if every resource is at source/notCreated/obsolete | – |
+
+When no migration is active the equivalent `ResourceState.CanCreateMigration` flag is set by `InitResourceConfigurationState`, and is `false` whenever any node is still `IsObsolete` or any resource is not at its `LastDefinedPoint`.
+
+## Triggering and progressing a migration
+
+The migration progresses **only** through explicit API calls — `OnNodeUpgrade` reacts to migration state, but never advances it. All mutations live on the GraphQL `Root.clusterManagement` connection (`KlusterKite.NodeManager/WebApi/ClusterManagement.cs`) and require the `Privileges.MigrateCluster` privilege.
+
+| Mutation | Underlying actor message | When to use |
+|----------|--------------------------|-------------|
+| `clusterManagement.migrationCreate(newConfigurationId)` | `UpdateClusterRequest` | Start a migration to a non-`Draft` target configuration. The current configuration becomes the migration's source. |
+| `clusterManagement.migrationResourceUpdate({ resources: [...] })` | `List<ResourceUpgrade>` | Run one resource through its migrator to source/destination. Allowed only while `CanMigrateResources` is `true`. |
+| `clusterManagement.migrationNodesUpdate(target)` | `NodesUpgrade { Target = Source\|Destination }` | Flip the *Active* configuration to source or destination. This is what makes the existing nodes start being recognized as `IsObsolete` and lets `OnNodeUpgrade` recycle them. Allowed only while the corresponding `CanUpdateNodesTo*` flag is `true`. |
+| `clusterManagement.migrationCancel()` | `MigrationCancel` | Roll back: marks destination `Faulted`, source `Active`, migration `Failed`. Allowed only while `CanCancelMigration` is `true`. |
+| `clusterManagement.migrationFinish()` | `MigrationFinish` | Closes a `Finish`-step migration: source becomes `Archived`, destination stays `Active`. |
+| `clusterManagement.recheckState()` | `RecheckState` | Force the manager to reload configuration and resource state from the database — useful after an out-of-band schema fix. |
+
+A typical successful upgrade looks like this:
+
+1. Operator publishes a draft configuration and calls `configurationSetReady` (handled by `ConfigurationCheckActor`).
+2. Operator calls `migrationCreate(newId)`. Migration enters `Preparing`, then `Ready`/`Start`.
+3. If pre-node resources need updating, operator calls `migrationResourceUpdate` for each (or all). Step advances to `PreNodeResourcesUpdated`.
+4. Operator calls `migrationNodesUpdate(Destination)`. The destination configuration becomes `Active`, every existing node is re-evaluated by `CheckNodeIsObsolete` and `OnNodeUpgrade` starts recycling them in waves. Step is `NodesUpdating` until the last obsolete node is replaced.
+5. Step advances to `NodesUpdated`. If post-node resources exist, operator calls `migrationResourceUpdate` for them.
+6. Operator calls `migrationFinish`. Migration is `Completed`, source is `Archived`.
+
+## Manual single-node upgrade
+
+There is also a per-node "kick" mutation:
+
+```graphql
+mutation { upgradeNode(address: "akka.tcp://KlusterKite@1.2.3.4:3090") { result } }
+```
+
+It is implemented in `NodeManagerApi.UpgradeNode` (privilege `Privileges.UpgradeNode`) and translates to a `NodeUpgradeRequest` handled by `NodeManagerActor.OnNodeUpdateRequest`, which simply forwards a `ShutdownMessage` to `/user/NodeManager/Receiver` on the target node. The launcher restarts the process, which then re-requests its configuration and rejoins.
+
+This bypass is useful for:
+
+* Forcing a node to pick up a configuration change that the manager considers compatible (and therefore would not recycle automatically).
+* Recovering a node that is wedged but still part of the cluster.
+* Recycling a node that is below `MinimumRequiredInstances` (use with care — there is no quorum guard on this path).
+
+It does **not** advance migration state, and it does **not** wait for the new node to come up.
+
+## Troubleshooting: nodes are not being upgraded
+
+When a node — or a whole template — refuses to recycle after a migration step, walk through these checks in order:
+
+1. **Is a migration even active?** Query `clusterManagement.currentMigration`. If it is `null`, no automatic recycling will happen — `OnNodeUpgrade` only acts on nodes whose `IsObsolete` flag is `true`, and that flag is only set when the active configuration changed. Without `migrationNodesUpdate(Destination)` having been called, the active configuration is still the source one and nothing is obsolete.
+2. **Is the resource pipeline still running?** `clusterManagement.resourceState.operationIsInProgress = true` blocks every `Can*` flag. Wait for the `MigrationActor` to finish the current resource batch, or check the manager's logs for `MigrationActorInitializationFailed` errors that left it stuck.
+3. **Is the current step what you think it is?** Inspect `resourceState.currentMigrationStep`. If it is `PreNodesResourcesUpdating` or `PreNodeResourcesUpdated`, you must run `migrationResourceUpdate` for the listed pre-node resources before `migrationNodesUpdate(Destination)` becomes legal.
+4. **Was the destination treated as compatible?** Look at `currentConfiguration.compatibleTemplatesBackward` for the affected template. If it contains the node's `(TemplateCode, ConfigurationId)` pair, `CheckNodeIsObsolete` will set `IsObsolete = false` on purpose — the manager believes the existing process is already running compatible code and does not need to be recycled. Common reasons a previous configuration is auto-marked compatible:
+    * the template's HOCON `Configuration` is byte-identical;
+    * the template's `PackageRequirements` set is identical;
+    * every floating package version (`SpecificVersion = null`) resolves to the same version in both configurations' `Packages` list.
+   To force a recycle anyway, either change one of those inputs (e.g. set `NodeTemplate.ForceUpdate = true` so the template ignores compatibility), or call the per-node `upgradeNode` mutation.
+5. **Is the template at minimum quorum?** If `activeNodesByTemplate[code].Count <= NodeTemplate.MinimumRequiredInstances`, `OnNodeUpgrade` skips the group entirely. Either lower `MinimumRequiredInstances`, or scale the cluster up by adding containers of the matching `containerType` so the manager has room to recycle one without dropping below the floor.
+6. **Are replacement nodes able to start?** Recycling depends on new nodes being able to claim the destination template via `NewNodeTemplateRequest`. Check the manager log for `Cluster is full` or `There is no configuration available for {ContainerType}` warnings — they mean the template's `MaximumNeededInstances` is already saturated by `awaitingRequests` (still booting) or that no `containerType` matches.
+7. **Is `upgradablePart` saturated?** While a wave is in flight, `upgradingNodes` is non-empty and the next wave waits until each in-flight upgrade either acknowledges (`OnNodeDescription` clears it) or times out after `NewNodeJoinTimeout + NewNodeRequestDescriptionNotificationTimeout`. If many nodes time out repeatedly, the new node containers are failing to start — inspect the launcher logs on the recycled hosts.
+8. **Is the migration `Broken` or `Recovery`?** No automatic node movement happens in either step. For `Recovery` you can drive nodes back to source or forward to destination manually with `migrationNodesUpdate`; for `Broken` only `migrationCancel` is allowed (and only when every resource is at source/notCreated/obsolete).
+9. **Did the database go stale?** If the manager's view diverges from the database (e.g. after a manual SQL fix or after restoring a backup), call `clusterManagement.recheckState()` to force `InitDatabase` and a fresh `RecheckState` round-trip to the `MigrationActor`.
+
+If, after these checks, the cluster still will not recycle a specific node, fall back to the manual single-node upgrade described above.
 
 ## Seeders
 
