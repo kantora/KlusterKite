@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\..\common.props" />
   <PropertyGroup>
     <TargetFrameworks>net9.0</TargetFrameworks>
@@ -21,10 +21,10 @@
     <EmbeddedResource Include="Resources\akka.hocon" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="GraphQL" Version="8.5.0" />
-    <PackageReference Include="GraphQL.NewtonsoftJson" Version="8.5.0" />
-    <PackageReference Include="GraphQL.Server.Transports.AspNetCore" Version="8.2.0" />
-    <PackageReference Include="GraphQL.Server.Ui.GraphiQL" Version="8.2.0" />
+    <PackageReference Include="GraphQL" Version="8.8.4" />
+    <PackageReference Include="GraphQL.NewtonsoftJson" Version="8.8.4" />
+    <PackageReference Include="GraphQL.Server.Transports.AspNetCore" Version="8.3.3" />
+    <PackageReference Include="GraphQL.Server.Ui.GraphiQL" Version="8.3.3" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\KlusterKite.API\KlusterKite.API.Client\KlusterKite.API.Client.csproj" />

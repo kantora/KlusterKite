@@ -1,5 +1,3 @@
-#addin nuget:?package=Cake.Core&version=5.0.0&loaddependencies=true
-#addin nuget:?package=Cake.Common&version=5.0.0&loaddependencies=true
 
 // Configuration
 var testPackageName = "KlusterKite.Core";

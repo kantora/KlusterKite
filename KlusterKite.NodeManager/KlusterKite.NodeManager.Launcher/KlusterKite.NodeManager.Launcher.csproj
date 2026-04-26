@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\..\common.props" />
   <PropertyGroup>
     <TargetFrameworks>net9.0</TargetFrameworks>
@@ -23,8 +23,8 @@
     <EmbeddedResource Include="Resources\packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Akka" Version="1.5.45" />
-    <PackageReference Include="RestSharp" Version="112.1.0" />
+    <PackageReference Include="Akka" Version="1.5.67" />
+    <PackageReference Include="RestSharp" Version="114.0.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\KlusterKite.NodeManager.Launcher.Messages\KlusterKite.NodeManager.Launcher.Messages.csproj" />

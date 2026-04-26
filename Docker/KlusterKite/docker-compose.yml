@@ -131,7 +131,7 @@ services:
         ipv4_address: 172.18.0.12
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:7.17.28
+    image: docker.elastic.co/kibana/kibana:8.17.4
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
     ports:
