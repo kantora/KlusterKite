@@ -75,6 +75,9 @@ namespace KlusterKite.Log.ElasticSearch
                               {
                                   MinimumLogEventLevel = level,
                                   AutoRegisterTemplate = true,
+                                  AutoRegisterTemplateVersion = AutoRegisterTemplateVersion.ESv8,
+                                  OverwriteTemplate = true,
+                                  TemplateName = "serilog-logstash-template",
                                   IndexFormat = indexFormat,
                               };
 
@@ -121,6 +124,9 @@ namespace KlusterKite.Log.ElasticSearch
             {
                 MinimumLogEventLevel = level,
                 AutoRegisterTemplate = true,
+                AutoRegisterTemplateVersion = AutoRegisterTemplateVersion.ESv8,
+                OverwriteTemplate = true,
+                TemplateName = "serilog-security-template",
                 IndexFormat = indexFormat,
             };
 
