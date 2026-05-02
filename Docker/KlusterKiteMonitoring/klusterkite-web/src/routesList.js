@@ -67,7 +67,7 @@ export default class RoutesList extends React.Component {
           <Route path='/klusterkite/Users/create' component={UserPage} queries={ApiQueries} render={({ props }) => props ? <UserPage {...props} /> : <Loading />} />
           <Route path='/klusterkite/Users/:id' component={UserPage} queries={ApiQueries} render={({ props }) => props ? <UserPage {...props} /> : <Loading />} />
           <Route path='/klusterkite/Users/ResetPassword/:id' component={ResetPasswordPage} queries={ApiQueries} render={({ props }) => props ? <ResetPasswordPage {...props} /> : <Loading />} />
-          <Route path='/klusterkite/ValidateState' component={ValidateStatePage} render={({ props }) => props ? <ValidateStatePage {...props} /> : <Loading />} />
+          <Route path='/klusterkite/ValidateState' component={ValidateStatePage} />
           <Route path='*' components={NotFoundPage} />
         </Route>
         <Redirect from="/" to="klusterkite/" />

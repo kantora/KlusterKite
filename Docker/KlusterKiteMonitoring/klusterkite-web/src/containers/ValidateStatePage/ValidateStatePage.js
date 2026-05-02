@@ -35,7 +35,6 @@ class ValidateStatePage extends React.Component {
         new ValidateStateMutation(),
         {
           onSuccess: (response) => {
-            console.log('response', response);
             const responsePayload = response.klusterKiteNodeApi_klusterKiteNodesApi_clusterManagement_recheckState;
 
             if (responsePayload.errors) {
@@ -44,14 +43,13 @@ class ValidateStatePage extends React.Component {
                 processErrors: true,
               });
             } else {
-              // console.log('result update nodes', responsePayload.result);
-              // total success
               this.setState({
                 isProcessing: false,
                 processErrors: null,
                 processSuccessful: true,
               });
-              browserHistory.push(`${decodeURIComponent(this.props.location.query.from)}`);
+              const from = this.props.location && this.props.location.query && this.props.location.query.from;
+              browserHistory.push(from ? decodeURIComponent(from) : '/klusterkite/');
             }
           },
           onFailure: (transaction) => {
@@ -74,7 +72,7 @@ class ValidateStatePage extends React.Component {
           <p>Server is inaccessible or has encountered an error.</p>
         </div>
         }
-        {this.state.processing &&
+        {this.state.isProcessing &&
           <div>
             <h2>Validating State</h2>
             <p>Please wait…</p>
