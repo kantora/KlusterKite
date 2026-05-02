@@ -12,16 +12,16 @@ class NodeTemplatesList extends React.Component {
 
   static propTypes = {
     configurationId: React.PropTypes.string,
-    configuration: React.PropTypes.object,
+    settings: React.PropTypes.object,
     canEdit: React.PropTypes.bool
   };
 
   render() {
-    const templates = this.props.configuration && this.props.configuration.nodeTemplates && this.props.configuration.nodeTemplates.edges;
+    const templates = this.props.settings && this.props.settings.nodeTemplates && this.props.settings.nodeTemplates.edges;
 
     return (
       <div>
-        <h3>Node templates list</h3>
+        <h3>Node templates</h3>
         {this.props.canEdit &&
           <Link to={`/klusterkite/NodeTemplates/${this.props.configurationId}/create`} className="btn btn-primary" role="button">Add a new template</Link>
         }
@@ -60,7 +60,7 @@ class NodeTemplatesList extends React.Component {
                 }
               </td>
               <td>{item.node.minimumRequiredInstances}</td>
-              <td>{item.node.maximumNeededInstances}</td>
+              <td>{item.node.maximumNeededInstances || '∞'}</td>
               <td>{item.node.priority}</td>
             </tr>
           )
@@ -77,7 +77,7 @@ export default Relay.createContainer(
   NodeTemplatesList,
   {
     fragments: {
-      configuration: () => Relay.QL`fragment on IKlusterKiteNodeApi_ConfigurationSettings {
+      settings: () => Relay.QL`fragment on IKlusterKiteNodeApi_ConfigurationSettings {
         nodeTemplates {
           edges {
             node {

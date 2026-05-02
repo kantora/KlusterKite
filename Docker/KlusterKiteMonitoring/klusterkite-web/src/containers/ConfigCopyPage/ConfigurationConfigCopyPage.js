@@ -66,7 +66,6 @@ class ConfigurationConfigCopyPage extends React.Component {
         }),
       {
         onSuccess: (response) => {
-          console.log('response', response);
           if (response.klusterKiteNodeApi_klusterKiteNodesApi_configurations_update.errors &&
             response.klusterKiteNodeApi_klusterKiteNodesApi_configurations_update.errors.edges) {
             const messages = this.getErrorMessagesFromEdge(response.klusterKiteNodeApi_klusterKiteNodesApi_configurations_update.errors.edges);

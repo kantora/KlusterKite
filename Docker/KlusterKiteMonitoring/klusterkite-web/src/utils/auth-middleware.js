@@ -11,7 +11,6 @@ const redirectToAuth = (reject) => {
   const currentLocation = browserHistory.getCurrentLocation().pathname;
   const currentSearch = browserHistory.getCurrentLocation().search;
 
-  console.log('redirect to auth');
   Storage.remove('privileges');
   Storage.remove('accessToken');
   Storage.remove('refreshToken');

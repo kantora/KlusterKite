@@ -28,6 +28,7 @@ import RolePage from './containers/RolePage/RolePage';
 import SeedPage from './containers/SeedPage/SeedPage';
 import UsersListPage from './containers/UsersListPage/UsersListPage';
 import UserPage from './containers/UserPage/UserPage';
+import ValidateStatePage from './containers/ValidateStatePage/ValidateStatePage';
 
 export default class RoutesList extends React.Component {
   render () {
@@ -39,6 +40,7 @@ export default class RoutesList extends React.Component {
       <Router forceFetch environment={Relay.Store} render={applyRouterMiddleware(useRelay)} history={browserHistory}>
         <Route path="/klusterkite/" component={App}>
           <IndexRoute component={HomePage} queries={ApiQueries} />
+          <Route path='/klusterkite/Home/:sort' component={HomePage} queries={ApiQueries} />
           <Route path='/klusterkite/Login' component={AuthPage} />
           <Route path='/klusterkite/Logout' component={LogoutPage} />
           <Route path='/klusterkite/ChangePassword' component={ChangePasswordPage} queries={ApiQueries} render={({ props }) => props ? <ChangePasswordPage {...props} /> : <Loading />} />
@@ -65,6 +67,7 @@ export default class RoutesList extends React.Component {
           <Route path='/klusterkite/Users/create' component={UserPage} queries={ApiQueries} render={({ props }) => props ? <UserPage {...props} /> : <Loading />} />
           <Route path='/klusterkite/Users/:id' component={UserPage} queries={ApiQueries} render={({ props }) => props ? <UserPage {...props} /> : <Loading />} />
           <Route path='/klusterkite/Users/ResetPassword/:id' component={ResetPasswordPage} queries={ApiQueries} render={({ props }) => props ? <ResetPasswordPage {...props} /> : <Loading />} />
+          <Route path='/klusterkite/ValidateState' component={ValidateStatePage} render={({ props }) => props ? <ValidateStatePage {...props} /> : <Loading />} />
           <Route path='*' components={NotFoundPage} />
         </Route>
         <Redirect from="/" to="klusterkite/" />
