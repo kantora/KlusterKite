@@ -1,8 +1,6 @@
 import React from 'react';
 import Relay from 'react-relay'
-import Icon from 'react-fa';
-
-import UpdateResourcesMutation from './mutations/UpdateResourcesMutation';
+import isEqual from 'lodash/isEqual';
 
 import './styles.css';
 
@@ -15,6 +13,8 @@ export class UpdateResources extends React.Component {
       processSuccessful: false,
       processErrors: null,
       selectedResources: [],
+      resourcesToUpgrade: [],
+      resourcesToDowngrade: [],
     };
   }
 
@@ -24,84 +24,63 @@ export class UpdateResources extends React.Component {
     onError: React.PropTypes.func.isRequired,
     operationIsInProgress: React.PropTypes.bool,
     canMigrateResources: React.PropTypes.bool,
+    selectedResources: React.PropTypes.arrayOf(React.PropTypes.object),
+    onSelectedResourcesChange: React.PropTypes.func,
   };
 
-  onStartUpdateDestination = () => {
-    return this.onStartUpdate('Destination');
-  };
+  componentWillMount() {
+    this.onReceiveProps(this.props, true);
+  }
 
-  onStartUpdateSource = () => {
-    return this.onStartUpdate('Source');
-  };
+  componentWillReceiveProps(nextProps) {
+    this.onReceiveProps(nextProps, false);
+  }
 
-  onStartMassMigration = () => {
-    if (!this.state.isProcessing){
-      this.setState({
-        isProcessing: true,
-        processSuccessful: false,
-      });
-
-      Relay.Store.commitUpdate(
-        new UpdateResourcesMutation({
-          resources: this.prepareResourceListForMigration(this.state.selectedResources)
-        }),
-        {
-          onSuccess: (response) => {
-            const responsePayload = response.klusterKiteNodeApi_klusterKiteNodesApi_clusterManagement_migrationResourceUpdate;
-
-            if (responsePayload.errors &&
-              responsePayload.errors.edges) {
-              const messages = this.getErrorMessagesFromEdge(responsePayload.errors.edges);
-              this.props.onError(messages);
-
-              this.setState({
-                processSuccessful: false,
-                processErrors: messages,
-              });
-            } else {
-              // console.log('result update nodes', responsePayload.result);
-              // total success
-              this.setState({
-                isProcessing: false,
-                processErrors: null,
-                processSuccessful: true,
-                selectedResources: [],
-              });
-
-              this.props.onStateChange();
-            }
-          },
-          onFailure: (transaction) => {
-            this.setState({
-              isProcessing: false
-            });
-            console.log(transaction)},
-        },
-      );
+  onReceiveProps(nextProps, skipCheck) {
+    if (nextProps.migrationState && (!isEqual(nextProps.migrationState, this.props.migrationState) || skipCheck)) {
+      this.getOptionsList(nextProps.migrationState);
     }
-  };
+  }
 
-  /**
-   * Prepare resource list for migration by removal unnecessary keys
-   * @param resources {Object[]} Resources List
-   * @return {Object[]} Prepared resources list
-   */
-  prepareResourceListForMigration = (resources) => {
-    let resourceList = [];
+  getOptionsList(migrationState) {
+    let resourcesToUpgrade = [];
+    let resourcesToDowngrade = [];
 
-    resources.forEach((item) => {
-      resourceList.push({
-        templateCode: item.templateCode,
-        migratorTypeName: item.migratorTypeName,
-        resourceCode: item.resourceCode,
-        target: item.target,
-      })
+    migrationState && migrationState.templateStates.edges && migrationState.templateStates.edges.forEach((edge) => {
+      const node = edge.node;
+      const migratableResources = migrationState.migratableResources.edges.map(edge => edge.node);
+      node.migrators.edges.forEach((migratorEdge) => {
+        const migratorNode = migratorEdge.node;
+        const resources = migratorNode.resources.edges;
+        resources.forEach((resourceEdge) => {
+          const resourceNode = resourceEdge.node;
+          const direction = (resourceNode.position === 'Source' || resourceNode.position === 'NotCreated') ? 'Destination' : 'Source';
+          const isMigratable = migratableResources.some(x => x.key === resourceNode.key);
+          const resource = {
+            templateCode: node.code,
+            migratorTypeName: migratorNode.typeName,
+            resourceCode: resourceNode.code,
+            target: direction,
+            key: resourceNode.key,
+          };
+
+          if (isMigratable && resourceNode.migrationToDestinationExecutor !== null) {
+            resourcesToUpgrade.push(resource);
+          }
+          if (isMigratable && resourceNode.migrationToSourceExecutor !== null) {
+            resourcesToDowngrade.push(resource);
+          }
+        });
+      });
     });
 
-    return resourceList;
-  };
+    this.setState({
+      resourcesToUpgrade: resourcesToUpgrade,
+      resourcesToDowngrade: resourcesToDowngrade
+    });
+  }
 
-  onSelectResource = (checked, key, templateCode, migratorTypeName, resourceCode, target) => {
+  onSelectResource(checked, key, templateCode, migratorTypeName, resourceCode, target) {
     const resource = {
       templateCode: templateCode,
       migratorTypeName: migratorTypeName,
@@ -111,27 +90,53 @@ export class UpdateResources extends React.Component {
     };
 
     if (checked) {
-      this.setState((prevState) => ({
-        selectedResources: [
-          ...prevState.selectedResources,
-          resource,
-        ],
-      }));
+      const list = [
+        ...this.props.selectedResources,
+        resource,
+      ];
+
+      this.props.onSelectedResourcesChange(list);
     } else {
-      this.setState((prevState) => ({
-        selectedResources: prevState.selectedResources.filter(item => item.key !== resource.key),
-      }));
+      const list = this.props.selectedResources.filter(item => item.key !== resource.key);
+      this.props.onSelectedResourcesChange(list);
+    }
+  };
+
+  onUpgradeAll(checked) {
+    const keys = this.props.selectedResources.map(item => item.target === 'Destination' && item.key);
+    const resourcesToAdd = this.state.resourcesToUpgrade.filter(item => !keys.includes(item.key));
+
+    let list = [];
+    if (checked) {
+      list = [
+        ...this.props.selectedResources,
+        ...resourcesToAdd
+      ];
+    } else {
+      list = this.props.selectedResources.filter(item => !keys.includes(item.key));
     }
 
-  };
+    this.props.onSelectedResourcesChange(list);
+  }
 
-  getErrorMessagesFromEdge = (edges) => {
-    return edges.map(x => x.node).map(x => x.message);
-  };
+  onDowngradeAll(checked) {
+    const keys = this.props.selectedResources.map(item => item.target === 'Source' && item.key);
+    const resourcesToAdd = this.state.resourcesToDowngrade.filter(item => !keys.includes(item.key));
+
+    let list = [];
+    if (checked) {
+      list = [
+        ...this.props.selectedResources,
+        ...resourcesToAdd
+      ];
+    } else {
+      list = this.props.selectedResources.filter(item => !keys.includes(item.key));
+    }
+
+    this.props.onSelectedResourcesChange(list);
+  }
 
   render() {
-    const upgradePossible = this.state.selectedResources.some(item => item.target === 'Destination');
-    const downgradePossible = this.state.selectedResources.some(item => item.target === 'Source');
     const isProcessing = this.props.operationIsInProgress || this.state.isProcessing;
 
     return (
@@ -144,17 +149,6 @@ export class UpdateResources extends React.Component {
           Operation in progress, please wait…
         </div>
         }
-
-        <button className="btn btn-primary" type="button" onClick={() => {this.onStartMassMigration()}} disabled={isProcessing || (!upgradePossible && !downgradePossible)}>
-          <Icon name='forward' />{' '}
-          {upgradePossible && !downgradePossible && <span>Upgrade</span>}
-          {downgradePossible && !upgradePossible && <span>Downgrade</span>}
-          {!upgradePossible && !downgradePossible && <span>Process</span>}
-          {downgradePossible && upgradePossible && <span>Upgrade and downgrade</span>}
-          {' '}selected{' '}
-          {this.state.selectedResources.length === 1 && <span>resouce</span>}
-          {this.state.selectedResources.length !== 1 && <span>resouces</span>}
-        </button>
 
         {this.props.migrationState && this.props.migrationState.templateStates.edges && this.props.migrationState.templateStates.edges.map((edge) => {
           const node = edge.node;
@@ -170,8 +164,14 @@ export class UpdateResources extends React.Component {
                   <th>Code</th>
                   <th>Position</th>
                   <th>Current point</th>
-                  <th className="migration-upgrade" title="Upgrade selected resources">↑</th>
-                  <th className="migration-downgrade" title="Downgrade selected resources">↓</th>
+                  <th className="migration-downgrade" title="Downgrade selected resources">
+                    ↓<br />
+                    <input type="checkbox" onChange={(element) => this.onDowngradeAll(element.target.checked)} />
+                  </th>
+                  <th className="migration-upgrade" title="Upgrade selected resources">
+                    ↑<br />
+                    <input type="checkbox" onChange={(element) => this.onUpgradeAll(element.target.checked)} />
+                  </th>
                 </tr>
                 </thead>
                 {node.migrators.edges.map((migratorEdge) => {
@@ -194,21 +194,21 @@ export class UpdateResources extends React.Component {
                             <td className="migration-resources">{resourceNode.code}</td>
                             <td className="migration-resources">{resourceNode.position}</td>
                             <td className="migration-resources">{resourceNode.currentPoint}</td>
+                            <td className="migration-resources migration-downgrade">
+                              {isMigratable && resourceNode.migrationToSourceExecutor !== null &&
+                              <input
+                                type="checkbox"
+                                checked={this.props.selectedResources.some(item => item.target === direction && item.key === resourceNode.key)}
+                                onChange={(element) => this.onSelectResource(element.target.checked, resourceNode.key, node.code, migratorNode.typeName, resourceNode.code, direction)}
+                                disabled={isProcessing}
+                              />
+                              }
+                            </td>
                             <td className="migration-resources migration-upgrade">
                               {isMigratable && resourceNode.migrationToDestinationExecutor !== null &&
                                 <input
                                   type="checkbox"
-                                  checked={this.state.selectedResources.some(item => item.target === direction && item.key === resourceNode.key)}
-                                  onChange={(element) => this.onSelectResource(element.target.checked, resourceNode.key, node.code, migratorNode.typeName, resourceNode.code, direction)}
-                                  disabled={isProcessing}
-                                />
-                              }
-                            </td>
-                            <td className="migration-resources migration-downgrade">
-                              {isMigratable && resourceNode.migrationToSourceExecutor !== null &&
-                                <input
-                                  type="checkbox"
-                                  checked={this.state.selectedResources.some(item => item.target === direction && item.key === resourceNode.key)}
+                                  checked={this.props.selectedResources.some(item => item.target === direction && item.key === resourceNode.key)}
                                   onChange={(element) => this.onSelectResource(element.target.checked, resourceNode.key, node.code, migratorNode.typeName, resourceNode.code, direction)}
                                   disabled={isProcessing}
                                 />

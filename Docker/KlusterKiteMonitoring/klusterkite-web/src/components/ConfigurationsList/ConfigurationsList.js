@@ -49,7 +49,6 @@ export class ConfigurationsList extends React.Component {
               <th>Created</th>
               <th>Finished</th>
               <th>State</th>
-              <th>Stable?</th>
             </tr>
           </thead>
           <tbody>
@@ -68,7 +67,6 @@ export class ConfigurationsList extends React.Component {
                 <td>{DateFormat.formatDateTime(dateCreated)}</td>
                 <td>{dateFinished && DateFormat.formatDateTime(dateFinished)}</td>
                 <td>{node.state}</td>
-                <td>{node.isStable.toString()}</td>
               </tr>
             )
           })
@@ -108,7 +106,6 @@ export default Relay.createContainer(
               started
               finished
               state
-              isStable
             }
           }
           count
