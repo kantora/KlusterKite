@@ -18,6 +18,7 @@ export default class Paginator extends React.Component {
 
     return (
       <div>
+        {totalPages > 1 &&
         <Pagination
           prev
           next
@@ -28,7 +29,8 @@ export default class Paginator extends React.Component {
           items={totalPages}
           maxButtons={5}
           activePage={this.props.currentPage}
-          onSelect={this.handleSelect.bind(this)} />
+          onSelect={this.handleSelect.bind(this)}/>
+        }
       </div>
     )
   }
