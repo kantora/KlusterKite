@@ -16,7 +16,7 @@ services:
         ipv4_address: 172.18.0.253
     privileged: true
     ports:
-     - "1194:1194"
+     - "${VPN_HOST_PORT:-1194}:1194"
     environment:
      - DEBUG=1
 
@@ -25,12 +25,12 @@ services:
     #image: sunside/simple-nuget-server
     image: klusterkite/nuget
     ports:
-     - "81:80"
+     - "${NUGET_HOST_PORT:-81}:80"
     environment:
      - NUGET_API_KEY=KlusterKite
     networks:
       default:
-        ipv4_address: 172.18.0.2 
+        ipv4_address: 172.18.0.2
 
   configDb:
     image: klusterkite/postgres
@@ -56,7 +56,7 @@ services:
      - "publisher1"
      - "publisher2"
     ports:
-     - "80:80"
+     - "${ENTRY_HOST_PORT:-80}:80"
     networks:
       default:
         ipv4_address: 172.18.0.5
@@ -109,7 +109,7 @@ services:
     depends_on:
       - entry
     ports:
-     - "82:80"
+     - "${MONITORING_UI_HOST_PORT:-82}:80"
     logging:
         driver: json-file
     networks:
@@ -123,7 +123,7 @@ services:
       - xpack.security.enabled=false
       - ES_JAVA_OPTS=-Xms512m -Xmx512m
     ports:
-      - "9200:9200"
+      - "${ELASTICSEARCH_HOST_PORT:-9200}:9200"
     logging:
         driver: json-file
     networks:
@@ -135,7 +135,7 @@ services:
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
     ports:
-      - "5601:5601"
+      - "${KIBANA_HOST_PORT:-5601}:5601"
     depends_on:
       - elasticsearch
     logging:
