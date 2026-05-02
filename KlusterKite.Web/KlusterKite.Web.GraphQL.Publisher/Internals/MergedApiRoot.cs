@@ -149,7 +149,13 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
         private FieldType CreateNodeField(NodeInterface nodeInterface, bool addResolver)
         {
             var nodeFieldType = new FieldType();
-            nodeFieldType.Name = "node";
+            // Per Relay spec, a field named exactly "node" with (id: ID): Node
+            // signature is reserved for the root Query type only. Defining the
+            // same field name on an API sub-root makes Relay's compiler refuse
+            // to transform any fragment that selects it. Use "_node" here so
+            // it is still distinguishable in the schema but doesn't trip
+            // Relay's check.
+            nodeFieldType.Name = "_node";
             nodeFieldType.ResolvedType = nodeInterface;
             nodeFieldType.Description = "The node global searcher according to Relay specification";
             nodeFieldType.Arguments =

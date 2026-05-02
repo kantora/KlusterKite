@@ -224,7 +224,7 @@ export default Relay.createContainer(
               }
             }
           }
-          configuration: node(id: $configurationId) @include( if: $nodeExists ) {
+          configuration: _node(id: $configurationId) @include( if: $nodeExists ) {
             ...on IKlusterKiteNodeApi_Configuration {
               _id
               name

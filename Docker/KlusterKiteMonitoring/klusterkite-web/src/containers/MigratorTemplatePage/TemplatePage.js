@@ -165,7 +165,7 @@ export default Relay.createContainer(
               }
             }
           }
-          configuration:node(id: $configurationId) {
+          configuration: _node(id: $configurationId) {
             ...on IKlusterKiteNodeApi_Configuration {
               _id
               settings   {
@@ -173,7 +173,7 @@ export default Relay.createContainer(
               }
             }
           }
-          template:node(id: $id) @include( if: $nodeExists ) {
+          template: _node(id: $id) @include( if: $nodeExists ) {
             ...on IKlusterKiteNodeApi_MigratorTemplate {
               id
               code
