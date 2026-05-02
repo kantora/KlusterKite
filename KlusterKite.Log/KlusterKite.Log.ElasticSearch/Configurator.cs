@@ -37,7 +37,6 @@ namespace KlusterKite.Log.ElasticSearch
         /// <returns>Updated configuration</returns>
         public LoggerConfiguration Configure(LoggerConfiguration configuration, Config config)
         {
-            SelfLog.Enable(Console.WriteLine);
             var loggerConfiguration = configuration;
             loggerConfiguration = this.ConfigureStandardLog(loggerConfiguration, config);
             loggerConfiguration = this.ConfigureSecurityLog(loggerConfiguration, config);

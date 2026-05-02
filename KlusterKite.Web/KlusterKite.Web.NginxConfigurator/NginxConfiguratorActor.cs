@@ -45,6 +45,9 @@ namespace KlusterKite.Web.NginxConfigurator
         /// <summary>
         /// Initializes a new instance of the <see cref="NginxConfiguratorActor"/> class.
         /// </summary>
+        /// <summary>Sent to self on a schedule to retry pending Web nodes that haven't responded yet.</summary>
+        private sealed class RetryPendingNodes { public static readonly RetryPendingNodes Instance = new RetryPendingNodes(); }
+
         public NginxConfiguratorActor()
         {
             this.configPath = Context.System.Settings.Config.GetString("KlusterKite.Web.Nginx.PathToConfig");
@@ -66,6 +69,18 @@ namespace KlusterKite.Web.NginxConfigurator
                 m => this.OnWebNodeDown(m.Member.Address));
 
             this.Receive<WebDescriptionResponse>(r => this.OnNewNodeDescription(r));
+
+            // Retry any Web nodes that joined but whose WebDescriptorActor hadn't started yet
+            // when we first sent the request. On slow/low-CPU machines the WebDescriptorActor
+            // can take several seconds longer to initialize than the MemberUp gossip takes to
+            // propagate, so the first request dead-letters. Retry every 15 s until answered.
+            this.Receive<RetryPendingNodes>(_ => this.RetryPending());
+            Context.System.Scheduler.ScheduleTellRepeatedly(
+                TimeSpan.FromSeconds(15),
+                TimeSpan.FromSeconds(15),
+                this.Self,
+                RetryPendingNodes.Instance,
+                this.Self);
         }
 
         /// <summary>
@@ -272,6 +287,21 @@ namespace KlusterKite.Web.NginxConfigurator
             this.Configuration.Flush();
             this.NodePublishUrls.Remove(nodeAddress);
             this.WriteConfiguration();
+        }
+
+        /// <summary>
+        /// Re-sends WebDescriptionRequest to any known Web nodes that haven't replied yet.
+        /// </summary>
+        private void RetryPending()
+        {
+            foreach (var address in this.KnownActiveNodes)
+            {
+                if (!this.NodePublishUrls.ContainsKey(address))
+                {
+                    Context.GetLogger().Info("{Type}: retrying WebDescriptionRequest to {Address}", this.GetType().Name, address);
+                    Context.System.GetWebDescriptor(address).Tell(new WebDescriptionRequest(), this.Self);
+                }
+            }
         }
 
         /// <summary>
