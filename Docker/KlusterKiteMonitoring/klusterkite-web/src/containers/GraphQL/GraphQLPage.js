@@ -8,7 +8,7 @@ import './style.css';
 
 export default class GraphQLPage extends React.Component {
   graphQLFetcher(graphQLParams) {
-    const url = process.env.REACT_APP_GRAPHQL_URL || 'http://localhost/api/1.x/graphQL';
+    const url = process.env.REACT_APP_GRAPHQL_URL || '/api/1.x/graphQL';
 
     return fetch(url, {
       method: 'post',
