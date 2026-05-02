@@ -205,6 +205,22 @@ Task("PrepareSources")
     {
         Error($"Error during PrepareSources: {ex.Message}");
     }
+
+    // Write a nuget.config into temp/build/src/ that clears inherited package sources.
+    // Without this, NuGet walks up the directory tree and picks up the repo-root NuGet.Config
+    // which registers localhost:81 — causing restore failures when the Docker NuGet server is down.
+    var tempNugetConfig = System.IO.Path.Combine(sourcesDir, "nuget.config");
+    System.IO.File.WriteAllText(tempNugetConfig,
+        """
+        <?xml version="1.0" encoding="utf-8"?>
+        <configuration>
+          <packageSources>
+            <clear />
+            <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+          </packageSources>
+        </configuration>
+        """);
+    Information("Wrote nuget.config to temp/build/src/ (clears inherited sources)");
 });
 
 // Task: RestoreThirdPartyPackages
@@ -348,13 +364,30 @@ Task("RestoreThirdPartyPackages")
             if (match != null) return match;
         }
 
-        // Not in cache – install it (mirrors FAKE's nuget.exe install branch)
+        // Not in cache – install it via dotnet restore on a temp project
         var minVer = MinVersion(versionSpec);
         Information($"Package {id} {versionSpec} not in cache, installing...");
-        StartProcess(System.IO.Path.Combine(rootDir, "nuget.exe"), new ProcessSettings
+        var tempRestoreDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"cake-nuget-restore-{Guid.NewGuid():N}");
+        System.IO.Directory.CreateDirectory(tempRestoreDir);
+        try
         {
-            Arguments = $"install {id} -Version {minVer} -Prerelease -NonInteractive"
-        });
+            var tempProj = System.IO.Path.Combine(tempRestoreDir, "restore.csproj");
+            System.IO.File.WriteAllText(tempProj,
+                $"""
+                <Project Sdk="Microsoft.NET.Sdk">
+                  <PropertyGroup><TargetFramework>net9.0</TargetFramework></PropertyGroup>
+                  <ItemGroup><PackageReference Include="{id}" Version="{minVer}" /></ItemGroup>
+                </Project>
+                """);
+            StartProcess("dotnet", new ProcessSettings
+            {
+                Arguments = $"restore \"{tempProj}\" --verbosity quiet"
+            });
+        }
+        finally
+        {
+            System.IO.Directory.Delete(tempRestoreDir, recursive: true);
+        }
         ReindexPackage(id);
 
         if (packageGroups.TryGetValue(id, out var lst2))
@@ -517,14 +550,13 @@ Task("Build")
     foreach (var sln in slnFiles)
     {
         Information($"Building solution: {sln.FullPath}");
-        MSBuild(sln.FullPath, settings =>
+        DotNetBuild(sln.FullPath, new DotNetBuildSettings
         {
-            settings.SetVerbosity(Verbosity.Minimal);
-            settings.WithTarget("Restore");
-            settings.WithTarget("Build");
-            settings.WithProperty("Configuration", "Release");
-            settings.WithProperty("Optimize", "True");
-            settings.WithProperty("DebugSymbols", "True");
+            Configuration = "Release",
+            Verbosity = DotNetVerbosity.Minimal,
+            MSBuildSettings = new DotNetMSBuildSettings()
+                .WithProperty("Optimize", "True")
+                .WithProperty("DebugSymbols", "True")
         });
     }
 });
@@ -541,14 +573,13 @@ Task("BuildDebug")
     foreach (var sln in slnFiles)
     {
         Information($"Building solution: {sln.FullPath}");
-        MSBuild(sln.FullPath, settings =>
+        DotNetBuild(sln.FullPath, new DotNetBuildSettings
         {
-            settings.SetVerbosity(Verbosity.Minimal);
-            settings.WithTarget("Restore");
-            settings.WithTarget("Build");
-            settings.WithProperty("Configuration", "Debug");
-            settings.WithProperty("Optimize", "False");
-            settings.WithProperty("DebugSymbols", "True");
+            Configuration = "Debug",
+            Verbosity = DotNetVerbosity.Minimal,
+            MSBuildSettings = new DotNetMSBuildSettings()
+                .WithProperty("Optimize", "False")
+                .WithProperty("DebugSymbols", "True")
         });
     }
 });
@@ -926,16 +957,15 @@ Task("DockerContainers")
 
         CleanDirectory(project.OutputPath);
 
-        MSBuild(project.ProjectPath, settings =>
+        DotNetPublish(project.ProjectPath, new DotNetPublishSettings
         {
-            settings.SetVerbosity(Verbosity.Minimal);
-            settings.WithTarget("Restore");
-            settings.WithTarget("Publish");
-            settings.WithProperty("Optimize", "True");
-            settings.WithProperty("DebugSymbols", "True");
-            settings.WithProperty("Configuration", "Release");
-            settings.WithProperty("TargetFramework", "net9.0");
-            settings.WithProperty("OutputPath", project.OutputPath);
+            Configuration = "Release",
+            OutputDirectory = project.OutputPath,
+            Verbosity = DotNetVerbosity.Minimal,
+            MSBuildSettings = new DotNetMSBuildSettings()
+                .WithProperty("Optimize", "True")
+                .WithProperty("DebugSymbols", "True")
+                .WithProperty("TargetFramework", "net9.0")
         });
     }
 
