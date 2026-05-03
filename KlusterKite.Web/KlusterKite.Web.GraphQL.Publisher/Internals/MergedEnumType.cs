@@ -10,11 +10,15 @@
 namespace KlusterKite.Web.GraphQL.Publisher.Internals
 {
     using System.Collections.Generic;
+    using System.Threading.Tasks;
 
+    using global::GraphQL;
     using global::GraphQL.Types;
 
     using KlusterKite.API.Client;
     using KlusterKite.Web.GraphQL.Publisher.GraphTypes;
+
+    using Newtonsoft.Json.Linq;
 
     /// <summary>
     /// The merged type representing some enum value
@@ -71,6 +75,24 @@ namespace KlusterKite.Web.GraphQL.Publisher.Internals
             }
 
             return this.ComplexTypeName;
+        }
+
+        /// <inheritdoc />
+        public override async ValueTask<object> ResolveAsync(IResolveFieldContext context)
+        {
+            // Provider serializes null enum properties as JValue.CreateNull
+            // (a non-null JToken whose .Value is null). Returning that JToken
+            // to GraphQL.NET's EnumerationGraphType.Serialize lets it stringify
+            // as "" and then fail "Error trying to resolve field '<name>'."
+            // INVALID_OPERATION. Unwrap to a real null so the framework treats
+            // the field as nullable-with-no-value and emits null.
+            var result = await base.ResolveAsync(context);
+            if (result is JValue jv && jv.Value == null)
+            {
+                return null;
+            }
+
+            return result;
         }
 
         /// <inheritdoc />
