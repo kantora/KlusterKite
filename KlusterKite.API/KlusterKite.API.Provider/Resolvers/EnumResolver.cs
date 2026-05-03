@@ -71,6 +71,18 @@ namespace KlusterKite.API.Provider.Resolvers
         /// <inheritdoc />
         public Task<JToken> ResolveQuery(object source, ApiRequest request, ApiField apiField, RequestContext context, JsonSerializer argumentsSerializer, Action<Exception> onErrorCallback)
         {
+            // A nullable enum (e.g. EnMigrationSteps?) can legitimately be
+            // null when no migration is in progress. Without this guard
+            // source.ToString() throws NullReferenceException, which the
+            // GraphQL pipeline then surfaces as
+            //   "Error trying to resolve field '<name>'. INVALID_OPERATION".
+            // Return raw null (not JValue.CreateNull); GraphQL.NET 7.x's
+            // EnumerationGraphType coercion rejects a wrapped JValue-null.
+            if (source == null)
+            {
+                return Task.FromResult<JToken>(null);
+            }
+
             var value = hasFlags ? new JValue((long)source) : new JValue(source.ToString());
             return Task.FromResult<JToken>(value);
         }
