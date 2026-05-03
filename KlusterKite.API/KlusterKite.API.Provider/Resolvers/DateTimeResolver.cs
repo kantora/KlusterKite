@@ -29,13 +29,19 @@ namespace KlusterKite.API.Provider.Resolvers
         /// <inheritdoc />
         public Task<JToken> ResolveQuery(object source, ApiRequest request, ApiField apiField, RequestContext context, JsonSerializer argumentsSerializer, Action<Exception> onErrorCallback)
         {
-            if (source is DateTime)
+            // EnScalarType.DateTime maps both DateTime and DateTimeOffset, so
+            // handle both: new JValue(object) doesn't recognize DateTimeOffset
+            // as a date and renders it as the underlying string/0, which the
+            // monitoring UI then parses as Unix epoch.
+            switch (source)
             {
-                var dateTime = (DateTime)source;
-                return Task.FromResult<JToken>(new JValue(dateTime.ToUniversalTime()));
+                case DateTime dt:
+                    return Task.FromResult<JToken>(new JValue(dt.ToUniversalTime()));
+                case DateTimeOffset dto:
+                    return Task.FromResult<JToken>(new JValue(dto.ToUniversalTime()));
+                default:
+                    return Task.FromResult<JToken>(new JValue(source));
             }
-
-            return Task.FromResult<JToken>(new JValue(source));
         }
 
         /// <inheritdoc />
