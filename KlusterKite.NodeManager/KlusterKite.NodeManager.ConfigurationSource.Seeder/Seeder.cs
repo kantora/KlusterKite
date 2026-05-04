@@ -26,6 +26,7 @@ namespace KlusterKite.NodeManager.ConfigurationSource.Seeder
     using KlusterKite.NodeManager.Client.ORM;
     using KlusterKite.NodeManager.Launcher.Messages;
     using KlusterKite.NodeManager.Launcher.Utils;
+    using KlusterKite.NodeManager.Launcher.Utils.Exceptions;
     using KlusterKite.NodeManager.Migrator;
     using KlusterKite.Security.Attributes;
 
@@ -118,9 +119,29 @@ namespace KlusterKite.NodeManager.ConfigurationSource.Seeder
                 resolvedConfiguration.SetPackagesDescriptionsForTemplates(this.packageRepository, supportedFrameworks)
                     .GetAwaiter().GetResult();
 
-            foreach (var errorDescription in resolutionErrors)
+            if (resolutionErrors.Any())
             {
-                Console.WriteLine($@"package resolution error in {errorDescription.Field} - {errorDescription.Message}");
+                // Hard blocker. If any required package (or a transitive dep)
+                // is missing from the local NuGet feed at this point, every
+                // downstream artifact we'd produce — Initial config in the
+                // DB and the fallback JSON files — would be quietly corrupt
+                // and split-brain the cluster (some node templates resolve
+                // version A from cache, others version B from a later
+                // re-resolve).
+                //
+                // Fail fast and exit non-zero. The seeder.launcher's retry
+                // loop will sleep NugetCheckPeriod and try again, by which
+                // time the package push may have completed.
+                foreach (var errorDescription in resolutionErrors)
+                {
+                    Console.WriteLine(
+                        $@"package resolution error in {errorDescription.Field} - {errorDescription.Message}");
+                }
+
+                throw new PackageNotFoundException(
+                    $"Cannot seed: {resolutionErrors.Count} package resolution error(s) "
+                    + "against the local NuGet feed. Most likely the package push has not "
+                    + "finished yet on a cold start. Aborting so seeder.launcher can retry.");
             }
 
             // Always write fallback configs so nodes can bootstrap even on fresh volumes
@@ -152,6 +173,13 @@ namespace KlusterKite.NodeManager.ConfigurationSource.Seeder
                     if (databaseCreator.Exists())
                     {
                         Console.WriteLine(@"KlusterKite configuration database is already existing");
+                        // Don't touch user-edited Configurations rows, but the
+                        // Active configuration's PackagesToInstall MUST stay
+                        // consistent with the current NuGet feed: otherwise a
+                        // node restart can pull versions that the cluster
+                        // assemblies (compiled against a newer set) refuse to
+                        // load. Re-resolve and persist if anything drifted.
+                        this.RefreshActiveConfigurationPackages(context, supportedFrameworks);
                         return;
                     }
 
@@ -164,6 +192,63 @@ namespace KlusterKite.NodeManager.ConfigurationSource.Seeder
             }
 
             Console.WriteLine(@"KlusterKite configuration database created");
+        }
+
+        /// <summary>
+        /// Re-resolves package versions for the Active configuration in an
+        /// existing database and persists the result if it differs.
+        /// </summary>
+        /// <remarks>
+        /// On a fresh seed we always resolve PackageRequirements against the
+        /// current NuGet feed. On a re-seed (DB already exists) we previously
+        /// short-circuited, leaving PackagesToInstall frozen at whatever
+        /// versions were on NuGet the day the DB was created. Once we publish
+        /// rebuilt cluster assemblies that reference newer transitive deps,
+        /// nodes that download per the stale Active config end up with a
+        /// version mismatch and crash on startup with FileNotFoundException
+        /// for the assembly version the new code requires.
+        /// </remarks>
+        /// <param name="context">An open ConfigurationContext on the existing DB</param>
+        /// <param name="supportedFrameworks">Frameworks for which to resolve PackagesToInstall</param>
+        private void RefreshActiveConfigurationPackages(ConfigurationContext context, List<string> supportedFrameworks)
+        {
+            var active = context.Configurations
+                .FirstOrDefault(c => c.State == EnConfigurationState.Active);
+            if (active == null)
+            {
+                Console.WriteLine("No Active configuration found - nothing to refresh.");
+                return;
+            }
+
+            // Re-resolve the flat package list from NuGet so Packages reflects
+            // current nuget contents (latest available version per id), then
+            // recompute PackagesToInstall transitive closures.
+            active.Settings.Packages = this.GetPackageDescriptions().GetAwaiter().GetResult();
+
+            var refreshErrors = active
+                .SetPackagesDescriptionsForTemplates(this.packageRepository, supportedFrameworks)
+                .GetAwaiter().GetResult();
+
+            if (refreshErrors.Any())
+            {
+                foreach (var err in refreshErrors)
+                {
+                    Console.WriteLine(
+                        $@"Active config refresh: package resolution error in {err.Field} - {err.Message}");
+                }
+
+                throw new PackageNotFoundException(
+                    $"Cannot refresh Active configuration: {refreshErrors.Count} package "
+                    + "resolution error(s). Aborting so seeder.launcher can retry once the "
+                    + "NuGet feed is fully populated.");
+            }
+
+            // Settings is serialized into the SettingsJson column. EF
+            // tracks the string, not the in-memory object, so we have to
+            // tell it the column is dirty after we mutate Settings.
+            context.Entry(active).Property(c => c.SettingsJson).IsModified = true;
+            context.SaveChanges();
+            Console.WriteLine($"Refreshed Active configuration #{active.Id} ('{active.Name}') against current NuGet feed.");
         }
 
         /// <summary>
