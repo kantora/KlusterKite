@@ -195,60 +195,77 @@ namespace KlusterKite.NodeManager.ConfigurationSource.Seeder
         }
 
         /// <summary>
-        /// Re-resolves package versions for the Active configuration in an
-        /// existing database and persists the result if it differs.
+        /// Re-resolves package versions for every non-terminal configuration
+        /// in an existing database (Active and Ready) and persists the result
+        /// if it differs.
         /// </summary>
         /// <remarks>
         /// On a fresh seed we always resolve PackageRequirements against the
         /// current NuGet feed. On a re-seed (DB already exists) we previously
         /// short-circuited, leaving PackagesToInstall frozen at whatever
-        /// versions were on NuGet the day the DB was created. Once we publish
-        /// rebuilt cluster assemblies that reference newer transitive deps,
-        /// nodes that download per the stale Active config end up with a
-        /// version mismatch and crash on startup with FileNotFoundException
-        /// for the assembly version the new code requires.
+        /// versions were on NuGet the day the DB was created — and at
+        /// whatever SupportedFrameworks the manager hocon listed at that
+        /// time. Once we publish rebuilt cluster assemblies that reference
+        /// newer transitive deps or change the framework list, nodes that
+        /// download per a stale config end up with a version mismatch and
+        /// crash on startup with FileNotFoundException, or the MigrationActor
+        /// rejects the configuration with "Framework X is not supported"
+        /// because the relevant framework key is absent from PackagesToInstall.
+        ///
+        /// Refreshing Active is mandatory; refreshing Ready avoids a
+        /// follow-on hang when the user picks up a Ready candidate that was
+        /// validated against the old framework list. Drafts stay untouched
+        /// (they're user-editable and re-resolve via the UI's Check button);
+        /// Obsolete/Archived/Faulted configurations stay frozen.
         /// </remarks>
         /// <param name="context">An open ConfigurationContext on the existing DB</param>
         /// <param name="supportedFrameworks">Frameworks for which to resolve PackagesToInstall</param>
         private void RefreshActiveConfigurationPackages(ConfigurationContext context, List<string> supportedFrameworks)
         {
-            var active = context.Configurations
-                .FirstOrDefault(c => c.State == EnConfigurationState.Active);
-            if (active == null)
+            var configurations = context.Configurations
+                .Where(c => c.State == EnConfigurationState.Active
+                            || c.State == EnConfigurationState.Ready)
+                .ToList();
+            if (!configurations.Any())
             {
-                Console.WriteLine("No Active configuration found - nothing to refresh.");
+                Console.WriteLine("No Active/Ready configurations found - nothing to refresh.");
                 return;
             }
 
-            // Re-resolve the flat package list from NuGet so Packages reflects
-            // current nuget contents (latest available version per id), then
-            // recompute PackagesToInstall transitive closures.
-            active.Settings.Packages = this.GetPackageDescriptions().GetAwaiter().GetResult();
-
-            var refreshErrors = active
-                .SetPackagesDescriptionsForTemplates(this.packageRepository, supportedFrameworks)
-                .GetAwaiter().GetResult();
-
-            if (refreshErrors.Any())
+            foreach (var configuration in configurations)
             {
-                foreach (var err in refreshErrors)
+                // Re-resolve the flat package list from NuGet so Packages reflects
+                // current nuget contents (latest available version per id), then
+                // recompute PackagesToInstall transitive closures.
+                configuration.Settings.Packages = this.GetPackageDescriptions().GetAwaiter().GetResult();
+
+                var refreshErrors = configuration
+                    .SetPackagesDescriptionsForTemplates(this.packageRepository, supportedFrameworks)
+                    .GetAwaiter().GetResult();
+
+                if (refreshErrors.Any())
                 {
-                    Console.WriteLine(
-                        $@"Active config refresh: package resolution error in {err.Field} - {err.Message}");
+                    foreach (var err in refreshErrors)
+                    {
+                        Console.WriteLine(
+                            $@"Configuration #{configuration.Id} ('{configuration.Name}', {configuration.State}) refresh: package resolution error in {err.Field} - {err.Message}");
+                    }
+
+                    throw new PackageNotFoundException(
+                        $"Cannot refresh configuration #{configuration.Id} ('{configuration.Name}'): "
+                        + $"{refreshErrors.Count} package resolution error(s). Aborting so "
+                        + "seeder.launcher can retry once the NuGet feed is fully populated.");
                 }
 
-                throw new PackageNotFoundException(
-                    $"Cannot refresh Active configuration: {refreshErrors.Count} package "
-                    + "resolution error(s). Aborting so seeder.launcher can retry once the "
-                    + "NuGet feed is fully populated.");
+                // Settings is serialized into the SettingsJson column. EF
+                // tracks the string, not the in-memory object, so we have to
+                // tell it the column is dirty after we mutate Settings.
+                context.Entry(configuration).Property(c => c.SettingsJson).IsModified = true;
+                Console.WriteLine(
+                    $"Refreshed configuration #{configuration.Id} ('{configuration.Name}', {configuration.State}) against current NuGet feed.");
             }
 
-            // Settings is serialized into the SettingsJson column. EF
-            // tracks the string, not the in-memory object, so we have to
-            // tell it the column is dirty after we mutate Settings.
-            context.Entry(active).Property(c => c.SettingsJson).IsModified = true;
             context.SaveChanges();
-            Console.WriteLine($"Refreshed Active configuration #{active.Id} ('{active.Name}') against current NuGet feed.");
         }
 
         /// <summary>
