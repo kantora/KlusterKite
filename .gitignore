@@ -224,3 +224,8 @@ packagesOut
 build.fsx.lock
 tools/
 Prompts.txt
+
+# Local docker-compose overrides (per-developer port maps, etc.)
+docker-compose.override.yml
+docker-compose.override.yaml
+Docker/KlusterKite/.env
