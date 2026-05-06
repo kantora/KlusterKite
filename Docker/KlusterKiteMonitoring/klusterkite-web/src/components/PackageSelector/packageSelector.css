@@ -12,6 +12,12 @@
     margin-right: 10px;
 }
 
+.package-selector .alert {
+    margin-bottom: -5px;
+    margin-top: -7px;
+    color: #d0ae08;
+}
+
 .package-selector {
     margin-bottom: 10px;
 }

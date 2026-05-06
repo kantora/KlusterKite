@@ -19,3 +19,25 @@
   /* buggy: margin-top: calc(50% - 200px); */
   margin-top: 300px;
 }
+
+.multiline-editor .remove {
+  margin-top: 7px;
+  color: #900000;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+.multiline-editor .add {
+  margin-top: 7px;
+  color: #009000;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+.multiline-editor-row {
+  margin-bottom: 10px;
+}
+
+.multiline-editor-outer {
+  margin-bottom: 4px;
+}
