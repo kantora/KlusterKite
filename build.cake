@@ -524,7 +524,7 @@ Task("PushThirdPartyPackages")
 
         var result = StartProcess("dotnet", new ProcessSettings
         {
-            Arguments = $"nuget push {file.FullPath} --source {nugetServerUrl} --api-key {apiKey} --skip-duplicate",
+            Arguments = $"nuget push {file.FullPath} --source {nugetServerUrl} --api-key {apiKey} --skip-duplicate --allow-insecure-connections",
             RedirectStandardOutput = true,
             RedirectStandardError = true
         });
@@ -739,7 +739,7 @@ Task("PushLocalPackages")
         IEnumerable<string> stdout, stderr;
         var result = StartProcess("dotnet", new ProcessSettings
         {
-            Arguments = $"nuget push {file.FullPath} --source {nugetServerUrl} --api-key {apiKey} --skip-duplicate",
+            Arguments = $"nuget push {file.FullPath} --source {nugetServerUrl} --api-key {apiKey} --skip-duplicate --allow-insecure-connections",
             RedirectStandardOutput = true,
             RedirectStandardError = true
         }, out stdout, out stderr);
@@ -789,7 +789,7 @@ Task("RePushLocalPackages")
 
         var result = StartProcess("dotnet", new ProcessSettings
         {
-            Arguments = $"nuget push {file.FullPath} --source {nugetServerUrl} --api-key {apiKey} --skip-duplicate",
+            Arguments = $"nuget push {file.FullPath} --source {nugetServerUrl} --api-key {apiKey} --skip-duplicate --allow-insecure-connections",
             RedirectStandardOutput = true,
             RedirectStandardError = true
         });
@@ -840,7 +840,7 @@ Task("RePushThirdPartyPackages")
 
         var result = StartProcess("dotnet", new ProcessSettings
         {
-            Arguments = $"nuget push {file.FullPath} --source {nugetServerUrl} --api-key {apiKey} --skip-duplicate",
+            Arguments = $"nuget push {file.FullPath} --source {nugetServerUrl} --api-key {apiKey} --skip-duplicate --allow-insecure-connections",
             RedirectStandardOutput = true,
             RedirectStandardError = true
         });
