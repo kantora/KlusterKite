@@ -165,7 +165,7 @@ export default Relay.createContainer(
       api: () => Relay.QL`
         fragment on IKlusterKiteNodeApi {
           id
-          role: node(id: $id) @include( if: $nodeExists ) {
+          role: _node(id: $id) @include( if: $nodeExists ) {
             ...on IKlusterKiteNodeApi_Role {
               id
               uid

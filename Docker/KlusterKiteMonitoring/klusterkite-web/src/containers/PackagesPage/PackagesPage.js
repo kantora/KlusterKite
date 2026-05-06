@@ -120,7 +120,7 @@ export default Relay.createContainer(
               }
             }
           }
-          configuration:node(id: $configurationId) {
+          configuration: _node(id: $configurationId) {
             ...on IKlusterKiteNodeApi_Configuration {
               _id
               settings {

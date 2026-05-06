@@ -123,7 +123,7 @@ export default Relay.createContainer(
               }
             }
           }
-          configuration:node(id: $configurationId) {
+          configuration: _node(id: $configurationId) {
             ...on IKlusterKiteNodeApi_Configuration {
               _id
               settings {
@@ -132,7 +132,7 @@ export default Relay.createContainer(
               }
             }
           }
-          package:node(id: $id) @include( if: $nodeExists ) {
+          package: _node(id: $id) @include( if: $nodeExists ) {
             ...on IKlusterKiteNodeApi_PackageDescription {
               id
               version

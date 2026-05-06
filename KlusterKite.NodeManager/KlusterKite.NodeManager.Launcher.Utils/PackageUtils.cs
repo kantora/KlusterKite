@@ -228,44 +228,54 @@ namespace KlusterKite.NodeManager.Launcher.Utils
         /// </returns>
         public static async Task<IPackageSearchMetadata> Search(string nugetUrl, string id, NuGetVersion version)
         {
-            var source = new PackageSource(nugetUrl) { AllowInsecureConnections = true };
-            var sourceRepository = Repository.Factory.GetCoreV3(source);
-            var resource = await sourceRepository.GetResourceAsync<PackageSearchResource>().ConfigureAwait(false);
-            var result = new List<IPackageSearchMetadata>();
-
-            const int PageSize = 1000;
-            var position = 0;
-            while (true)
-            {
-                var searchMetadata = (await resource.SearchAsync(
-                                         id,
-                                         new SearchFilter(true, null),
-                                         position,
-                                         PageSize,
-                                         NullLogger.Instance,
-                                         CancellationToken.None)).ToList();
-                var previousCount = result.Count;
-                result.AddRange(searchMetadata);
-                position += PageSize;
-                if (searchMetadata.Any(s => s.Identity.Id == id))
-                {
-                    break;
-                }
-
-                if (result.Count - previousCount < PageSize)
-                {
-                    break;
-                }
-            }
-
-            var package = result.FirstOrDefault(s => s.Identity.Id == id);
-            if (package == null)
+            // Same V2-direct path as GetByIdAsync, but filter by exact version
+            // instead of picking the latest. The NuGet client's
+            // PackageSearchResource is unreliable against the local
+            // simple-nuget-server (its V2 service-index probe fails with
+            // "Unable to load the service index for source ...").
+            var baseUrl = nugetUrl.TrimEnd('/');
+            var url = $"{baseUrl}/FindPackagesById()?id='{Uri.EscapeDataString(id)}'";
+            var response = await HttpClient.GetAsync(url).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
             {
                 return null;
             }
 
-            var versions = (await package.GetVersionsAsync()).ToList();
-            return versions.FirstOrDefault(v => v.Version == version)?.PackageSearchMetadata;
+            var xml = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            var doc = XDocument.Parse(xml);
+            XNamespace d = "http://schemas.microsoft.com/ado/2007/08/dataservices";
+            XNamespace m = "http://schemas.microsoft.com/ado/2007/08/dataservices/metadata";
+            XNamespace atom = "http://www.w3.org/2005/Atom";
+
+            var entry = doc.Descendants(atom + "entry")
+                .Select(e => new
+                {
+                    e,
+                    v = NuGetVersion.TryParse(
+                            e.Element(m + "properties")?.Element(d + "NormalizedVersion")?.Value
+                            ?? e.Element(m + "properties")?.Element(d + "Version")?.Value
+                            ?? string.Empty,
+                            out var ver)
+                        ? ver
+                        : null
+                })
+                .FirstOrDefault(x => x.v != null && x.v == version)?.e;
+            if (entry == null)
+            {
+                return null;
+            }
+
+            var props = entry.Element(m + "properties");
+            if (props == null)
+            {
+                return null;
+            }
+
+            var packageId = props.Element(d + "Id")?.Value ?? entry.Element(atom + "title")?.Value ?? id;
+            var dependencyStr = props.Element(d + "Dependencies")?.Value ?? string.Empty;
+            var dependencySets = ParseV2DependencyString(dependencyStr);
+
+            return new V2DirectMetadata(new PackageIdentity(packageId, version), dependencySets);
         }
 
         /// <summary>

@@ -108,7 +108,7 @@ export default Relay.createContainer(
         fragment on IKlusterKiteNodeApi {
           __typename
           id
-          configuration:node(id: $configurationId) {
+          configuration: _node(id: $configurationId) {
             ...on IKlusterKiteNodeApi_Configuration {
               _id
               settings {
