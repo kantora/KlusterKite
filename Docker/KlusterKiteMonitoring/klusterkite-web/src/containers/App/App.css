@@ -10,10 +10,10 @@
 
     background: url('./images/logo.png') #F8F7F7 no-repeat center center;
     display: inline-block;
-    width: 40px;
+    width: 25px;
     height: 40px;
     background-size: 80%;
-    margin: 0 0 0 -45px;
+    margin: 0 0 0 -33px;
     border-radius: 20px;
 }
 
