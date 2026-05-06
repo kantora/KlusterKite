@@ -15,7 +15,11 @@
       work correctly both with client-side routing and a non-root public URL.
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/latest/css/bootstrap.min.css">
+    <!-- react-bootstrap 0.30 targets Bootstrap 3. The maxcdn "latest" alias
+         now serves Bootstrap 4, which doesn't recognize the 3-era class names
+         react-bootstrap emits (e.g. .navbar-fixed-top), so the navbar
+         disappears. Pin the last 3.x release. -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
     <meta name="mobile-web-app-capable" content="yes">
     <title>ClusterKit</title>
   </head>
