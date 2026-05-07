@@ -29,7 +29,7 @@ export default class ActorsTreeButtons extends React.Component {
                 <i className={reloadClassName}/> {' '} Scan
               </button>
               <p className="text-margined">Scan generates additional load to all cluster node. Do this only in emergency situations or in
-                development infrastructure</p>
+                development infrastructure.</p>
             </div>
           </div>
         </div>
@@ -44,8 +44,8 @@ export default class ActorsTreeButtons extends React.Component {
               >
                 <i className={reloadClassName}/> {' '} Reload tree
               </button>
-              <p className="text-margined">Scan can take some time and can be unfinished in time of tree load. Try to reload tree before
-                initiating new scan</p>
+              <p className="text-margined">
+                Try to reload tree before initiating a new scan, because scan can take some time and can be unfinished in time of tree load.</p>
             </div>
           </div>
         </div>

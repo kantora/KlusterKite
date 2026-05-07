@@ -39,8 +39,6 @@ export class UpdateNodes extends React.Component {
         processSuccessful: false,
       });
 
-      console.log('updating nodes');
-
       Relay.Store.commitUpdate(
         new UpdateNodesMutation({
           target: target,

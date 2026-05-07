@@ -62,11 +62,13 @@ export default class App extends React.Component {
                 <NavItem>Migration</NavItem>
               </LinkContainer>
               }
+              {hasPrivilege('KlusterKite.NodeManager.ClusterUpdate') &&
               <NavDropdown title="…" id="tools-dropdown">
                 <LinkContainer to={`/klusterkite/ValidateState/?from=${encodeURIComponent(browserHistory.getCurrentLocation().pathname)}`}>
                   <NavItem>Validate State</NavItem>
                 </LinkContainer>
               </NavDropdown>
+              }
             </Nav>
             {username &&
               <Nav pullRight>

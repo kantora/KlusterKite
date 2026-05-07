@@ -187,6 +187,7 @@ class ConfigurationPage extends React.Component {
           <FeedsList
             settings={model.settings}
             configurationId={this.props.params.id}
+            configurationInnerId={model._id}
             canEdit={canEdit}
           />
           <NodeTemplatesList

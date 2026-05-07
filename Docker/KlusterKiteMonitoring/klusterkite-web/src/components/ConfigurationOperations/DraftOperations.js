@@ -79,8 +79,6 @@ export class DraftOperations extends React.Component {
 
   onSetReady = () => {
     if (!this.state.isSettingReady){
-      console.log('set ready');
-
       this.setState({
         isSettingReady: true,
         setReadySuccessful: false,
@@ -94,7 +92,6 @@ export class DraftOperations extends React.Component {
           }),
         {
           onSuccess: (response) => {
-            console.log('response', response);
             if (response.klusterKiteNodeApi_klusterKiteNodesApi_configurations_setReady.errors &&
               response.klusterKiteNodeApi_klusterKiteNodesApi_configurations_setReady.errors.edges) {
               const messages = this.getErrorMessagesFromEdge(response.klusterKiteNodeApi_klusterKiteNodesApi_configurations_setReady.errors.edges);
@@ -105,7 +102,7 @@ export class DraftOperations extends React.Component {
                 isChangingState: false
               });
             } else {
-              console.log('result set ready', response.klusterKiteNodeApi_klusterKiteNodesApi_configurations_setReady);
+              // console.log('result set ready', response.klusterKiteNodeApi_klusterKiteNodesApi_configurations_setReady);
               // total success
               this.setState({
                 isSettingReady: false,
