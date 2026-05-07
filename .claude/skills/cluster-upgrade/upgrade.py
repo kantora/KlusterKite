@@ -322,6 +322,77 @@ def migration_resource_update(api, token, resources):
     }}""")
 
 
+def upgrade_node(api, token, address):
+    """Manually request a node to restart and reload its configuration.
+
+    Equivalent to the per-node Reset button on the home page. Required for
+    NodeTemplates whose minimumRequiredInstances == maximumNeededInstances
+    (or any pin that prevents the migration's automatic node turnover):
+    the cluster won't take such a node down on its own — it can't preserve
+    capacity while the replacement comes up. So those nodes stay
+    isObsolete=true after migrationNodesUpdate completes, and
+    canFinishMigration won't go true until they're cycled. Send
+    upgradeNode(address) to each obsolete node and wait for it to drop
+    out of getActiveNodeDescriptions and rejoin under the new config.
+    """
+    gql(api, token, f"""mutation {{
+      klusterKiteNodeApi_klusterKiteNodesApi_upgradeNode(input:{{
+        address:{json.dumps(address)}, clientMutationId:"upgrade"
+      }}) {{ result {{ result }} }}
+    }}""")
+
+
+def get_active_nodes(api, token):
+    body = gql(api, token, """{
+      api { klusterKiteNodesApi { getActiveNodeDescriptions { edges { node {
+        nodeId nodeTemplate isObsolete isInitialized
+        nodeAddress { asString }
+      }}}}}
+    }""")
+    return [
+        e["node"]
+        for e in body["data"]["api"]["klusterKiteNodesApi"]["getActiveNodeDescriptions"]["edges"]
+    ]
+
+
+def cycle_obsolete_stragglers(api, token, *, timeout, interval=10):
+    """Find every obsolete node and ask it to restart. Wait for them all
+    to drop their obsolete flag (or be replaced by a new instance under
+    the same template). Returns the count of nodes cycled."""
+    obsolete = [n for n in get_active_nodes(api, token) if n.get("isObsolete")]
+    if not obsolete:
+        return 0
+    print(f"  found {len(obsolete)} obsolete node(s) the migration won't auto-cycle "
+          "(min-instance pin); sending manual restart:", flush=True)
+    addresses_seen = set()
+    for n in obsolete:
+        addr = n["nodeAddress"]["asString"]
+        tpl = n.get("nodeTemplate") or "?"
+        print(f"    upgradeNode({addr})  [template={tpl}]", flush=True)
+        upgrade_node(api, token, addr)
+        addresses_seen.add(addr)
+
+    start = time.time()
+    while True:
+        nodes = get_active_nodes(api, token)
+        # The address the launcher reports back changes when the node
+        # rejoins (new ephemeral port). So "settled" means: every address
+        # we just kicked is gone AND no obsolete nodes remain.
+        still_obsolete = [n for n in nodes if n.get("isObsolete")]
+        still_old_addrs = [n for n in nodes if n["nodeAddress"]["asString"] in addresses_seen]
+        if not still_obsolete and not still_old_addrs:
+            elapsed = int(time.time() - start)
+            print(f"  obsolete stragglers cycled in {elapsed}s", flush=True)
+            return len(addresses_seen)
+        if time.time() - start > timeout:
+            raise SystemExit(
+                f"timeout {timeout}s waiting for {len(addresses_seen)} restarted node(s) "
+                f"to rejoin (still obsolete: {len(still_obsolete)}, "
+                f"still on old address: {len(still_old_addrs)})"
+            )
+        time.sleep(interval)
+
+
 def get_migration_state(api, token):
     body = gql(api, token, """{
       api { klusterKiteNodesApi { clusterManagement {
@@ -514,6 +585,15 @@ def main():
                        lambda s: ((s.get("resourceState") or {}).get("currentMigrationStep") != "NodesUpdating"
                                    and not (s.get("resourceState") or {}).get("operationIsInProgress")),
                        timeout=args.timeout, interval=10, label="nodes update to settle")
+            # Templates pinned to a fixed instance count (minimumRequiredInstances ==
+            # maximumNeededInstances) are not cycled automatically because the
+            # cluster won't drop below the minimum. Cycle them by hand.
+            cycle_obsolete_stragglers(api, token, timeout=args.timeout)
+            continue
+
+        # Even outside of NodesUpdating, an obsolete node might appear if a
+        # template was edited mid-migration. Sweep before deciding to Finish.
+        if cycle_obsolete_stragglers(api, token, timeout=args.timeout):
             continue
 
         if rs.get("canFinishMigration"):
@@ -521,7 +601,13 @@ def main():
                 print("canFinishMigration=true; --no-finish set, exiting (manual finish required)")
                 return 0
             migration_finish(api, token)
-            print("migration finished", flush=True)
+            print("migrationFinish issued; waiting for the cluster to clear the migration record…", flush=True)
+            wait_until(api, token,
+                       lambda s: s.get("currentMigration") is None,
+                       timeout=args.timeout, interval=5, label="currentMigration to clear")
+            # Final post-finish sweep: a node template may still have an
+            # obsolete instance the cluster won't auto-cycle.
+            cycle_obsolete_stragglers(api, token, timeout=args.timeout)
             break
 
         if state.get("currentMigration") is None:

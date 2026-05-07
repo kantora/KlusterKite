@@ -77,8 +77,65 @@ If you need to drive part of the flow by hand, the mutation surface is:
 | Start migration | `klusterKiteNodeApi_klusterKiteNodesApi_clusterManagement_migrationCreate(input:{newConfigurationId})` |
 | Migrate resources | `..._clusterManagement_migrationResourceUpdate(input:{request:{resources:[{templateCode,migratorTypeName,resourceCode,target}]}})` (`target ∈ {Source,Destination}`) |
 | Migrate nodes | `..._clusterManagement_migrationNodesUpdate(input:{target:Destination})` |
+| **Restart a single node** | `klusterKiteNodeApi_klusterKiteNodesApi_upgradeNode(input:{address:"akka.tcp://KlusterKite@host:port"})` |
+| List active nodes | `query { api { klusterKiteNodesApi { getActiveNodeDescriptions { edges { node { nodeId nodeTemplate isObsolete nodeAddress { asString } } } } } } }` |
 | Finish | `..._clusterManagement_migrationFinish(input:{})` |
 | Cancel | `..._clusterManagement_migrationCancel(input:{})` |
+
+### d. Min-instance stragglers (must restart manually)
+
+The cluster's automatic node-update step will only cycle a NodeTemplate if it can preserve the configured minimum capacity while doing so. A template with `minimumRequiredInstances == maximumNeededInstances` (or any pin where the only running instance is also the minimum) is **never** auto-cycled — taking it down would drop the cluster below the floor. After `migrationNodesUpdate(Destination)` finishes, those nodes still report `isObsolete: true` in `getActiveNodeDescriptions`, and `canFinishMigration` stays `false` indefinitely.
+
+`upgrade.py` handles this automatically: after each `migrationNodesUpdate` settles, it scans for `isObsolete` nodes and calls `upgradeNode(address)` on each (the API behind the per-node Reset button on the home page), then waits for them to drop their old address from `getActiveNodeDescriptions` before checking `canFinishMigration`. The post-Finish sweep does it again, in case a template was edited mid-migration.
+
+If you're driving the flow by hand, after the nodes-update step:
+
+```graphql
+# 1. Find the obsolete nodes
+query {
+  api { klusterKiteNodesApi { getActiveNodeDescriptions {
+    edges { node { nodeId nodeTemplate isObsolete nodeAddress { asString } } }
+  } } }
+}
+
+# 2. For each isObsolete:true node, restart it:
+mutation {
+  klusterKiteNodeApi_klusterKiteNodesApi_upgradeNode(input:{
+    address:"akka.tcp://KlusterKite@publisher1:39173"
+  }) { result { result } }
+}
+
+# 3. Poll getActiveNodeDescriptions until isObsolete is false on every node
+#    (the address changes when the launcher rejoins under the new config).
+```
+
+### e. Wait for success — and prove it
+
+Don't return "upgrade done" the moment `migrationFinish` is called. The cluster is asynchronous and the manager takes a moment to clear `currentMigration` and flip the new Configuration's state to `Active`. Before declaring success, verify all of:
+
+1. `currentMigration` is `null`. (If anything failed, it'll be in a `Failed`/`Rollbacked` state instead of cleared.)
+2. The new Configuration's state is `Active`.
+3. `getActiveNodeDescriptions` reports zero `isObsolete: true` nodes.
+4. The previous Active is now `Archived`.
+
+`upgrade.py` enforces (1) via a `wait_until` loop after `migrationFinish`, runs the obsolete-sweep again to satisfy (3), then asserts (2) before returning exit 0. If `--no-finish` is set the script returns without these checks and the agent is responsible for them.
+
+A standalone verification snippet:
+
+```bash
+TOKEN=$(curl -s -X POST -H 'Content-Type: application/x-www-form-urlencoded' \
+  -d 'grant_type=password&username=admin&password=admin&client_id=KlusterKite.NodeManager.WebApplication' \
+  http://localhost:28080/api/1.x/security/token | python -c "import json,sys; print(json.load(sys.stdin)['access_token'])")
+curl -s -X POST -H 'Content-Type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"query":"{api{klusterKiteNodesApi{
+        clusterManagement{currentMigration{state}}
+        configurations(sort:[id_desc],limit:3){edges{node{_id name state}}}
+        getActiveNodeDescriptions{edges{node{isObsolete nodeTemplate}}}
+      }}}"}' \
+  http://localhost:28080/api/1.x/graphQL | python -m json.tool
+```
+
+Look for: `currentMigration: null`, the most recent Configuration's `state: "Active"`, the previous one's `state: "Archived"`, and zero `isObsolete: true` entries.
 
 Input shapes for `Configuration_Input` / `ConfigurationSettings_Input` / `NodeTemplate_Input` / `MigratorTemplate_Input` / `PackageRequirement_Input` / `PackageDescription_Input` are introspectable on the running cluster:
 
