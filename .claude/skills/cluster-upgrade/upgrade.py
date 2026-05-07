@@ -20,9 +20,21 @@ itself, to keep concerns separated).
 Usage:
   python upgrade.py
   python upgrade.py --api http://localhost:28080 --bump minor
-  python upgrade.py --name "Release 0.4" --notes "akka 1.5.68"
+  python upgrade.py --notes "akka 1.5.67 -> 1.5.68; PackageUtils null fix"
+  python upgrade.py --name "Release 0.4"   # override the default timestamp name
   python upgrade.py --dry-run        # plan, but stop before mutation
   python upgrade.py --abort-current  # cancel any in-flight migration first
+
+Naming: by default the new Configuration is named `Release YYYYMMDDHHMMSS`
+(UTC). Pass --name to override. The version (majorVersion.minorVersion)
+fields are independently bumped via --bump.
+
+Notes: the agent SHOULD pass --notes describing what's actually changing
+(e.g. "Akka 1.5.67 -> 1.5.68", "fix EnumResolver null on enum",
+"#issue-123: monitoring graphql provider crash on null state"). The
+notes show up in the Configurations list in the UI and are the only
+human-readable audit trail of why each migration happened. Empty notes
+are accepted but make the deploy log useless after a few rounds.
 
 Exit codes:
   0  upgrade complete, new config is Active
@@ -32,6 +44,7 @@ Exit codes:
 """
 
 import argparse
+import datetime
 import json
 import os
 import sys
@@ -396,8 +409,12 @@ def main():
     p.add_argument("--client-id", default=os.environ.get("KK_CLIENT_ID", "KlusterKite.NodeManager.WebApplication"))
     p.add_argument("--bump", choices=["patch", "minor", "major"], default="minor",
                    help="how to bump the version on the new configuration (default: minor)")
-    p.add_argument("--name", help="name for the new Configuration; default: 'Release MAJ.MIN'")
-    p.add_argument("--notes", default="", help="free-text notes; e.g., what changed in the package set")
+    p.add_argument("--name", help="name for the new Configuration; default: 'Release YYYYMMDDHHMMSS' (UTC)")
+    p.add_argument("--notes", default="",
+                   help="free-text notes describing what's changing in this release. "
+                        "Surface in the Configurations list and is the only human-readable "
+                        "audit trail of why each migration happened — supply something useful "
+                        "(e.g., 'Akka 1.5.67 -> 1.5.68; PackageUtils null fix; #issue-42').")
     p.add_argument("--dry-run", action="store_true",
                    help="plan + print the new settings, but make no mutations")
     p.add_argument("--abort-current", action="store_true",
@@ -436,7 +453,11 @@ def main():
         new_major, new_minor = major, minor + 1
     elif args.bump == "major":
         new_major, new_minor = major + 1, 0
-    name = args.name or f"Release {new_major}.{new_minor}"
+    name = args.name or "Release " + datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d%H%M%S")
+    if not args.notes:
+        print("note: --notes was empty. Once this Configuration is Active there's no other "
+              "place to look up what changed. Consider re-running with --notes describing "
+              "the package version diff or the issue number.", flush=True)
 
     refreshed = get_nuget_packages(api, token)
     print(f"latest packages on feed: {len(refreshed)}", flush=True)

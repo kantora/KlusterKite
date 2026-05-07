@@ -40,17 +40,26 @@ Use `upgrade.py` (next to this file). It clones the current Active configuration
 # Plan only; prints the new settings preview and exits without mutating
 python .claude/skills/cluster-upgrade/upgrade.py --dry-run
 
-# Real upgrade. Defaults: --bump minor, --name "Release MAJ.MIN"
-python .claude/skills/cluster-upgrade/upgrade.py
+# Real upgrade. Defaults: --bump minor; --name "Release YYYYMMDDHHMMSS" (UTC)
+python .claude/skills/cluster-upgrade/upgrade.py \
+    --notes "akka 1.5.67 -> 1.5.68; PackageUtils null fix"
 
-# Fully parameterized
+# Fully parameterized — override the auto-generated name if you want a vanity tag
 python .claude/skills/cluster-upgrade/upgrade.py \
     --api http://localhost:28080 --bump minor \
-    --name "Release 0.4" --notes "akka 1.5.68" \
+    --name "Release 0.4" --notes "akka 1.5.68 + EnumResolver fix" \
     --abort-current        # cancel any in-flight migration first
 ```
 
 Auth defaults to `admin/admin` against `KlusterKite.NodeManager.WebApplication` (override with `--user`/`--password`/`--client-id` or env vars `KK_USER`/`KK_PASSWORD`/`KK_CLIENT_ID`).
+
+**Always pass `--notes`.** The Configuration's notes field is the only human-readable audit trail of what changed in each migration — it's surfaced in the Configurations list and on the Configuration page. Don't shortcut to empty notes: write the package-version delta, the bug being fixed, the issue/PR number, whatever a future operator (or you in two weeks) would need to know to triage. Examples that are useful:
+- `"Akka 1.5.67 → 1.5.68; refresh after PackageUtils.Search null fix"`
+- `"#issue-42: ConfigurationCheckActor INVALID_OPERATION on null enum"`
+- `"GraphQL.Publisher 0.1.3-local; rolls back PR #26 hotfix that broke MigrationSteps"`
+
+Examples that aren't:
+- `"update"`, `"bump"`, `""`, `"."`
 
 ### c. What the script does, in GraphQL terms
 
