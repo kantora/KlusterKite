@@ -12,16 +12,16 @@ class NodeTemplatesList extends React.Component {
 
   static propTypes = {
     configurationId: React.PropTypes.string,
-    configuration: React.PropTypes.object,
+    settings: React.PropTypes.object,
     canEdit: React.PropTypes.bool
   };
 
   render() {
-    const templates = this.props.configuration && this.props.configuration.migratorTemplates && this.props.configuration.migratorTemplates.edges;
+    const templates = this.props.settings && this.props.settings.migratorTemplates && this.props.settings.migratorTemplates.edges;
 
     return (
       <div>
-        <h3>Migrator templates list</h3>
+        <h3>Migrator templates</h3>
         {this.props.canEdit &&
           <Link to={`/klusterkite/MigratorTemplates/${this.props.configurationId}/create`} className="btn btn-primary" role="button">Add a new template</Link>
         }
@@ -73,7 +73,7 @@ export default Relay.createContainer(
   NodeTemplatesList,
   {
     fragments: {
-      configuration: () => Relay.QL`fragment on IKlusterKiteNodeApi_ConfigurationSettings {
+      settings: () => Relay.QL`fragment on IKlusterKiteNodeApi_ConfigurationSettings {
         migratorTemplates {
           edges {
             node {

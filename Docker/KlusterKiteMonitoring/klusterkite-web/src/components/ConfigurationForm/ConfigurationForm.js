@@ -2,8 +2,9 @@ import React from 'react';
 import { Input, Textarea } from 'formsy-react-components';
 
 import Form from '../Form/Form';
-import RecheckState from '../../components/RecheckState/RecheckState';
 import RowText from '../Form/RowText';
+
+import DateFormat from '../../utils/date';
 
 export default class ConfigurationForm extends React.Component {
   constructor(props) {
@@ -37,10 +38,10 @@ export default class ConfigurationForm extends React.Component {
     return (
       <div>
         {initialValues && canEdit &&
-          <h2>Edit Configuration <RecheckState /></h2>
+          <h2>Edit Configuration</h2>
         }
         {initialValues && !canEdit &&
-          <h2>View Configuration <RecheckState /></h2>
+          <h2>View Configuration</h2>
         }
         {!initialValues &&
           <h2>Create a new Configuration</h2>
@@ -70,8 +71,9 @@ export default class ConfigurationForm extends React.Component {
                    validations={{isNumeric:true}}
                    validationErrors={{isNumeric: 'You have to type a number'}}
                    elementWrapperClassName="col-sm-2" />
-            <RowText label="Is stable" text={(initialValues && initialValues.isStable.toString()) || "false"} />
             <RowText label="State" text={(initialValues && initialValues.state) || "Draft"} />
+            <RowText label="Created" text={(initialValues && initialValues.created && DateFormat.formatDateTime(new Date(initialValues.created))) || "—"} />
+            <RowText label="Finished" text={(initialValues && initialValues.finished && DateFormat.formatDateTime(new Date(initialValues.finished))) || "—"} />
           </fieldset>
         </Form>
       </div>

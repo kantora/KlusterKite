@@ -1,25 +1,62 @@
-import React from 'react';
+import React from 'react'
 import Relay from 'react-relay'
+import Icon from 'react-fa';
+import isEqual from 'lodash/isEqual';
+import { Link } from 'react-router'
 
-import { Link } from 'react-router';
+import UpdateFeedMutation from '../../containers/FeedPage/mutations/UpdateFeedMutation'
+import TableFilter from '../Table/TableFilter'
 
 import './styles.css';
 
 export class PackagesList extends React.Component { // eslint-disable-line react/prefer-stateless-function
   constructor(props) {
     super(props);
+    this.onChangeVersion = this.onChangeVersion.bind(this);
+    this.onStartEdit = this.onStartEdit.bind(this);
 
     this.state = {
       showUpdated: true,
+      filter: '',
+      nugetPackagesList: null,
+      editableIds: [],
+      packagesCache: null,
     };
   }
 
   static propTypes = {
     configurationId: React.PropTypes.string,
-    configuration: React.PropTypes.object.isRequired,
+    configurationInnerId: React.PropTypes.number,
+    settings: React.PropTypes.object.isRequired,
     activeConfigurationPackages: React.PropTypes.object,
     canEdit: React.PropTypes.bool,
+    nugetPackagesList: React.PropTypes.object,
+    currentState: React.PropTypes.string.isRequired,
   };
+
+  componentWillMount() {
+    this.onReceiveProps(this.props, true);
+  }
+
+  componentWillReceiveProps(nextProps) {
+    this.onReceiveProps(nextProps, false);
+  }
+
+  onReceiveProps(nextProps, skipCheck) {
+    if (nextProps.nugetPackagesList && (!isEqual(nextProps.nugetPackagesList, this.props.nugetPackagesList) || skipCheck)) {
+      const packagesNodes = nextProps.nugetPackagesList.edges.map(x => x.node);
+      this.setState({
+        nugetPackagesList: packagesNodes
+      })
+    }
+
+    // We save unfiltered packages list to use later in migration
+    if (nextProps.settings && nextProps.settings.packages && !this.state.packagesCache) {
+      this.setState({
+        packagesCache: nextProps.settings.packages
+      })
+    }
+  }
 
   onUpdatedChange() {
     this.setState((prevState) => ({
@@ -27,8 +64,77 @@ export class PackagesList extends React.Component { // eslint-disable-line react
     }));
   }
 
+  /**
+   * Applies filter to Relay variables after debounce (defined in the constructor)
+   * @param filter {string} Filter text
+   */
+  applyFilter(filter) {
+    this.props.relay.setVariables({
+      filter: { id_l_contains: filter.toLowerCase() }
+    });
+    this.setState({
+      filter: filter
+    });
+  }
+
+  onChangeVersion(item, newValue) {
+    const packages = this.state.packagesCache.edges.map(x => {
+      return {
+        id: x.node._id,
+        version: x.node.id === item.id ? newValue : x.node.version
+      }
+    });
+
+    this.savePackages(packages);
+  }
+
+  onStartEdit(id) {
+    this.setState((prevState) => ({
+      editableIds: [
+        ...prevState.editableIds,
+        id,
+      ],
+    }));
+  }
+
+  savePackages = (packages) => {
+    this.setState({
+      saving: true
+    });
+
+    Relay.Store.commitUpdate(
+      new UpdateFeedMutation(
+        {
+          nodeId: this.props.configurationId,
+          configurationId: this.props.configurationInnerId,
+          settings: this.props.settings,
+          packagesList: packages,
+        }),
+      {
+        onSuccess: (response) => {
+          if (response.klusterKiteNodeApi_klusterKiteNodesApi_configurations_update.errors &&
+            response.klusterKiteNodeApi_klusterKiteNodesApi_configurations_update.errors.edges) {
+            const messages = this.getErrorMessagesFromEdge(response.klusterKiteNodeApi_klusterKiteNodesApi_configurations_update.errors.edges);
+
+            this.setState({
+              saving: false,
+              saveErrors: messages
+            });
+          } else {
+            // ok
+          }
+        },
+        onFailure: (transaction) => {
+          this.setState({
+            saving: false
+          });
+          console.log(transaction)},
+      },
+    )
+  };
+
   render() {
-    const packages = this.props.configuration && this.props.configuration.packages && this.props.configuration.packages.edges;
+    const packages = this.props.settings && this.props.settings.packages && this.props.settings.packages.edges;
     const activeConfigurationPackages = this.props.activeConfigurationPackages.edges;
 
     let packagesFiltered = [];
@@ -47,14 +153,32 @@ export class PackagesList extends React.Component { // eslint-disable-line react
     return (
       <div>
         <div>
-          <h3>Packages list</h3>
+          <h3>Packages</h3>
           {this.props.canEdit &&
-            <Link to={`/klusterkite/Packages/${this.props.configurationId}`} className="btn btn-primary" role="button">Add/edit packages</Link>
+            <div className="buttons-block-margin">
+              <Link to={`/klusterkite/Packages/${this.props.configurationId}`} className="btn btn-primary" role="button">Add/edit packages</Link>
+
+              {this.props.currentState && this.props.currentState === 'Draft' &&
+                <Link to={`/klusterkite/CopyConfig/${this.props.configurationId}/updateCurrent`} className="btn btn-success btn-margined" role="button">
+                  <Icon name="clone"/>{' '}Update all packages to the latest version
+                </Link>
+              }
+            </div>
           }
 
-          <p>
-            <label className="checkbox-label"><input type="checkbox" checked={this.state.showUpdated} onChange={this.onUpdatedChange.bind(this)} /> Show changed only</label>
-          </p>
+          <TableFilter onFilter={this.applyFilter.bind(this)}>
+            <p className="table-filter-element">
+              <label className="checkbox-label"><input type="checkbox" checked={this.state.showUpdated} onChange={this.onUpdatedChange.bind(this)} /> Show changed only</label>
+            </p>
+          </TableFilter>
+
+          <div className="table-filter-clear"></div>
+          {packagesFiltered && packagesFiltered.length === 0 && this.state.filter.length === 0 &&
+            <p>No changed packages.</p>
+          }
+          {packagesFiltered && packagesFiltered.length === 0 && this.state.filter.length > 0 &&
+            <p>No packages found.</p>
+          }
           {packagesFiltered && packagesFiltered.length > 0 &&
           <table className="table table-hover">
             <thead>
@@ -65,20 +189,31 @@ export class PackagesList extends React.Component { // eslint-disable-line react
             </tr>
             </thead>
             <tbody>
-            {packagesFiltered.map((item) =>
-              <tr key={item.id}>
-                <td>
-                  <Link to={`/klusterkite/Packages/${this.props.configurationId}`}>
-                    {item.name}
-                  </Link>
-                </td>
-                <td>
-                  {item.version}
-                </td>
-                <td>
-                  {item.isNew.toString()}
-                </td>
-              </tr>
+            {packagesFiltered.map((item) => {
+              const nugetFeedNode = this.state.nugetPackagesList.find(x => x.name === item.name);
+              const isEditable = this.state.editableIds.includes(item.id);
+              return (
+                <tr key={item.id}>
+                  <td>
+                    <Link to={`/klusterkite/Packages/${this.props.configurationId}`}>
+                      {item.name}
+                    </Link>
+                  </td>
+                  <td>
+                    {!isEditable &&
+                      <span className="pseudohref" onClick={() => {this.onStartEdit(item.id)}}>{item.version}</span>
+                    }
+                    {isEditable &&
+                      <select defaultValue={item.version} onChange={(event) => { this.onChangeVersion(item, event.target.value) }}>
+                        {nugetFeedNode.availableVersions.map((version) => <option key={version} value={version}>{version}</option>)}
+                      </select>
+                    }
+                  </td>
+                  <td>
+                    {item.isNew.toString()}
+                  </td>
+                </tr>
+              )}
             )}
             </tbody>
           </table>
@@ -92,9 +227,12 @@ export class PackagesList extends React.Component { // eslint-disable-line react
 export default Relay.createContainer(
   PackagesList,
   {
+    initialVariables: {
+      filter: { id_l_contains: '' },
+    },
     fragments: {
-      configuration: () => Relay.QL`fragment on IKlusterKiteNodeApi_ConfigurationSettings {
-        packages(sort: id_asc) {
+      settings: () => Relay.QL`fragment on IKlusterKiteNodeApi_ConfigurationSettings {
+        packages(sort: id_asc, filter: $filter ) {
           edges {
             node {
               version
@@ -102,7 +240,8 @@ export default Relay.createContainer(
               _id
             }
           }
-        }
+        },
+        ${UpdateFeedMutation.getFragment('settings')},
       }
       `,
     },

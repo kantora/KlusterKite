@@ -2,7 +2,7 @@ import React from 'react';
 import { storiesOf, action } from '@kadira/storybook';
 import StubContainer from 'react-storybooks-relay-container';
 
-import NodesWithTemplates from './index';
+import NodesWithTemplates from './NodesWithTemplates';
 
 storiesOf('Homepage')
   .add('nodes with templates', () => {

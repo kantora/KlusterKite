@@ -12,7 +12,7 @@ class FeedList extends React.Component {
 
   static propTypes = {
     configurationId: React.PropTypes.string,
-    configuration: React.PropTypes.object,
+    settings: React.PropTypes.object,
     canEdit: React.PropTypes.bool
   };
 
@@ -25,11 +25,11 @@ class FeedList extends React.Component {
           <p>
             {this.props.canEdit &&
               <Link to={`/klusterkite/NugetFeeds/${this.props.configurationId}`}>
-                {this.props.configuration && this.props.configuration.nugetFeed}
+                {this.props.settings && this.props.settings.nugetFeed}
               </Link>
             }
             {!this.props.canEdit &&
-              <span>{this.props.configuration && this.props.configuration.nugetFeed}</span>
+              <span>{this.props.settings && this.props.settings.nugetFeed}</span>
             }
           </p>
         </div>
@@ -42,7 +42,7 @@ export default Relay.createContainer(
   FeedList,
   {
     fragments: {
-      configuration: () => Relay.QL`fragment on IKlusterKiteNodeApi_ConfigurationSettings {
+      settings: () => Relay.QL`fragment on IKlusterKiteNodeApi_ConfigurationSettings {
         nugetFeed
       }
       `,
