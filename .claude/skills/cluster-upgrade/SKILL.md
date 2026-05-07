@@ -1,31 +1,30 @@
 ---
 name: cluster-upgrade
-description: Use when upgrading a running KlusterKite local devcluster after code, HOCON, or Docker-image changes. The idiomatic flow is bump-version → push → drive the cluster through a migration; recreating containers in place is a debug shortcut, not the upgrade mechanism.
+description: Use when upgrading a running KlusterKite local devcluster after code/HOCON/Docker-image changes. Idiomatic flow is `cake FinalPushLocalPackages` (auto-bumps the patch and pushes a new package set) followed by a Configuration migration driven through the GraphQL API. Skill ships with a Python orchestrator that does the migration end-to-end.
 ---
 
 KlusterKite was designed to upgrade in place via configuration migrations, not by replacing running containers. Each cluster Configuration pins a set of `PackageRequirements` and the resolved `PackagesToInstall` per template. To roll new code:
 
-1. **Bump the package version** so old and new can coexist on the feed.
+1. **Bump versions** so old and new packages can coexist on the feed.
 2. **Build and push** to the local NuGet feed.
-3. **Create a new Configuration** that requires the new versions; let `ConfigurationCheckActor` resolve them.
-4. **Migrate** the cluster from the current Active configuration to the new one. Nodes drain and re-launch under the new versions one role at a time, with rollback if anything fails.
+3. **Create a new Configuration** that picks up the new versions and migrate the cluster to it.
 
-The `--force-recreate` and DB-wipe paths in the Pitfalls section exist for two narrow cases: cold start before the cluster is seeded, and developer-side iteration on a single package version (`0.0.0-local`) where you don't want to bump on every save.
+Containers stay running throughout. Migration handles draining, re-launching, and rolls back on failure.
+
+The `--force-recreate` and DB-wipe paths in [§ Pitfalls](#5-pitfalls) exist for two narrow cases: cold start before the cluster is seeded, and developer-side iteration on a single package version (`0.0.0-local`) where you don't want to bump on every save.
 
 ## 1. Idiomatic upgrade
 
 ### a. Bump version + push
 
-`build.cake`'s `SetVersion` target queries the local NuGet feed for the highest existing patch and increments by one (`0.0.5-local` → `0.0.6-local`). The composite target that bumps, builds, packs, and pushes in one shot:
+`build.cake`'s `SetVersion` target queries the local NuGet feed for the highest existing patch and increments by one (`0.0.5-local` → `0.0.6-local`). The composite target that bumps, builds, packs, and pushes:
 
 ```bash
 NUGET_API_KEY=KlusterKite NUGET_SERVER_URL=http://localhost:28081 \
   dotnet cake build.cake --target=FinalPushLocalPackages
 ```
 
-Adjust the port to whatever `Docker/KlusterKite/.env` says (`28081` in this checkout's parameterized layout, `81` upstream).
-
-After the run, the local NuGet feed has the new versioned packages. The currently-running cluster is unaffected — it's still pinned to the old Configuration's `PackagesToInstall`.
+Adjust the port to whatever `Docker/KlusterKite/.env` says (`28081` in this checkout's parameterized layout, `81` upstream). After the run, the local NuGet feed has the new versioned packages. The currently-running cluster is unaffected — it's still pinned to the old Configuration's `PackagesToInstall`.
 
 If the change includes the **launcher binary itself** (anything under `KlusterKite.NodeManager.Launcher.*` or `KlusterKite.NodeManager.Seeder.Launcher`), you also need new Docker images:
 
@@ -33,29 +32,56 @@ If the change includes the **launcher binary itself** (anything under `KlusterKi
 dotnet cake build.cake --target=FinalBuildDocker
 ```
 
-### b. Create the new Configuration in the UI
+### b. Drive the migration via API
 
-In the monitoring UI (`http://localhost:28082/klusterkite/`) under **Configurations**:
+Use `upgrade.py` (next to this file). It clones the current Active configuration into a new Draft with the version bumped and the `packages` list refreshed from the live nuget feed, then runs Check → SetReady → Start migration → walks the migration steps → Finish.
 
-1. Open the current Active configuration.
-2. Click **Create a new configuration** (clones settings; new state is Draft).
-3. Bump the major / minor as appropriate.
-4. Click **Update all packages to the latest version** — `ConfigurationCheckActor` re-resolves every `PackageRequirement` against the live NuGet feed. This is where the new versions get pulled in.
-5. **Check configuration** — runs `ConfigurationExtensions.CheckAll`: validates each declared package exists, walks transitive deps, populates `PackagesToInstall` per `SupportedFrameworks` (currently just `.NETCoreApp,Version=v9.0`).
-6. **Prepare for publication** — state moves Draft → Ready.
+```bash
+# Plan only; prints the new settings preview and exits without mutating
+python .claude/skills/cluster-upgrade/upgrade.py --dry-run
 
-If Check or Prepare reports errors, the new versions aren't fully on NuGet yet, or a transitive dep can't be resolved. Inspect the error before continuing.
+# Real upgrade. Defaults: --bump minor, --name "Release MAJ.MIN"
+python .claude/skills/cluster-upgrade/upgrade.py
 
-### c. Migrate
+# Fully parameterized
+python .claude/skills/cluster-upgrade/upgrade.py \
+    --api http://localhost:28080 --bump minor \
+    --name "Release 0.4" --notes "akka 1.5.68" \
+    --abort-current        # cancel any in-flight migration first
+```
 
-On the Ready configuration page click **Start migration**. `MigrationActor` extracts service binaries for the new migrator template, runs the cluster compatibility check (Preparing → Ready), and the UI moves to the Migration page. Walk it through:
+Auth defaults to `admin/admin` against `KlusterKite.NodeManager.WebApplication` (override with `--user`/`--password`/`--client-id` or env vars `KK_USER`/`KK_PASSWORD`/`KK_CLIENT_ID`).
 
-- **PreNodesResourcesUpdating** — resources flagged for pre-node migration get migrated. Click **Upgrade selected** when there are checked rows.
-- **NodesUpdating** — node templates restart under the new packages. Watch the Nodes table; obsolete nodes get torn down and recreated. Use the per-node **Reset** button on the home page if a straggler doesn't pick up the new config.
-- **PostNodesResourcesUpdating** — resources flagged for post-node migration.
-- **Finish** — once `canFinishMigration` is true, click **Finish migration**. Old config → Obsolete, new config → Active.
+### c. What the script does, in GraphQL terms
 
-If anything fails mid-migration, **Cancel migration** rolls every node back to the previous Active. (Cancel is hidden in the UI when `migrationSteps` is null — i.e. while the migration is still in `Preparing`. The mutation works regardless: see Pitfalls below.)
+If you need to drive part of the flow by hand, the mutation surface is:
+
+| Step | Mutation |
+|---|---|
+| Get auth | `POST /api/1.x/security/token` (form: `grant_type=password&...`) |
+| Read Active | `query { api { klusterKiteNodesApi { configurations(filter:{state:Active},limit:1) { ... } } } }` |
+| Read latest pkgs | `query { api { klusterKiteNodesApi { nugetPackages { edges { node { name version } } } } } }` |
+| Create draft | `klusterKiteNodeApi_klusterKiteNodesApi_configurations_create(input:{newNode:{majorVersion,minorVersion,name,notes}})` |
+| Write settings | `klusterKiteNodeApi_klusterKiteNodesApi_configurations_update(input:{id, newNode:{id,settings:{...}}})` |
+| Validate | `klusterKiteNodeApi_klusterKiteNodesApi_configurations_check(input:{id})` |
+| Draft → Ready | `klusterKiteNodeApi_klusterKiteNodesApi_configurations_setReady(input:{id})` |
+| Start migration | `klusterKiteNodeApi_klusterKiteNodesApi_clusterManagement_migrationCreate(input:{newConfigurationId})` |
+| Migrate resources | `..._clusterManagement_migrationResourceUpdate(input:{request:{resources:[{templateCode,migratorTypeName,resourceCode,target}]}})` (`target ∈ {Source,Destination}`) |
+| Migrate nodes | `..._clusterManagement_migrationNodesUpdate(input:{target:Destination})` |
+| Finish | `..._clusterManagement_migrationFinish(input:{})` |
+| Cancel | `..._clusterManagement_migrationCancel(input:{})` |
+
+Input shapes for `Configuration_Input` / `ConfigurationSettings_Input` / `NodeTemplate_Input` / `MigratorTemplate_Input` / `PackageRequirement_Input` / `PackageDescription_Input` are introspectable on the running cluster:
+
+```bash
+curl -s -X POST -H 'Content-Type: application/json' -H "Authorization: Bearer $TOKEN" \
+  -d '{"query":"{__type(name:\"KlusterKiteNodeApi_ConfigurationSettings_Input\"){inputFields{name type{kind name ofType{kind name}}}}}"}' \
+  http://localhost:28080/api/1.x/graphQL | python -m json.tool
+```
+
+Two GraphQL ↔ JSON quirks worth knowing:
+- The output schema renames `id` → `_id` on all sub-API types (Relay collision; PR #19 fix). The **input** types still use plain `id`. So when you query for a configuration's packages you get `{_id, version}`, but you must send `{id, version}` back via `configurations_update`.
+- `configurations_check` and the migration mutations return their domain errors inside `errors{ edges{ node{ field message } } }` rather than as transport-level GraphQL errors. The script treats those payload errors as success unless they're non-empty.
 
 ### d. Verify
 
@@ -70,7 +96,7 @@ TOKEN=$(curl -s -X POST -H 'Content-Type: application/x-www-form-urlencoded' \
   -d 'grant_type=password&username=admin&password=admin&client_id=KlusterKite.NodeManager.WebApplication' \
   http://localhost:28080/api/1.x/security/token | python -c "import json,sys; print(json.load(sys.stdin)['access_token'])")
 curl -s -X POST -H 'Content-Type: application/json' -H "Authorization: Bearer $TOKEN" \
-  -d '{"query":"{api{klusterKiteNodesApi{configurations(filter:{state:Active},limit:1){edges{node{name,majorVersion,minorVersion}}}}}}"}' \
+  -d '{"query":"{api{klusterKiteNodesApi{configurations(filter:{state:Active},limit:1){edges{node{_id,name,majorVersion,minorVersion}}}}}}"}' \
   http://localhost:28080/api/1.x/graphQL
 ```
 
@@ -113,36 +139,42 @@ dotnet nuget push temp/packageOut/$PKG_ID.0.0.0-local.nupkg \
   --source http://localhost:28081 --api-key KlusterKite \
   --allow-insecure-connections
 
-# 3. Recreate consumers so they re-download. Map: which roles host the package.
-#    (manager, worker run providers; publishers run GraphQL.Publisher; seeder runs the seed dll.)
+# 3. Recreate consumers so they re-download.
+#    manager + worker run providers; publishers run GraphQL.Publisher; seeder runs the seed dll.
 cd Docker/KlusterKite
 docker compose -p klusterkite up -d --force-recreate <services...>
 ```
 
 The recreate cascades to `seeder` (`service_completed_successfully` dep). After PR #20 the seeder will refresh Active and Ready configs against the new NuGet state, which keeps things consistent — but that's a safety net, not the upgrade path.
 
-## 4. Pitfalls
+## 4. Decision quick-reference
+
+| Change | Use this path |
+|---|---|
+| Code in any package | §1 — bump version, push, migrate via `upgrade.py` |
+| One package, debugging an iteration | §3 — overwrite `0.0.0-local` and recreate consumers |
+| Fresh checkout, no Active config | §2 — cold start (push packages, let seeder run) |
+| Launcher binary (`KlusterKite.NodeManager.Launcher.*`) | `cake FinalBuildDocker`, then §1 |
+| HOCON inside `KlusterKite.NodeManager/Resources/akka.hocon` | Same as code change to that package |
+| HOCON copied into a Docker image (`Docker/KlusterKite*/seeder.hocon`) | `docker buildx build` of that dir, recreate that container |
+| `docker-compose.yml` | `docker compose up -d --force-recreate <svc>`, no build |
+| React app | `npm run build` in `klusterkite-web` → image build → recreate `monitoringUI` |
+
+## 5. Pitfalls
 
 ### Migration stuck in `Preparing`
-The chosen target Configuration's `PackagesToInstall` doesn't have the runtime's framework key (e.g. `.NETCoreApp,Version=v9.0`). Causes: it was Check'd against an old `SupportedFrameworks` list, or `MigrationActor` can't extract the migrator template service.
+The chosen target Configuration's `PackagesToInstall` doesn't have the runtime's framework key (`.NETCoreApp,Version=v9.0`). Causes: it was Check'd against an old `SupportedFrameworks` list (pre-PR #20), or `MigrationActor` can't extract the migrator template service.
 
-Confirm by querying the migrator template's resolved framework keys:
-
-```bash
-docker exec klusterkite-configDb-1 sh -c "su postgres -c '
-psql \"KlusterKite.NodeManagerConfiguration\" -tAc \"select \\\"SettingsJson\\\" from \\\"Configurations\\\" where \\\"State\\\"=1\"'" \
-  | python -c "import json,sys; d=json.load(sys.stdin); [print(t['Code'], list((t.get('PackagesToInstall') or {}).keys())) for t in d.get('MigratorTemplates', [])]"
-```
-
-If the framework key is wrong, cancel the migration via API (UI hides the button while `migrationSteps` is null):
+`upgrade.py` handles this: it always runs `configurations_check` against the live `SupportedFrameworks` before SetReady, so the framework keys match what `MigrationActor` will look up. If you took the path manually and the configuration was Check'd before PR #20, cancel and re-Check:
 
 ```bash
-curl -s -X POST -H 'Content-Type: application/json' -H "Authorization: Bearer $TOKEN" \
-  -d '{"query":"mutation{klusterKiteNodeApi_klusterKiteNodesApi_clusterManagement_migrationCancel(input:{clientMutationId:\"x\"}){result,clientMutationId}}"}' \
-  http://localhost:28080/api/1.x/graphQL
-```
+# Cancel (UI hides the button while migrationSteps is null; API works regardless)
+python .claude/skills/cluster-upgrade/upgrade.py --abort-current --dry-run
+# (or call migrationCancel directly via curl, see §1c)
 
-After cancel, recreate the seeder so PR #20's refresh repopulates `PackagesToInstall` for the Ready candidate. Then re-run Start migration.
+# After cancel, recreate seeder so PR #20's refresh repopulates PackagesToInstall
+docker compose -p klusterkite up -d --force-recreate seeder
+```
 
 ### `seed` container exits, `manager` grabs `172.18.0.6`
 The cluster seed image's process can exit cleanly post-bootstrap. Its reserved IP is freed, and a recreated `manager` (no fixed IP) can take it. Subsequent `up -d seed` then fails with "Address already in use".
@@ -154,7 +186,7 @@ docker compose -p klusterkite up -d manager
 ```
 
 ### nuget container nginx doesn't bind on cold start
-`klusterkite-nuget-1` runs hhvm + nginx via supervisord. Nginx fails to bind `:80` on first start. `ss -tln` inside shows only `:9000`. Reload fixes it:
+`klusterkite-nuget-1` runs hhvm + nginx via supervisord. Nginx fails to bind `:80` on first start; `ss -tln` inside shows only `:9000`. A reload fixes it:
 
 ```bash
 docker exec klusterkite-nuget-1 nginx -s reload
@@ -173,16 +205,3 @@ The `forge-*` cluster and `klusterkite-*` share `klusterkite/*:latest` images bu
 
 ### `dotnet nuget push` rejects HTTP
 PR #17 added `--allow-insecure-connections` to every Cake push site. If you're pushing manually outside of Cake, include the flag.
-
-## 5. Decision quick-reference
-
-| Change | Use this path |
-|---|---|
-| Code in any package, idiomatic | §1 — bump version, push, migrate |
-| One package, debugging an iteration | §3 — overwrite `0.0.0-local` and recreate consumers |
-| Fresh checkout, no Active config in DB | §2 — cold start (push packages, let seeder run) |
-| Launcher binary (`KlusterKite.NodeManager.Launcher.*`) | `cake FinalBuildDocker`, then either §1 (preferred) or §3 |
-| HOCON inside `KlusterKite.NodeManager/Resources/akka.hocon` | Same as code change to that package |
-| HOCON copied into a Docker image (`Docker/KlusterKite*/seeder.hocon` etc.) | `docker buildx build` of that dir, then recreate |
-| `docker-compose.yml` | `docker compose up -d --force-recreate <svc>`, no build |
-| React app | `npm run build` in `klusterkite-web` → image build → recreate `monitoringUI` |
