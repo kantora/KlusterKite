@@ -1,4 +1,8 @@
 
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text.Json.Nodes;
+
 // Configuration
 var testPackageName = "KlusterKite.Core";
 var rootDir = MakeAbsolute(Directory("./")).FullPath;
@@ -1124,6 +1128,674 @@ Task("FinalBuildDocker")
     Information("Finalizing the build of all Docker images...");
 
     Information("All Docker images have been built and cleaned successfully.");
+});
+
+// =============================================================================
+// LocalDevClusterUpdate
+// =============================================================================
+// One-shot path for refreshing a running local devcluster after code/HOCON/
+// Docker-image changes:
+//
+//   1. Bumps patch, builds, packs, pushes (FinalPushLocalPackages).
+//   2. Clones the cluster's Active configuration into a new Draft with bumped
+//      minor version and the packages list refreshed from the live nuget feed.
+//   3. configurations_check -> setReady -> migrationCreate.
+//   4. Walks the migration: per-template forward resource updates, node
+//      updates to Destination, manual restarts for min-pinned stragglers,
+//      migrationFinish.
+//   5. Verifies the new configuration is Active, the previous is Archived,
+//      no isObsolete nodes remain.
+//
+// Defaults expect the parameterised local devcluster on http://localhost:28080
+// with admin/admin against KlusterKite.NodeManager.WebApplication. Override
+// with --api/--user/--password/--client-id or env KK_API_URL/KK_USER/
+// KK_PASSWORD/KK_CLIENT_ID.
+//
+// Usage:
+//   dotnet cake build.cake --target=LocalDevClusterUpdate --notes="..."
+//   dotnet cake build.cake --target=LocalDevClusterUpdate --notes="..." --bump=major
+//   dotnet cake build.cake --target=LocalDevClusterUpdate --name="Release 0.4" --notes="..."
+//
+// --notes is optional but strongly recommended (and required when an agent
+// drives the upgrade): the Configuration's notes field is the only readable
+// audit trail of what each migration changed.
+
+string _kkApi;
+string _kkToken;
+HttpClient _kkHttp;
+
+HttpClient KkHttp()
+{
+    if (_kkHttp == null)
+    {
+        _kkHttp = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
+    }
+    return _kkHttp;
+}
+
+void KkAuth(string user, string password, string clientId)
+{
+    var url = $"{_kkApi}/api/1.x/security/token";
+    var form = $"grant_type=password&username={Uri.EscapeDataString(user)}"
+             + $"&password={Uri.EscapeDataString(password)}"
+             + $"&client_id={Uri.EscapeDataString(clientId)}";
+    var req = new HttpRequestMessage(HttpMethod.Post, url)
+    {
+        Content = new StringContent(form, System.Text.Encoding.UTF8, "application/x-www-form-urlencoded"),
+    };
+    var resp = KkHttp().SendAsync(req).GetAwaiter().GetResult();
+    var text = resp.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+    if (!resp.IsSuccessStatusCode)
+    {
+        throw new Exception($"auth failed ({(int)resp.StatusCode}): {text}");
+    }
+    _kkToken = JsonNode.Parse(text)["access_token"].GetValue<string>();
+}
+
+JsonNode KkGql(string query, JsonNode variables = null, bool expectErrorsInPayload = false)
+{
+    // The cluster's own nginx returns 404/502/503 during NodesUpdating while
+    // upstreams drop and reattach. Treat those (plus IO/timeout exceptions)
+    // as transient and retry with backoff.
+    var payload = new JsonObject { ["query"] = query };
+    if (variables != null)
+    {
+        payload["variables"] = variables;
+    }
+    var json = payload.ToJsonString();
+    int attempt = 0;
+    const int maxAttempts = 12;
+    Exception last = null;
+    while (attempt++ < maxAttempts)
+    {
+        try
+        {
+            var req = new HttpRequestMessage(HttpMethod.Post, $"{_kkApi}/api/1.x/graphQL")
+            {
+                Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json"),
+            };
+            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _kkToken);
+            var resp = KkHttp().SendAsync(req).GetAwaiter().GetResult();
+            var text = resp.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+            if (!resp.IsSuccessStatusCode)
+            {
+                int code = (int)resp.StatusCode;
+                if (code == 404 || code == 502 || code == 503 || code == 504)
+                {
+                    last = new Exception($"graphql {code}: {text.Substring(0, Math.Min(text.Length, 200))}");
+                    Verbose($"  graphql transient {code} (attempt {attempt}/{maxAttempts}), retrying");
+                    System.Threading.Thread.Sleep(Math.Min(15000, 2000 * attempt));
+                    continue;
+                }
+                throw new Exception($"graphql {code}: {text.Substring(0, Math.Min(text.Length, 400))}");
+            }
+            var body = JsonNode.Parse(text);
+            if (!expectErrorsInPayload && body["errors"] != null)
+            {
+                throw new Exception($"graphql errors: {body["errors"].ToJsonString()}");
+            }
+            return body;
+        }
+        catch (HttpRequestException ex)
+        {
+            last = ex;
+            Verbose($"  graphql IO error (attempt {attempt}/{maxAttempts}): {ex.Message}; retrying");
+            System.Threading.Thread.Sleep(Math.Min(15000, 2000 * attempt));
+        }
+        catch (TaskCanceledException ex)
+        {
+            last = ex;
+            Verbose($"  graphql timeout (attempt {attempt}/{maxAttempts}); retrying");
+            System.Threading.Thread.Sleep(Math.Min(15000, 2000 * attempt));
+        }
+    }
+    throw new Exception($"graphql failed after {maxAttempts} attempts: {last?.Message}");
+}
+
+void KkCheckPayloadErrors(JsonNode payload, string label)
+{
+    if (payload == null)
+    {
+        throw new Exception($"{label}: null payload");
+    }
+    var edges = payload["errors"]?["edges"] as JsonArray;
+    if (edges != null && edges.Count > 0)
+    {
+        throw new Exception($"{label} failed: {payload["errors"].ToJsonString()}");
+    }
+}
+
+JsonNode KkActiveConfig()
+{
+    var body = KkGql(@"{
+      api { klusterKiteNodesApi { configurations(filter:{state:Active},limit:1){
+        edges{node{
+          _id name majorVersion minorVersion notes
+          settings{
+            nugetFeed
+            seedAddresses
+            packages{ edges{ node{ _id version } } }
+            nodeTemplates{ edges{ node{
+              code name notes
+              minimumRequiredInstances maximumNeededInstances
+              priority containerTypes configuration
+              packageRequirements{ edges{ node{ _id specificVersion } } }
+            }}}
+            migratorTemplates{ edges{ node{
+              code name notes priority configuration
+              packageRequirements{ edges{ node{ _id specificVersion } } }
+            }}}
+          }
+        }}
+      }}}
+    }");
+    var edges = body["data"]["api"]["klusterKiteNodesApi"]["configurations"]["edges"] as JsonArray;
+    if (edges == null || edges.Count == 0)
+    {
+        throw new Exception("no Active configuration found on the cluster");
+    }
+    return edges[0]["node"].DeepClone();
+}
+
+JsonArray KkLatestPackages()
+{
+    var body = KkGql(@"{
+      api { klusterKiteNodesApi { nugetPackages{ edges{ node{ name version } } } } }
+    }");
+    var src = body["data"]["api"]["klusterKiteNodesApi"]["nugetPackages"]["edges"] as JsonArray;
+    var arr = new JsonArray();
+    foreach (var e in src)
+    {
+        arr.Add(new JsonObject
+        {
+            ["id"] = e["node"]["name"].GetValue<string>(),
+            ["version"] = e["node"]["version"].GetValue<string>(),
+        });
+    }
+    return arr;
+}
+
+JsonArray KkPackageRequirements(JsonNode template)
+{
+    var arr = new JsonArray();
+    var edges = template["packageRequirements"]?["edges"] as JsonArray;
+    if (edges == null) return arr;
+    foreach (var e in edges)
+    {
+        arr.Add(new JsonObject
+        {
+            ["id"] = e["node"]["_id"].GetValue<string>(),
+            ["specificVersion"] = e["node"]["specificVersion"]?.DeepClone(),
+        });
+    }
+    return arr;
+}
+
+JsonObject KkBuildSettings(JsonNode active, JsonArray packages)
+{
+    var s = active["settings"];
+    var nodeTemplates = new JsonArray();
+    foreach (var e in (s["nodeTemplates"]["edges"] as JsonArray))
+    {
+        var t = e["node"];
+        nodeTemplates.Add(new JsonObject
+        {
+            ["code"] = t["code"]?.DeepClone(),
+            ["name"] = t["name"]?.DeepClone(),
+            ["notes"] = t["notes"]?.DeepClone(),
+            ["minimumRequiredInstances"] = t["minimumRequiredInstances"]?.DeepClone(),
+            ["maximumNeededInstances"] = t["maximumNeededInstances"]?.DeepClone(),
+            ["priority"] = t["priority"]?.DeepClone(),
+            ["containerTypes"] = t["containerTypes"]?.DeepClone(),
+            ["configuration"] = t["configuration"]?.DeepClone(),
+            ["packageRequirements"] = KkPackageRequirements(t),
+        });
+    }
+    var migratorTemplates = new JsonArray();
+    foreach (var e in (s["migratorTemplates"]["edges"] as JsonArray))
+    {
+        var t = e["node"];
+        migratorTemplates.Add(new JsonObject
+        {
+            ["code"] = t["code"]?.DeepClone(),
+            ["name"] = t["name"]?.DeepClone(),
+            ["notes"] = t["notes"]?.DeepClone(),
+            ["priority"] = t["priority"]?.DeepClone(),
+            ["configuration"] = t["configuration"]?.DeepClone(),
+            ["packageRequirements"] = KkPackageRequirements(t),
+        });
+    }
+    return new JsonObject
+    {
+        ["nugetFeed"] = s["nugetFeed"]?.DeepClone(),
+        ["seedAddresses"] = s["seedAddresses"]?.DeepClone(),
+        ["packages"] = packages,
+        ["nodeTemplates"] = nodeTemplates,
+        ["migratorTemplates"] = migratorTemplates,
+    };
+}
+
+int KkCreateDraft(int major, int minor, string name, string notes)
+{
+    var body = KkGql(
+        @"mutation($major:Int!,$minor:Int!,$name:String!,$notes:String!){
+          klusterKiteNodeApi_klusterKiteNodesApi_configurations_create(input:{
+            newNode:{majorVersion:$major,minorVersion:$minor,name:$name,notes:$notes},
+            clientMutationId:""LocalDevClusterUpdate""
+          }){ node{ _id } errors{ edges{ node{ field message } } } }
+        }",
+        new JsonObject
+        {
+            ["major"] = major,
+            ["minor"] = minor,
+            ["name"] = name,
+            ["notes"] = notes ?? "",
+        },
+        expectErrorsInPayload: true);
+    var payload = body["data"]["klusterKiteNodeApi_klusterKiteNodesApi_configurations_create"];
+    KkCheckPayloadErrors(payload, "create");
+    return payload["node"]["_id"].GetValue<int>();
+}
+
+void KkWriteSettings(int id, JsonNode settings, int major, int minor, string name, string notes)
+{
+    // Send via typed variable so GraphQL.NET coerces Float/Bool into the
+    // backing non-nullable .NET value types (priority:double, forceUpdate:bool)
+    // — an inline `priority:1.0` literal trips the resolver with an ARGUMENT error.
+    var newNode = new JsonObject
+    {
+        ["id"] = id,
+        ["majorVersion"] = major,
+        ["minorVersion"] = minor,
+        ["name"] = name,
+        ["notes"] = notes ?? "",
+        ["settings"] = settings,
+    };
+    var body = KkGql(
+        @"mutation($id:Int!,$newNode:KlusterKiteNodeApi_Configuration_Input!){
+          klusterKiteNodeApi_klusterKiteNodesApi_configurations_update(input:{
+            id:$id, newNode:$newNode, clientMutationId:""LocalDevClusterUpdate""
+          }){ node{ _id } errors{ edges{ node{ field message } } } }
+        }",
+        new JsonObject { ["id"] = id, ["newNode"] = newNode },
+        expectErrorsInPayload: true);
+    KkCheckPayloadErrors(
+        body["data"]["klusterKiteNodeApi_klusterKiteNodesApi_configurations_update"],
+        "update");
+}
+
+void KkConfigCheck(int id)
+{
+    var body = KkGql(
+        $@"mutation{{ klusterKiteNodeApi_klusterKiteNodesApi_configurations_check(input:{{
+            id:{id}, clientMutationId:""LocalDevClusterUpdate""
+          }}){{ errors{{ edges{{ node{{ field message }} }} }} }} }}",
+        expectErrorsInPayload: true);
+    KkCheckPayloadErrors(
+        body["data"]["klusterKiteNodeApi_klusterKiteNodesApi_configurations_check"],
+        "check");
+}
+
+void KkSetReady(int id)
+{
+    var body = KkGql(
+        $@"mutation{{ klusterKiteNodeApi_klusterKiteNodesApi_configurations_setReady(input:{{
+            id:{id}, clientMutationId:""LocalDevClusterUpdate""
+          }}){{ errors{{ edges{{ node{{ field message }} }} }} }} }}",
+        expectErrorsInPayload: true);
+    KkCheckPayloadErrors(
+        body["data"]["klusterKiteNodeApi_klusterKiteNodesApi_configurations_setReady"],
+        "setReady");
+}
+
+void KkMigrationCreate(int id)
+{
+    var body = KkGql(
+        $@"mutation{{ klusterKiteNodeApi_klusterKiteNodesApi_clusterManagement_migrationCreate(input:{{
+            newConfigurationId:{id}, clientMutationId:""LocalDevClusterUpdate""
+          }}){{ result{{ errors{{ edges{{ node{{ field message }} }} }} }} }} }}",
+        expectErrorsInPayload: true);
+    var inner = body["data"]["klusterKiteNodeApi_klusterKiteNodesApi_clusterManagement_migrationCreate"]?["result"];
+    KkCheckPayloadErrors(inner, "migrationCreate");
+}
+
+void KkMigrationFinish()
+{
+    KkGql(@"mutation{ klusterKiteNodeApi_klusterKiteNodesApi_clusterManagement_migrationFinish(input:{
+              clientMutationId:""LocalDevClusterUpdate""
+            }){ result } }");
+}
+
+void KkMigrationNodesUpdate(string target)
+{
+    KkGql(
+        $@"mutation{{ klusterKiteNodeApi_klusterKiteNodesApi_clusterManagement_migrationNodesUpdate(input:{{
+              target:{target}, clientMutationId:""LocalDevClusterUpdate""
+            }}){{ result }} }}");
+}
+
+void KkMigrationResourceUpdate(JsonArray resources)
+{
+    var body = KkGql(
+        @"mutation($req:KlusterKiteNodeApi_ResourceUpgradeRequest_Input!){
+            klusterKiteNodeApi_klusterKiteNodesApi_clusterManagement_migrationResourceUpdate(input:{
+              request:$req, clientMutationId:""LocalDevClusterUpdate""
+            }){ result }
+          }",
+        new JsonObject { ["req"] = new JsonObject { ["resources"] = resources } });
+}
+
+void KkUpgradeNode(string address)
+{
+    KkGql(
+        $@"mutation{{ klusterKiteNodeApi_klusterKiteNodesApi_upgradeNode(input:{{
+            address:{System.Text.Json.JsonSerializer.Serialize(address)},
+            clientMutationId:""LocalDevClusterUpdate""
+          }}){{ result{{ result }} }} }}");
+}
+
+JsonNode KkMigrationState()
+{
+    var body = KkGql(@"{
+      api { klusterKiteNodesApi { clusterManagement {
+        currentMigration { state fromConfiguration{_id name} toConfiguration{_id name} }
+        resourceState {
+          currentMigrationStep
+          canCancelMigration canFinishMigration canMigrateResources
+          canUpdateNodesToDestination canUpdateNodesToSource
+          operationIsInProgress
+          migrationState{ templateStates{ edges{ node{
+            code
+            migrators{ edges{ node{
+              typeName direction
+              resources{ edges{ node{ code position migrationToDestinationExecutor migrationToSourceExecutor key } } }
+            }}}
+          }}}}
+          migratableResources: migrationState{ migratableResources{ edges{ node{ key } } } }
+        }
+      }}}
+    }");
+    return body["data"]["api"]["klusterKiteNodesApi"]["clusterManagement"];
+}
+
+JsonArray KkActiveNodes()
+{
+    var body = KkGql(@"{
+      api { klusterKiteNodesApi { getActiveNodeDescriptions { edges { node {
+        nodeId nodeTemplate isObsolete isInitialized
+        nodeAddress { asString }
+      }}}}}
+    }");
+    return body["data"]["api"]["klusterKiteNodesApi"]["getActiveNodeDescriptions"]["edges"] as JsonArray;
+}
+
+JsonArray KkCollectForwardResources(JsonNode state)
+{
+    var rs = state["resourceState"];
+    var ts = rs?["migrationState"]?["templateStates"]?["edges"] as JsonArray;
+    var migratableEdges = rs?["migratableResources"]?["migratableResources"]?["edges"] as JsonArray;
+    var keys = new HashSet<string>();
+    if (migratableEdges != null)
+    {
+        foreach (var e in migratableEdges)
+        {
+            keys.Add(e["node"]["key"].GetValue<string>());
+        }
+    }
+    var output = new JsonArray();
+    if (ts == null) return output;
+    foreach (var t in ts)
+    {
+        var tnode = t["node"];
+        var tcode = tnode["code"].GetValue<string>();
+        foreach (var m in (tnode["migrators"]?["edges"] as JsonArray) ?? new JsonArray())
+        {
+            var mnode = m["node"];
+            var typeName = mnode["typeName"].GetValue<string>();
+            foreach (var r in (mnode["resources"]?["edges"] as JsonArray) ?? new JsonArray())
+            {
+                var rn = r["node"];
+                if (rn["position"]?.GetValue<string>() == "Destination") continue;
+                if (rn["migrationToDestinationExecutor"] is null
+                    || rn["migrationToDestinationExecutor"] is JsonValue jv && jv.TryGetValue<object>(out var ov) && ov == null)
+                {
+                    if (rn["migrationToDestinationExecutor"] == null) continue;
+                }
+                if (rn["migrationToDestinationExecutor"] == null) continue;
+                if (!keys.Contains(rn["key"].GetValue<string>())) continue;
+                output.Add(new JsonObject
+                {
+                    ["templateCode"] = tcode,
+                    ["migratorTypeName"] = typeName,
+                    ["resourceCode"] = rn["code"].GetValue<string>(),
+                    ["target"] = "Destination",
+                });
+            }
+        }
+    }
+    return output;
+}
+
+void KkWaitUntil(Func<JsonNode, bool> predicate, string label, int timeoutSec, int intervalSec = 5)
+{
+    var start = DateTime.UtcNow;
+    var lastReport = DateTime.MinValue;
+    while (true)
+    {
+        var state = KkMigrationState();
+        if (predicate(state)) return;
+        var elapsed = (DateTime.UtcNow - start).TotalSeconds;
+        if (elapsed > timeoutSec)
+        {
+            throw new Exception($"timeout {timeoutSec}s waiting for: {label}");
+        }
+        if ((DateTime.UtcNow - lastReport).TotalSeconds >= 30)
+        {
+            var step = state["resourceState"]?["currentMigrationStep"]?.GetValue<string>() ?? "(none)";
+            var op = state["resourceState"]?["operationIsInProgress"]?.GetValue<bool>() ?? false;
+            var migState = state["currentMigration"]?["state"]?.GetValue<string>() ?? "(none)";
+            Information($"  [{(int)elapsed,4}s] migration={migState} step={step} op_in_progress={op}");
+            lastReport = DateTime.UtcNow;
+        }
+        System.Threading.Thread.Sleep(intervalSec * 1000);
+    }
+}
+
+bool KkCycleObsoleteStragglers(int timeoutSec)
+{
+    var nodes = KkActiveNodes();
+    var obsolete = new List<string>();
+    var templates = new Dictionary<string, string>();
+    foreach (var n in nodes)
+    {
+        if (n["node"]["isObsolete"]?.GetValue<bool>() == true)
+        {
+            var addr = n["node"]["nodeAddress"]["asString"].GetValue<string>();
+            obsolete.Add(addr);
+            templates[addr] = n["node"]["nodeTemplate"]?.GetValue<string>() ?? "?";
+        }
+    }
+    if (obsolete.Count == 0) return false;
+    Information($"  found {obsolete.Count} obsolete node(s) the migration won't auto-cycle (min-instance pin); restarting:");
+    foreach (var addr in obsolete)
+    {
+        Information($"    upgradeNode({addr})  [template={templates[addr]}]");
+        KkUpgradeNode(addr);
+    }
+    var seen = new HashSet<string>(obsolete);
+    var start = DateTime.UtcNow;
+    while (true)
+    {
+        var ns = KkActiveNodes();
+        var stillObsolete = 0;
+        var stillOldAddr = 0;
+        foreach (var n in ns)
+        {
+            if (n["node"]["isObsolete"]?.GetValue<bool>() == true) stillObsolete++;
+            if (seen.Contains(n["node"]["nodeAddress"]["asString"].GetValue<string>())) stillOldAddr++;
+        }
+        if (stillObsolete == 0 && stillOldAddr == 0)
+        {
+            Information($"  obsolete stragglers cycled in {(int)(DateTime.UtcNow - start).TotalSeconds}s");
+            return true;
+        }
+        if ((DateTime.UtcNow - start).TotalSeconds > timeoutSec)
+        {
+            throw new Exception(
+                $"timeout {timeoutSec}s cycling obsolete nodes (still obsolete: {stillObsolete}, still on old address: {stillOldAddr})");
+        }
+        System.Threading.Thread.Sleep(10000);
+    }
+}
+
+void KkVerifyActiveAndArchived(int newId, int prevActiveId, int timeoutSec)
+{
+    KkWaitUntil(
+        s => s["currentMigration"] is null
+             || s["currentMigration"] is JsonValue jv && jv.TryGetValue<object>(out var ov) && ov == null,
+        "currentMigration to clear",
+        timeoutSec);
+
+    var body = KkGql($@"{{api{{klusterKiteNodesApi{{
+        configurations(filter:{{state:Active}},limit:1){{edges{{node{{_id name state}}}}}}
+        archived:configurations(filter:{{id:{prevActiveId}}}){{edges{{node{{_id state}}}}}}
+        getActiveNodeDescriptions{{edges{{node{{isObsolete nodeTemplate}}}}}}
+    }}}}}}");
+    var activeEdges = body["data"]["api"]["klusterKiteNodesApi"]["configurations"]["edges"] as JsonArray;
+    if (activeEdges == null || activeEdges.Count == 0)
+    {
+        throw new Exception("no Active configuration after migrationFinish");
+    }
+    var activeId = activeEdges[0]["node"]["_id"].GetValue<int>();
+    if (activeId != newId)
+    {
+        throw new Exception($"expected #{newId} Active, got #{activeId}");
+    }
+    var prevEdges = body["data"]["api"]["klusterKiteNodesApi"]["archived"]["edges"] as JsonArray;
+    if (prevEdges == null || prevEdges.Count == 0
+        || prevEdges[0]["node"]["state"].GetValue<string>() != "Archived")
+    {
+        Warning($"  previous Active #{prevActiveId} did not transition to Archived");
+    }
+    var nodeEdges = body["data"]["api"]["klusterKiteNodesApi"]["getActiveNodeDescriptions"]["edges"] as JsonArray;
+    var stillObsolete = 0;
+    foreach (var n in nodeEdges)
+    {
+        if (n["node"]["isObsolete"]?.GetValue<bool>() == true) stillObsolete++;
+    }
+    if (stillObsolete > 0)
+    {
+        throw new Exception($"{stillObsolete} obsolete node(s) still present after finish");
+    }
+}
+
+Task("LocalDevClusterUpdate")
+    .IsDependentOn("FinalPushLocalPackages")
+    .Does(() =>
+{
+    _kkApi = (Argument("api", EnvironmentVariable("KK_API_URL") ?? "http://localhost:28080")).TrimEnd('/');
+    var user = Argument("user", EnvironmentVariable("KK_USER") ?? "admin");
+    var password = Argument("password", EnvironmentVariable("KK_PASSWORD") ?? "admin");
+    var clientId = Argument("client-id", EnvironmentVariable("KK_CLIENT_ID") ?? "KlusterKite.NodeManager.WebApplication");
+    var notes = Argument("notes", "");
+    var defaultName = $"Release {DateTime.UtcNow:yyyyMMddHHmmss}";
+    var name = Argument("name", defaultName);
+    var bump = Argument("bump", "minor");
+    var timeoutSec = Argument("timeout", 900);
+
+    Information($"=== LocalDevClusterUpdate against {_kkApi} ===");
+    KkAuth(user, password, clientId);
+    Information("auth ok");
+
+    var active = KkActiveConfig();
+    var activeId = active["_id"].GetValue<int>();
+    var activeMajor = active["majorVersion"].GetValue<int>();
+    var activeMinor = active["minorVersion"].GetValue<int>();
+    Information($"active: #{activeId} '{active["name"].GetValue<string>()}' v{activeMajor}.{activeMinor}");
+
+    int newMajor = activeMajor;
+    int newMinor = activeMinor;
+    if (bump == "major") { newMajor++; newMinor = 0; }
+    else if (bump == "minor") { newMinor++; }
+    else if (bump == "none") { /* keep */ }
+    else { throw new Exception($"unknown bump: {bump} (expected major|minor|none)"); }
+
+    var packages = KkLatestPackages();
+    Information($"latest packages on feed: {packages.Count}");
+    var settings = KkBuildSettings(active, packages);
+
+    var newId = KkCreateDraft(newMajor, newMinor, name, notes);
+    Information($"created draft #{newId}");
+    KkWriteSettings(newId, settings, newMajor, newMinor, name, notes);
+    Information("settings written");
+    KkConfigCheck(newId);
+    Information("check ok");
+    KkSetReady(newId);
+    Information($"#{newId} -> Ready");
+
+    KkMigrationCreate(newId);
+    Information($"migration started -> #{newId}");
+
+    var deadline = DateTime.UtcNow.AddSeconds(timeoutSec);
+    while (true)
+    {
+        if (DateTime.UtcNow > deadline)
+        {
+            throw new Exception("migration walk timed out");
+        }
+        var state = KkMigrationState();
+        var migration = state["currentMigration"];
+        if (migration == null
+            || (migration is JsonValue mv && mv.TryGetValue<object>(out var mvv) && mvv == null))
+        {
+            Information("currentMigration cleared without a Finish call; verifying state");
+            break;
+        }
+        var rs = state["resourceState"];
+        var step = rs?["currentMigrationStep"]?.GetValue<string>();
+        var canFinish = rs?["canFinishMigration"]?.GetValue<bool>() == true;
+        var canUpdateNodes = rs?["canUpdateNodesToDestination"]?.GetValue<bool>() == true;
+
+        var resources = KkCollectForwardResources(state);
+        if (resources.Count > 0)
+        {
+            Information($"  step={step}: migrating {resources.Count} resource(s) to Destination");
+            KkMigrationResourceUpdate(resources);
+            KkWaitUntil(
+                s => !(s["resourceState"]?["operationIsInProgress"]?.GetValue<bool>() ?? false),
+                "resource migration to settle",
+                timeoutSec);
+            continue;
+        }
+
+        if (canUpdateNodes)
+        {
+            Information($"  step={step}: updating nodes to Destination");
+            KkMigrationNodesUpdate("Destination");
+            KkWaitUntil(
+                s => (s["resourceState"]?["currentMigrationStep"]?.GetValue<string>() ?? "") != "NodesUpdating"
+                     && !(s["resourceState"]?["operationIsInProgress"]?.GetValue<bool>() ?? false),
+                "nodes update to settle",
+                timeoutSec, intervalSec: 10);
+            KkCycleObsoleteStragglers(timeoutSec);
+            continue;
+        }
+
+        if (KkCycleObsoleteStragglers(timeoutSec)) continue;
+
+        if (canFinish)
+        {
+            Information("issuing migrationFinish");
+            KkMigrationFinish();
+            break;
+        }
+
+        // Nothing actionable; idle a bit and recheck
+        System.Threading.Thread.Sleep(5000);
+    }
+
+    KkVerifyActiveAndArchived(newId, activeId, timeoutSec);
+    Information($"LocalDevClusterUpdate complete. Active is now #{newId} '{name}'.");
 });
 
 // Entry point
